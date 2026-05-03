@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация — TG Lead Wareon</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body class="auth-page page-dark">
+<div class="auth-wrapper">
+    <div class="auth-card glass">
+        <a href="/" class="logo auth-logo">
+            <span class="logo-mark">TG</span>
+            <span class="logo-text">Lead Wareon</span>
+        </a>
+        <h1>Создать аккаунт</h1>
+        <p class="auth-subtitle">Подключите Miner и Sender, чтобы автоматизировать Telegram‑связки.</p>
+
+        <form method="POST" action="/register" class="auth-form">
+            <div class="field">
+                <label for="full_name">Имя и фамилия</label>
+                <input id="full_name" name="full_name" type="text" required placeholder="Иван Иванов">
+            </div>
+            <div class="field">
+                <label for="email">Рабочий email</label>
+                <input id="email" name="email" type="email" required placeholder="you@example.com">
+            </div>
+            <div class="field">
+                <label for="password">Пароль</label>
+                <input id="password" name="password" type="password" required placeholder="Минимум 8 символов">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Зарегистрироваться</button>
+        </form>
+
+        <p class="auth-meta">
+            Уже есть аккаунт?
+            <a href="/login">Войти</a>
+        </p>
+    </div>
+</div>
+</body>
+</html>
