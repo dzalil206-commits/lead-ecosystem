@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>TG Lead Miner — Сбор аудитории</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <style>
+    .miner-container { max-width: 600px; margin: 60px auto; padding: 0 20px; }
+    .miner-card { background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 18px; padding: 32px; }
+    .miner-card h2 { font-size: 24px; margin-bottom: 20px; }
+    .miner-card input { width: 100%; padding: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-soft); border-radius: 8px; color: #fff; font-size: 14px; margin-bottom: 16px; }
+    .miner-card .btn { width: 100%; padding: 14px; font-size: 16px; }
+    .result-box { margin-top: 20px; }
+  </style>
+</head>
+<body style="background:#0a0a0a; color:#fff; font-family:'Inter',sans-serif;">
+  <header class="header">
+    <div class="container header-inner">
+      <div class="logo">
+        <div class="logo-mark">TG</div>
+        <div><div class="logo-text-main">TG Lead Miner</div></div>
+      </div>
+      <div class="header-right">
+        <a href="/dashboard" class="btn btn-outline btn-sm">Кабинет</a>
+        <a href="/logout" class="btn btn-accent btn-sm">Выйти</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="miner-container">
+    <div class="miner-card">
+      <h2>🧠 Сбор аудитории</h2>
+      <form method="POST" action="/miner/collect">
+        <input name="link" type="text" placeholder="Ссылка на чат или канал (@name или https://t.me/name)" required />
+        <button type="submit" class="btn btn-accent">🚀 Начать сбор</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
