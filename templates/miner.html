@@ -1,42 +1,82 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>TG Lead Miner — Сбор аудитории</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/style.css" />
-  <style>
-    .miner-container { max-width: 600px; margin: 60px auto; padding: 0 20px; }
-    .miner-card { background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 18px; padding: 32px; }
-    .miner-card h2 { font-size: 24px; margin-bottom: 20px; }
-    .miner-card input { width: 100%; padding: 12px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-soft); border-radius: 8px; color: #fff; font-size: 14px; margin-bottom: 16px; }
-    .miner-card .btn { width: 100%; padding: 14px; font-size: 16px; }
-    .result-box { margin-top: 20px; }
-  </style>
+    <meta charset="UTF-8">
+    <title>TG Lead Miner — Сбор аудитории</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/style.css" />
 </head>
-<body style="background:#0a0a0a; color:#fff; font-family:'Inter',sans-serif;">
-  <header class="header">
-    <div class="container header-inner">
-      <div class="logo">
-        <div class="logo-mark">TG</div>
-        <div><div class="logo-text-main">TG Lead Miner</div></div>
-      </div>
-      <div class="header-right">
-        <a href="/dashboard" class="btn btn-outline btn-sm">Кабинет</a>
-        <a href="/logout" class="btn btn-accent btn-sm">Выйти</a>
-      </div>
-    </div>
-  </header>
+<body class="page-dark">
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <a href="/" class="logo">
+                <span class="logo-mark">TG</span>
+                <span class="logo-text">Lead Wareon</span>
+            </a>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/dashboard" class="nav-item">Обзор</a>
+            <a href="/miner" class="nav-item active">Miner</a>
+            <a href="/dashboard#sender" class="nav-item">Sender</a>
+            <a href="/dashboard#settings" class="nav-item">Настройки</a>
+        </nav>
+        <div class="sidebar-footer">
+            <span class="sidebar-user">{{ current_user.full_name or current_user.email }}</span>
+            <a href="/logout" class="sidebar-logout">Выйти</a>
+        </div>
+    </aside>
 
-  <div class="miner-container">
-    <div class="miner-card">
-      <h2>🧠 Сбор аудитории</h2>
-      <form method="POST" action="/miner/collect">
-        <input name="link" type="text" placeholder="Ссылка на чат или канал (@name или https://t.me/name)" required />
-        <button type="submit" class="btn btn-accent">🚀 Начать сбор</button>
-      </form>
-    </div>
-  </div>
+    <main class="main">
+        <header class="dashboard-header">
+            <div>
+                <h1>TG Lead Miner</h1>
+                <p class="dashboard-subtitle">Запустите умный сбор аудитории из каналов, чатов и постов.</p>
+            </div>
+            <a href="/buy/miner" class="btn btn-outline btn-sm">Купить дополнительные лицензии</a>
+        </header>
+
+        <section class="dashboard-section">
+            <div class="miner-panel glass">
+                <h2>Новый сбор аудитории</h2>
+                <p>Вставьте ссылку на канал, чат, пост или комментарий. TG Lead Miner аккуратно соберёт активную аудиторию.</p>
+                <form method="POST" action="/miner/collect" class="miner-form">
+                    <div class="field">
+                        <label for="link">Ссылка</label>
+                        <input id="link" name="link" type="url" required placeholder="https://t.me/your_channel">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Начать сбор</button>
+                </form>
+            </div>
+        </section>
+
+        <section class="dashboard-section">
+            <h2>Последние сборы</h2>
+            <div class="table-minimal">
+                <div class="table-head">
+                    <span>Источник</span>
+                    <span>Статус</span>
+                    <span>Найдено лидов</span>
+                    <span>Создано</span>
+                </div>
+                {% for job in miner_jobs or [] %}
+                <div class="table-row">
+                    <span>{{ job.source_link }}</span>
+                    <span>{{ job.status }}</span>
+                    <span>{{ job.leads_count }}</span>
+                    <span>{{ job.created_at }}</span>
+                </div>
+                {% else %}
+                <div class="table-empty">Вы ещё не запускали сбор аудитории.</div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+</div>
+
+<script src="/static/script.js"></script>
 </body>
 </html>
