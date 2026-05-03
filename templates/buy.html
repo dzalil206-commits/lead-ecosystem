@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Оплата — TG Lead Wareon</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body class="page-dark">
+<header class="site-header slim">
+    <div class="container header-inner">
+        <a href="/" class="logo">
+            <span class="logo-mark">TG</span>
+            <span class="logo-text">Lead Wareon</span>
+        </a>
+        <nav class="nav-main">
+            <a href="/dashboard">Личный кабинет</a>
+        </nav>
+        <a href="/logout" class="btn btn-ghost btn-sm">Выйти</a>
+    </div>
+</header>
+
+<main class="section">
+    <div class="container buy-layout">
+        <section class="buy-main glass">
+            <h1>Оплата лицензии</h1>
+            <p class="buy-subtitle">
+                Вы оплачиваете продукт:
+                <strong>
+                    {% if product == 'sender' %}TG Lead Sender{% else %}TG Lead Miner{% endif %}
+                </strong>
+            </p>
+
+            <form method="POST" action="/buy/{{ product or 'miner' }}" class="buy-form">
+                <div class="field">
+                    <label>Способ оплаты</label>
+                    <div class="payment-methods">
+                        <label class="payment-option">
+                            <input type="radio" name="method" value="card" checked>
+                            <span>Карта / СБП (RUB)</span>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="method" value="usdt">
+                            <span>USDT TRC20</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="payment-details" data-method="card">
+                    <h3>Оплата картой / СБП</h3>
+                    <p>После оплаты вы автоматически получите активную лицензию в личном кабинете.</p>
+                    <ul class="payment-info">
+                        <li>Получатель: TG Lead Wareon</li>
+                        <li>Назначение: Лицензия {{ product or 'miner' }}</li>
+                        <li>Сумма: {{ amount_rub or 990 }}₽</li>
+                    </ul>
+                </div>
+
+                <div class="payment-details hidden" data-method="usdt">
+                    <h3>Оплата USDT TRC20</h3>
+                    <p>Отправьте точную сумму на указанный кошелёк. Лицензия активируется после одного подтверждения сети.</p>
+                    <ul class="payment-info">
+                        <li>Сеть: TRC20</li>
+                        <li>Кошелёк: <code>{{ usdt_wallet or 'TXXXXXX...XXXX' }}</code></li>
+                        <li>Сумма: {{ amount_usdt or 15 }} USDT</li>
+                    </ul>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full">Я оплатил</button>
+            </form>
+        </section>
+
+        <aside class="buy-side">
+            <article class="summary-card">
+                <h3>Детали заказа</h3>
+                <p>Продукт: {% if product == 'sender' %}TG Lead Sender{% else %}TG Lead Miner{% endif %}</p>
+                <p>Тариф: {{ selected_plan or 'Pro' }}</p>
+                <p>Период: {{ billing_period or '1 месяц' }}</p>
+            </article>
+            <article class="summary-card">
+                <h3>Поддержка</h3>
+                <p>Если возникли вопросы с оплатой, напишите в поддержку {{ SUPPORT_USERNAME or '@Support' }}.</p>
+            </article>
+        </aside>
+    </div>
+</main>
+
+<script src="/static/script.js"></script>
+</body>
+</html>
