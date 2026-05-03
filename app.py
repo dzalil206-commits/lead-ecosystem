@@ -1,4 +1,3 @@
-cat > /var/www/lead-combine/app.py << 'ENDOFFILE'
 import os, sqlite3, random, string, io
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, session, g, send_file
@@ -208,4 +207,3 @@ if __name__ == '__main__':
     with app.app_context():
         init_db()
     app.run(debug=True, host='0.0.0.0', port=5000)
-ENDOFFILE
