@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TG Lead Wareon — Блог</title>
+  <link rel="stylesheet" href="{ url_for('static', filename='style.css') }" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body class="page-dark">
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="{ url_for('index') }" class="logo">
+      <div class="logo-mark">TG</div>
+      <div class="logo-text">TG Lead Wareon</div>
+    </a>
+    <nav class="nav-main">
+      <a href="{ url_for('index') }">Главная</a>
+      <a href="{ url_for('pricing') }">Тарифы</a>
+      <a href="{ url_for('cases') }">Кейсы</a>
+      <a href="{ url_for('blog') }">Блог</a>
+      <a href="{ url_for('faq') }">FAQ</a>
+      <a href="{ url_for('support') }">Поддержка</a>
+    </nav>
+    <div class="header-actions">
+      <a href="{ url_for('login') }" class="btn btn-ghost btn-sm">Войти</a>
+      <a href="{ url_for('register') }" class="btn btn-primary btn-sm">Регистрация</a>
+    </div>
+    <button class="nav-toggle" type="button" aria-label="Открыть меню"><span></span><span></span></button>
+  </div>
+</header>
+<main>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header-inline" data-reveal>
+      <div>
+        <h2>Блог TG Lead Wareon</h2>
+        <p class="dashboard-subtitle">Разбираем Telegram-маркетинг, лидогенерацию и AI-настройки на практике.</p>
+      </div>
+    </div>
+    <div class="hero-actions" data-reveal>
+      <button class="pill pill-gray">Все</button>
+      <button class="pill pill-gray">Telegram-маркетинг</button>
+      <button class="pill pill-gray">Лидогенерация</button>
+      <button class="pill pill-gray">AI и автоматизация</button>
+    </div>
+    <div class="products-grid" style="margin-top:18px;">
+      {% for post in posts or [
+        {'title':'7 источников лидов в Telegram кроме рекламы','category':'Telegram-маркетинг','date':'18 апреля 2026'},
+        {'title':'Как настроить автопрогрев аккаунтов безопасно','category':'Безопасность','date':'10 апреля 2026'},
+        {'title':'Скрипт нейро-ответчика: от приветствия до сделки','category':'AI и автоматизация','date':'2 апреля 2026'},
+        {'title':'Чек-лист: готов ли ваш проект к авторассылке','category':'Лидогенерация','date':'25 марта 2026'},
+        {'title':'Ошибки при массовых рассылках в Telegram','category':'Telegram-маркетинг','date':'12 марта 2026'},
+        {'title':'Как агентствам упаковать TG Lead Wareon в продукт','category':'Агентства','date':'5 марта 2026'}
+      ] %}
+      <article class="card-hover product-card" data-reveal>
+        <p class="pill pill-gray">{{ post.category }}</p>
+        <h3>{{ post.title }}</h3>
+        <p>{{ post.date }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container" data-reveal>
+    <div class="card-hover miner-panel">
+      <h2>Подписаться на обновления</h2>
+      <p>Раз в неделю отправляем разборы кейсов, шаблоны сценариев и новости о продукте.</p>
+      <form class="auth-form" action="#" method="post" onsubmit="return false;">
+        <div class="field">
+          <label for="newsletter_email">Email</label>
+          <input id="newsletter_email" type="email" placeholder="you@example.com" />
+        </div>
+        <button class="btn btn-primary btn-lg" style="margin-top:10px;" type="submit">Подписаться</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div>© {{ current_year or 2026 }} TG Lead Wareon. Все права защищены.</div>
+    <div class="footer-links">
+      <a href="{{ url_for('faq') }}">FAQ</a>
+      <a href="{{ url_for('support') }}">Поддержка</a>
+      <a href="{{ url_for('pricing') }}">Тарифы</a>
+    </div>
+  </div>
+</footer>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

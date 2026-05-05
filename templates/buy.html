@@ -1,93 +1,86 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Оплата — TG Lead Wareon</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/static/css/style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TG Lead Wareon — Покупка</title>
+  <link rel="stylesheet" href="{ url_for('static', filename='style.css') }" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body class="page-dark">
-<header class="site-header slim">
-    <div class="container header-inner">
-        <a href="/" class="logo">
-            <span class="logo-mark">TG</span>
-            <span class="logo-text">Lead Wareon</span>
-        </a>
-        <nav class="nav-main">
-            <a href="/dashboard">Личный кабинет</a>
-        </nav>
-        <a href="/logout" class="btn btn-ghost btn-sm">Выйти</a>
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="{ url_for('index') }" class="logo">
+      <div class="logo-mark">TG</div>
+      <div class="logo-text">TG Lead Wareon</div>
+    </a>
+    <nav class="nav-main">
+      <a href="{ url_for('index') }">Главная</a>
+      <a href="{ url_for('pricing') }">Тарифы</a>
+      <a href="{ url_for('cases') }">Кейсы</a>
+      <a href="{ url_for('blog') }">Блог</a>
+      <a href="{ url_for('faq') }">FAQ</a>
+      <a href="{ url_for('support') }">Поддержка</a>
+    </nav>
+    <div class="header-actions">
+      <a href="{ url_for('login') }" class="btn btn-ghost btn-sm">Войти</a>
+      <a href="{ url_for('register') }" class="btn btn-primary btn-sm">Регистрация</a>
     </div>
+    <button class="nav-toggle" type="button" aria-label="Открыть меню"><span></span><span></span></button>
+  </div>
 </header>
+<main>
 
-<main class="section">
-    <div class="container buy-layout">
-        <section class="buy-main glass">
-            <h1>Оплата лицензии</h1>
-            <p class="buy-subtitle">
-                Вы оплачиваете продукт:
-                <strong>
-                    {% if product == 'sender' %}TG Lead Sender{% else %}TG Lead Miner{% endif %}
-                </strong>
-            </p>
-
-            <form method="POST" action="/buy/{{ product or 'miner' }}" class="buy-form">
-                <div class="field">
-                    <label>Способ оплаты</label>
-                    <div class="payment-methods">
-                        <label class="payment-option">
-                            <input type="radio" name="method" value="card" checked>
-                            <span>Карта / СБП (RUB)</span>
-                        </label>
-                        <label class="payment-option">
-                            <input type="radio" name="method" value="usdt">
-                            <span>USDT TRC20</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="payment-details" data-method="card">
-                    <h3>Оплата картой / СБП</h3>
-                    <p>После оплаты вы автоматически получите активную лицензию в личном кабинете.</p>
-                    <ul class="payment-info">
-                        <li>Получатель: TG Lead Wareon</li>
-                        <li>Назначение: Лицензия {{ product or 'miner' }}</li>
-                        <li>Сумма: {{ amount_rub or 990 }}₽</li>
-                    </ul>
-                </div>
-
-                <div class="payment-details hidden" data-method="usdt">
-                    <h3>Оплата USDT TRC20</h3>
-                    <p>Отправьте точную сумму на указанный кошелёк. Лицензия активируется после одного подтверждения сети.</p>
-                    <ul class="payment-info">
-                        <li>Сеть: TRC20</li>
-                        <li>Кошелёк: <code>{{ usdt_wallet or 'TXXXXXX...XXXX' }}</code></li>
-                        <li>Сумма: {{ amount_usdt or 15 }} USDT</li>
-                    </ul>
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-full">Я оплатил</button>
-            </form>
-        </section>
-
-        <aside class="buy-side">
-            <article class="summary-card">
-                <h3>Детали заказа</h3>
-                <p>Продукт: {% if product == 'sender' %}TG Lead Sender{% else %}TG Lead Miner{% endif %}</p>
-                <p>Тариф: {{ selected_plan or 'Pro' }}</p>
-                <p>Период: {{ billing_period or '1 месяц' }}</p>
-            </article>
-            <article class="summary-card">
-                <h3>Поддержка</h3>
-                <p>Если возникли вопросы с оплатой, напишите в поддержку {{ SUPPORT_USERNAME or '@Support' }}.</p>
-            </article>
-        </aside>
+<section class="section">
+  <div class="container" data-reveal>
+    <div class="buy-layout">
+      <div class="card-hover buy-main">
+        <h1>Оформление подписки</h1>
+        <p class="buy-subtitle">Вы выбрали тариф <strong>{{ selected_plan or 'Pro' }}</strong>. Настройте способ оплаты и дополнительные модули.</p>
+        <div class="payment-methods">
+          <label class="payment-option">
+            <input type="radio" name="payment_method" checked />
+            <span>Банковская карта</span>
+          </label>
+          <label class="payment-option">
+            <input type="radio" name="payment_method" />
+            <span>Счёт для юрлица</span>
+          </label>
+        </div>
+        <div class="payment-details">
+          <p><strong>Тестовый режим</strong>. Форма оплаты служит демо-примером и не отправляет данные.</p>
+          <ul class="payment-info">
+            <li>После оформления вы получите письмо с деталями доступа.</li>
+            <li>Автопродление можно отключить в любой момент.</li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <div class="summary-card">
+          <p><strong>Итог по тарифу</strong></p>
+          <p>Базовый тариф: <span>{{ plan_price or '2 490₽/мес' }}</span></p>
+          <p>Доп. модули: <span>по выбору</span></p>
+          <p><strong>Итого к оплате: {{ total_price or 'от 2 490₽/мес' }}</strong></p>
+        </div>
+        <button class="btn btn-primary btn-full">Перейти к оплате</button>
+      </div>
     </div>
-</main>
+  </div>
+</section>
 
-<script src="/static/script.js"></script>
+</main>
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div>© {{ current_year or 2026 }} TG Lead Wareon. Все права защищены.</div>
+    <div class="footer-links">
+      <a href="{{ url_for('faq') }}">FAQ</a>
+      <a href="{{ url_for('support') }}">Поддержка</a>
+      <a href="{{ url_for('pricing') }}">Тарифы</a>
+    </div>
+  </div>
+</footer>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

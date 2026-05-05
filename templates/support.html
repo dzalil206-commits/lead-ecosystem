@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TG Lead Wareon — Miner</title>
+  <title>TG Lead Wareon — Поддержка</title>
   <link rel="stylesheet" href="{ url_for('static', filename='style.css') }" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -36,34 +36,36 @@
 <section class="section">
   <div class="container">
     <div class="section-header" data-reveal>
-      <h2>Miner — автосбор аудитории в Telegram</h2>
-      <p>Настройте правила поиска, запустите сканирование — и получайте свежих лидов каждый день.</p>
+      <h2>Поддержка и обратная связь</h2>
+      <p>Ответим на вопросы по настройке, тарифам и интеграциям. Форма ниже не отправляет данные и служит демо-заглушкой.</p>
     </div>
     <div class="buy-layout" data-reveal>
-      <div class="card-hover miner-panel">
-        <h2>Настройка поиска</h2>
-        <p>Укажите ключевые слова, типы источников и минимальную активность, чтобы Miner собирал только релевантных пользователей.</p>
-        <form class="miner-form" method="post" action="#" onsubmit="return false;">
+      <div class="card-hover auth-card">
+        <h3>Написать в поддержку</h3>
+        <form class="auth-form" action="#" method="post" onsubmit="return false;">
           <div class="field">
-            <label>Ключевые слова</label>
-            <input type="text" placeholder="крипта, трейдинг, defi..." />
+            <label for="support_name">Имя</label>
+            <input id="support_name" type="text" placeholder="{{ current_user.full_name or 'Иван' }}" />
           </div>
           <div class="field">
-            <label>Источники</label>
-            <input type="text" placeholder="чаты, каналы, комментарии" />
+            <label for="support_email">Email</label>
+            <input id="support_email" type="email" placeholder="you@example.com" />
           </div>
           <div class="field">
-            <label>Минимальная активность</label>
-            <input type="text" placeholder="Например: ≥ 5 сообщений за 7 дней" />
+            <label for="support_msg">Сообщение</label>
+            <input id="support_msg" type="text" placeholder="Опишите задачу или проблему..." />
           </div>
-          <button class="btn btn-primary btn-lg" type="submit">Сохранить пресет</button>
+          <button class="btn btn-primary btn-lg" style="margin-top:12px;" type="submit">Отправить запрос</button>
         </form>
       </div>
       <div class="summary-card">
-        <p><strong>Статистика по Miner</strong></p>
-        <p>Собрано лидов за 30 дней: <strong>{{ miner_leads_30d or '48 320' }}</strong></p>
-        <p>Активных пресетов: {{ miner_presets_count or 7 }}</p>
-        <p>Средняя цена лида: {{ miner_cpl or '23,4₽' }}</p>
+        <p><strong>Контакты команды</strong></p>
+        <p>Telegram: <a href="https://t.me/wareon_support" target="_blank" rel="noreferrer">@wareon_support</a></p>
+        <p>Email: <a href="mailto:support@tgwareon.com">support@tgwareon.com</a></p>
+        <p>Часы работы: Пн–Пт, 10:00–19:00 (MSK)</p>
+        <hr style="border-color:rgba(255,255,255,0.06);margin:10px 0;" />
+        <p>Или начните прямо сейчас:</p>
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-full">Запустить бесплатный тест</a>
       </div>
     </div>
   </div>
