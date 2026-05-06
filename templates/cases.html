@@ -3,176 +3,128 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TG Lead Wareon — Кейсы клиентов</title>
-  <link rel="stylesheet" href="{ url_for('static', filename='style.css') }" />
+  <title>Кейсы — TG Lead Wareon</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body class="page-dark">
 <header class="site-header">
-  <div class="container header-inner">
-    <a href="{ url_for('index') }" class="logo">
-      <div class="logo-mark">TG</div>
-      <div class="logo-text">TG Lead Wareon</div>
-    </a>
-    <nav class="nav-main">
-      <a href="{ url_for('index') }">Главная</a>
-      <a href="{ url_for('pricing') }">Тарифы</a>
-      <a href="{ url_for('cases') }">Кейсы</a>
-      <a href="{ url_for('blog') }">Блог</a>
-      <a href="{ url_for('faq') }">FAQ</a>
-      <a href="{ url_for('support') }">Поддержка</a>
-    </nav>
-    <div class="header-actions">
-      <a href="{ url_for('login') }" class="btn btn-ghost btn-sm">Войти</a>
-      <a href="{ url_for('register') }" class="btn btn-primary btn-sm">Регистрация</a>
+    <div class="container header-inner">
+        <a href="{{ url_for('index') }}" class="logo">
+            <span class="logo-mark">TG</span>
+            <span class="logo-text">Lead Wareon</span>
+        </a>
+        <nav class="nav-main">
+            <a href="{{ url_for('index') }}">Главная</a>
+            <a href="{{ url_for('pricing') }}">Тарифы</a>
+            <a href="{{ url_for('cases') }}">Кейсы</a>
+            <a href="{{ url_for('blog') }}">Блог</a>
+            <a href="{{ url_for('faq') }}">FAQ</a>
+            <a href="{{ url_for('support') }}">Поддержка</a>
+        </nav>
+        <div class="header-actions">
+            <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">Войти</a>
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Регистрация</a>
+        </div>
+        <button class="nav-toggle" aria-label="Открыть меню">
+            <span></span><span></span>
+        </button>
     </div>
-    <button class="nav-toggle" type="button" aria-label="Открыть меню"><span></span><span></span></button>
-  </div>
 </header>
+
 <main>
-
-<section class="section">
-  <div class="container">
-    <div class="section-header" data-reveal>
-      <h2>Кейсы клиентов</h2>
-      <p>TG Lead Wareon помогает агентствам, онлайн-школам, SaaS-сервисам и экспертам строить предсказуемый поток лидов из Telegram.</p>
-    </div>
-    <div class="cases-grid">
-      <article class="card-hover case-card" data-reveal>
-        <div class="card-accent card-accent-gold"></div>
-        <h3>Онлайн-школа по трейдингу</h3>
-        <p>Задача: стабилизировать поток заявок из Telegram без увеличения рекламного бюджета.</p>
-        <ul class="case-stats">
-          <li><span>+212%</span> рост заявок за 60 дней</li>
-          <li><span>-37%</span> стоимость лида</li>
-          <li><span>3</span> аккаунта в автопрогреве</li>
-        </ul>
-      </article>
-      <article class="card-hover case-card" data-reveal>
-        <div class="card-accent"></div>
-        <h3>Маркетинговое агентство</h3>
-        <p>Задача: масштабировать сервис по генерации лидов для клиентов из разных ниш.</p>
-        <ul class="case-stats">
-          <li><span>+18</span> активных проектов на Sender</li>
-          <li><span>до 450 000</span> диалогов в месяц</li>
-          <li><span>5</span> менеджеров в одном кабинете</li>
-        </ul>
-      </article>
-      <article class="card-hover case-card" data-reveal>
-        <div class="card-accent"></div>
-        <h3>SaaS-сервис для e-commerce</h3>
-        <p>Задача: вернуть неактивных пользователей и поднять LTV через Telegram.</p>
-        <ul class="case-stats">
-          <li><span>+27%</span> возвратов пользователей</li>
-          <li><span>+19%</span> к среднему чеку</li>
-          <li><span>120 000</span> лидов в базе</li>
-        </ul>
-      </article>
-      <article class="card-hover case-card" data-reveal>
-        <div class="card-accent"></div>
-        <h3>Эксперт по продюсированию</h3>
-        <p>Задача: автоматизировать прогрев аудиторий из партнёрских каналов.</p>
-        <ul class="case-stats">
-          <li><span>+3,1x</span> рост конверсии в разбор</li>
-          <li><span>2</span> сценария нейро-ответчика</li>
-          <li><span>0</span> банов за 4 месяца</li>
-        </ul>
-      </article>
-      <article class="card-hover case-card" data-reveal>
-        <div class="card-accent"></div>
-        <h3>Крипто-комьюнити</h3>
-        <p>Задача: монетизировать активную аудиторию через персональные предложения.</p>
-        <ul class="case-stats">
-          <li><span>+46%</span> конверсия из диалога в сделку</li>
-          <li><span>150 000</span> обработанных контактов</li>
-          <li><span>24/7</span> AI-поддержка</li>
-        </ul>
-      </article>
-      <article class="card-hover case-card" data-reveal>
-        <div class="card-accent"></div>
-        <h3>B2B IT-продукт</h3>
-        <p>Задача: создать стабильный поток демо-встреч через Telegram.</p>
-        <ul class="case-stats">
-          <li><span>+63%</span> записей на демо</li>
-          <li><span>-28%</span> стоимость лида</li>
-          <li><span>4</span> интеграции с CRM</li>
-        </ul>
-      </article>
-    </div>
-  </div>
-</section>
-
-<section class="section">
-  <div class="container">
-    <div class="section-header" data-reveal>
-      <h2>Отзывы клиентов</h2>
-      <p>Команды, которые уже масштабируются с TG Lead Wareon.</p>
-    </div>
-    <div class="reviews-carousel" data-reveal>
-      <button class="carousel-arrow prev" type="button">‹</button>
-      <div class="carousel-track">
-        <article class="review-card active">
-          <div class="review-user">
-            <div class="avatar">AK</div>
-            <div>
-              <div class="name">Анна К.</div>
-              <div class="role">COO онлайн-школы</div>
+    <section class="section" id="cases">
+        <div class="container">
+            <div class="section-header">
+                <h2>Реальные истории клиентов</h2>
+                <p>Кейсы из арбитража, инфобизнеса и агентств, которые уже выросли с TG Lead Wareon.</p>
             </div>
-          </div>
-          <p>С Miner и Sender мы закрыли проблему нестабильного трафика из Telegram. Команда перестала делать рутинный ручной прогрев и сфокусировалась на продукте.</p>
-        </article>
-        <article class="review-card">
-          <div class="review-user">
-            <div class="avatar">DM</div>
-            <div>
-              <div class="name">Дмитрий М.</div>
-              <div class="role">Основатель агентства</div>
+            <div class="cases-grid">
+                <article class="case-card card-hover">
+                    <div class="card-accent"></div>
+                    <h3>Онлайн-школа дизайна</h3>
+                    <p>Подключили Miner + Sender, настроили автоворонку на вебинар.</p>
+                    <ul class="case-stats"><li><span>+214%</span> рост заявок за 2 месяца</li><li><span>5 300</span> лидов из Telegram</li></ul>
+                </article>
+                <article class="case-card card-hover">
+                    <div class="card-accent card-accent-gold"></div>
+                    <h3>SaaS-сервис для бизнеса</h3>
+                    <p>Замена ручных рассылок на AI-чаттинг и триггерные цепочки.</p>
+                    <ul class="case-stats"><li><span>−62%</span> время оператора на переписку</li><li><span>+37%</span> конверсия в демо</li></ul>
+                </article>
+                <article class="case-card card-hover">
+                    <div class="card-accent"></div>
+                    <h3>Крипто-проект</h3>
+                    <p>Автоматизировали прогрев холодных лидов в личке.</p>
+                    <ul class="case-stats"><li><span>3,2x</span> рост ROMI</li><li><span>0</span> заблокированных аккаунтов</li></ul>
+                </article>
+                <article class="case-card card-hover">
+                    <div class="card-accent card-accent-gold"></div>
+                    <h3>Арбитражное агентство</h3>
+                    <p>Пересадили команду с самописных скриптов на TG Lead.</p>
+                    <ul class="case-stats"><li><span>−70%</span> нагрузки на операторов</li><li><span>+41%</span> к выкупу офферов</li></ul>
+                </article>
+                <article class="case-card card-hover">
+                    <div class="card-accent"></div>
+                    <h3>Инфобизнесмен</h3>
+                    <p>Прогрев аудитории через нейрочаттинг 24/7.</p>
+                    <ul class="case-stats"><li><span>+89%</span> вовлечённость</li><li><span>1 200</span> новых лидов</li></ul>
+                </article>
+                <article class="case-card card-hover">
+                    <div class="card-accent card-accent-gold"></div>
+                    <h3>Локальный бизнес</h3>
+                    <p>Сбор аудитории по гео-чатам и авторассылка.</p>
+                    <ul class="case-stats"><li><span>340%</span> прирост подписчиков</li><li><span>15 000+</span> лидов за 30 дней</li></ul>
+                </article>
             </div>
-          </div>
-          <p>Мы упаковали TG Lead Wareon внутрь своих услуг и масштабировали MRR практически без роста команды. Нравится, что всё заточено под реальный Telegram-маркетинг.</p>
-        </article>
-        <article class="review-card">
-          <div class="review-user">
-            <div class="avatar">IS</div>
-            <div>
-              <div class="name">Ирина С.</div>
-              <div class="role">CMO SaaS-продукта</div>
+        </div>
+    </section>
+
+    <section class="section" id="reviews">
+        <div class="container">
+            <h2>Что говорят клиенты</h2>
+            <div class="reviews-carousel" data-carousel>
+                <button class="carousel-arrow prev" data-carousel-prev>&larr;</button>
+                <div class="carousel-track">
+                    <article class="review-card active">
+                        <div class="review-user"><div class="avatar">АР</div><div><div class="name">Артём Романов</div><div class="role">Арбитражный тимлид</div></div></div>
+                        <p>Пересадили всю команду с самописных скриптов. Конверсии выросли, а риск блокировок ушёл в прошлое.</p>
+                    </article>
+                    <article class="review-card">
+                        <div class="review-user"><div class="avatar">ДВ</div><div><div class="name">Дарья Власова</div><div class="role">Основатель онлайн-школы</div></div></div>
+                        <p>Нейрочаттинг делает всю "грязную" работу: диалоги стали короче, а оплата — быстрее.</p>
+                    </article>
+                    <article class="review-card">
+                        <div class="review-user"><div class="avatar">МК</div><div><div class="name">Максим Котов</div><div class="role">Владелец агентства</div></div></div>
+                        <p>Интерфейс уровня Stripe в нише Telegram‑инструментов. Клиенты доверяют продукту с первого взгляда.</p>
+                    </article>
+                </div>
+                <button class="carousel-arrow next" data-carousel-next>&rarr;</button>
             </div>
-          </div>
-          <p>AI-нейроответчик стал для нас новым каналом продаж. Клиенты получают ответы в любой момент, а менеджеры подключаются только к тёплым диалогам.</p>
-        </article>
-      </div>
-      <button class="carousel-arrow next" type="button">›</button>
-    </div>
-  </div>
-</section>
+        </div>
+    </section>
 
-<section class="section">
-  <div class="container" data-reveal>
-    <div class="card-hover miner-panel">
-      <h2>Хотите такие же результаты?</h2>
-      <p>Расскажите про свои задачи в Telegram — подберём конфигурацию TG Lead Wareon и покажем демо на ваших данных.</p>
-      <div class="hero-actions">
-        <a href="{{ url_for('support') }}" class="btn btn-primary">Оставить запрос</a>
-        <a href="{{ url_for('pricing') }}" class="btn btn-ghost">Посмотреть тарифы</a>
-      </div>
-    </div>
-  </div>
-</section>
-
+    <section class="section" id="cta">
+        <div class="container" style="text-align:center;">
+            <h2>Хотите такие же результаты?</h2>
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Попробовать бесплатно</a>
+        </div>
+    </section>
 </main>
+
 <footer class="site-footer">
-  <div class="container footer-inner">
-    <div>© {{ current_year or 2026 }} TG Lead Wareon. Все права защищены.</div>
-    <div class="footer-links">
-      <a href="{{ url_for('faq') }}">FAQ</a>
-      <a href="{{ url_for('support') }}">Поддержка</a>
-      <a href="{{ url_for('pricing') }}">Тарифы</a>
+    <div class="container footer-inner">
+        <div class="footer-left"><span class="logo-text">TG Lead Wareon</span></div>
+        <div class="footer-links">
+            <a href="{{ url_for('faq') }}">FAQ</a>
+            <a href="{{ url_for('support') }}">Поддержка</a>
+            <a href="{{ url_for('pricing') }}">Тарифы</a>
+        </div>
     </div>
-  </div>
 </footer>
+
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
