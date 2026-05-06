@@ -330,4 +330,9 @@ def admin_panel():
     users = db.execute("SELECT * FROM users ORDER BY created_at DESC LIMIT 20").fetchall()
     licenses = db.execute("SELECT * FROM licenses ORDER BY created_at DESC LIMIT 20").fetchall()
     return render_template('admin.html', users=users, licenses=licenses)
+
+if __name__ == '__main__':
+    with app.app_context():
+        init_db()
+    app.run(debug=True, host='0.0.0.0', port=5000)
     
