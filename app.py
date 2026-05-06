@@ -316,3 +316,23 @@ if __name__ == '__main__':
     with app.app_context():
         init_db()
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+@app.route('/pricing')
+def pricing():
+    return render_template('pricing.html')
+
+@app.route('/cases')
+def cases():
+    return render_template('cases.html')
+
+@app.route('/blog')
+def blog():
+    return render_template('blog.html')
+
+@app.route('/faq')
+def faq():
+    return render_template('faq.html')
+
+@app.route('/support')
+def support():
+    return render_template('support.html')
