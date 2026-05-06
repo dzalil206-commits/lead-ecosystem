@@ -125,6 +125,7 @@ def generate_license_key():
 @app.route('/')
 def index():
     @app.route('/pricing')
+    
 def pricing():
     return render_template('pricing.html')
 
