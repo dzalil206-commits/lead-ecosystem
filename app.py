@@ -124,8 +124,9 @@ def generate_license_key():
 # ---------- ГЛАВНАЯ СТРАНИЦА ----------
 @app.route('/')
 def index():
-    @app.route('/pricing')
-    
+    return render_template('index.html')
+
+@app.route('/pricing')
 def pricing():
     return render_template('pricing.html')
 
@@ -144,7 +145,6 @@ def faq():
 @app.route('/support')
 def support():
     return render_template('support.html')
-    return render_template('index.html')
 
 # ---------- РЕГИСТРАЦИЯ / ВХОД ----------
 @app.route('/register', methods=['GET', 'POST'])
