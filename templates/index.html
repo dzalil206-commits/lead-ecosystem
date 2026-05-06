@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -11,179 +12,142 @@
 </head>
 <body class="page-dark">
 <header class="site-header">
-  <div class="container header-inner">
-    <a href="{ url_for('index') }" class="logo">
-      <div class="logo-mark">TG</div>
-      <div class="logo-text">TG Lead Wareon</div>
-    </a>
-    <nav class="nav-main">
-      <a href="{ url_for('index') }">Главная</a>
-      <a href="{ url_for('pricing') }">Тарифы</a>
-      <a href="{ url_for('cases') }">Кейсы</a>
-      <a href="{ url_for('blog') }">Блог</a>
-      <a href="{ url_for('faq') }">FAQ</a>
-      <a href="{ url_for('support') }">Поддержка</a>
-    </nav>
-    <div class="header-actions">
-      <a href="{ url_for('login') }" class="btn btn-ghost btn-sm">Войти</a>
-      <a href="{ url_for('register') }" class="btn btn-primary btn-sm">Регистрация</a>
+    <div class="container header-inner">
+        <a href="{{ url_for('index') }}" class="logo">
+            <span class="logo-mark">TG</span>
+            <span class="logo-text">Lead Wareon</span>
+        </a>
+        <nav class="nav-main">
+            <a href="{{ url_for('index') }}">Главная</a>
+            <a href="{{ url_for('pricing') }}">Тарифы</a>
+            <a href="{{ url_for('cases') }}">Кейсы</a>
+            <a href="{{ url_for('blog') }}">Блог</a>
+            <a href="{{ url_for('faq') }}">FAQ</a>
+            <a href="{{ url_for('support') }}">Поддержка</a>
+        </nav>
+        <div class="header-actions">
+            <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">Войти</a>
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Регистрация</a>
+        </div>
+        <button class="nav-toggle" aria-label="Открыть меню">
+            <span></span><span></span>
+        </button>
     </div>
-    <button class="nav-toggle" type="button" aria-label="Открыть меню"><span></span><span></span></button>
-  </div>
 </header>
+
 <main>
-
-<section class="hero">
-  <div class="noise-bg"></div>
-  <div class="hero-gradient"></div>
-  <div class="container hero-inner">
-    <div class="hero-content" data-reveal>
-      <div class="hero-label">
-        <span class="dot-live"></span>
-        <span data-typing="Автосбор лидов в Telegram|Автопрогрев и рассылки|Нейро-чаттинг с вашими лидами"></span>
-      </div>
-      <h1>Автопоиск клиентов и лидов для Telegram</h1>
-      <p class="hero-subtitle">TG Lead Wareon — Telegram-комбайн для автосбора аудитории, тёплого прогрева и умных диалогов с помощью AI. Работает поверх ваших аккаунтов и каналов.</p>
-      <div class="hero-actions">
-        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Попробовать бесплатно</a>
-        <a href="{{ url_for('pricing') }}" class="btn btn-outline btn-lg">Смотреть тарифы</a>
-      </div>
-      <div class="hero-metas">
-        <span>⚡ Запуск за 15 минут</span>
-        <span>👥 До 1 000 000 лидов в месяц</span>
-        <span>🧠 AI-нейрочаттинг</span>
-      </div>
-    </div>
-    <div class="hero-visual" data-reveal>
-      <div class="hero-card glass">
-        <div class="hero-card-header">
-          <span class="badge">Realtime Miner</span>
-          <span class="mini-indicator"><span class="pulse-dot"></span>Лиды растут</span>
+    <section class="hero" id="top">
+        <div class="noise-bg"></div>
+        <div class="hero-gradient"></div>
+        <div class="container hero-inner">
+            <div class="hero-content">
+                <div class="hero-label">
+                    <span class="dot-live"></span>
+                    Новый уровень Telegram‑арбитража
+                </div>
+                <h1>Автопоиск клиентов и лидов для Telegram</h1>
+                <p class="hero-subtitle">TG Lead Wareon — безопасный Telegram‑комбайн: автосбор аудитории, умная авторассылка и нейрочаттинг в одном премиум‑интерфейсе.</p>
+                <div class="hero-actions">
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Попробовать бесплатно</a>
+                    <a href="{{ url_for('pricing') }}" class="btn btn-outline btn-lg">Смотреть тарифы</a>
+                </div>
+                <div class="hero-metas">
+                    <span>Нет блокировок аккаунтов</span>
+                    <span>Готов к высокому объёму</span>
+                    <span>Для арбитража, школ и агентств</span>
+                </div>
+            </div>
+            <div class="hero-visual" data-parallax>
+                <div class="hero-card glass">
+                    <div class="hero-card-header">
+                        <span class="badge">Конверсия кампаний</span>
+                        <span class="mini-indicator"><span class="pulse-dot"></span> +37% за 7 дней</span>
+                    </div>
+                    <div class="hero-card-chart">
+                        <div class="chart-line">
+                            <span class="chart-point chart-point-1"></span>
+                            <span class="chart-point chart-point-2"></span>
+                            <span class="chart-point chart-point-3"></span>
+                            <span class="chart-point chart-point-4"></span>
+                            <span class="chart-point chart-point-5"></span>
+                        </div>
+                        <div class="chart-legend"><span>Лиды</span><span>Клики</span><span>Диалоги</span></div>
+                    </div>
+                    <div class="hero-card-chat">
+                        <div class="chat-message chat-message-in">Найдено 1 245 лидов по нише «Онлайн‑школа».</div>
+                        <div class="chat-message chat-message-out">Отлично, запусти авторассылку и прогрей аудиторию.</div>
+                        <div class="chat-message-type">
+                            <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+                            <span class="typing-label" data-typing>Нейро‑чаттинг пишет ответ…</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="hero-card-chart">
-          <div class="chart-line">
-            <span class="chart-point chart-point-1"></span>
-            <span class="chart-point chart-point-2"></span>
-            <span class="chart-point chart-point-3"></span>
-            <span class="chart-point chart-point-4"></span>
-            <span class="chart-point chart-point-5"></span>
-          </div>
-          <div class="chart-legend">
-            <span>Лиды / сутки</span>
-            <span>+184% за 30 дней</span>
-          </div>
-        </div>
-        <div class="hero-card-chat">
-          <div class="chat-message chat-message-in">Новый лид из чатов по крипте. Добавить в прогрев?</div>
-          <div class="chat-message chat-message-out">Да, отправь серию из 3 сообщений с оффером.</div>
-          <div class="chat-message chat-message-in">Готово. Следующий шаг — автозвонок или квиз?</div>
-          <div class="chat-message-type">
-            <span class="typing-dot"></span>
-            <span class="typing-dot"></span>
-            <span class="typing-dot"></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+    </section>
 
-<section class="section">
-  <div class="container">
-    <div class="section-header" data-reveal>
-      <h2>Как это работает</h2>
-      <p>Четыре модуля, которые закрывают полный цикл работы с аудиторией в Telegram — от поиска до продажи.</p>
-    </div>
-    <div class="steps-grid">
-      <div class="step-card" data-reveal>
-        <div class="step-number">Шаг 1</div>
-        <h3>Miner: автосбор аудитории</h3>
-        <p>Сканирует чаты, каналы и комментарии, собирая релевантные профили и сегменты по вашим правилам.</p>
-      </div>
-      <div class="step-card" data-reveal>
-        <div class="step-number">Шаг 2</div>
-        <h3>Автопрогрев аккаунтов</h3>
-        <p>Готовит аккаунты к массовым действиям, имитируя живую активность и снижая риски блокировок.</p>
-      </div>
-      <div class="step-card" data-reveal>
-        <div class="step-number">Шаг 3</div>
-        <h3>Sender: авторассылка</h3>
-        <p>Отправляет персонализированные сообщения и цепочки прогрева в Telegram по заданным сценарием.</p>
-      </div>
-      <div class="step-card" data-reveal>
-        <div class="step-number">Шаг 4</div>
-        <h3>AI-нейрочаттинг</h3>
-        <p>Отвечает на вопросы лидов, квалифицирует и доводит до заявки или покупки в режиме 24/7.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="section">
-  <div class="container">
-    <div class="section-header" data-reveal>
-      <h2>Продукты TG Lead Wareon</h2>
-      <p>Соберите свою воронку в Telegram из двух ключевых модулей.</p>
-    </div>
-    <div class="products-grid">
-      <article class="card-hover product-card" data-reveal>
-        <div class="card-accent card-accent-gold"></div>
-        <h3>Miner — поиск и сбор лидов</h3>
-        <p>Автоматический поиск целевой аудитории в чатах, каналах и комментариях с гибкой фильтрацией и сегментацией.</p>
-        <div class="product-meta">
-          <span class="price">от 490₽/мес</span>
-          <span class="pill pill-gold">до 50 000 лидов / мес</span>
+    <section class="section" id="how">
+        <div class="container">
+            <div class="section-header">
+                <h2>Как TG Lead Wareon работает за вас</h2>
+                <p>Полный цикл поиска и монетизации лидов в Telegram — от сбора аудитории до тёплого диалога.</p>
+            </div>
+            <div class="steps-grid">
+                <article class="step-card" data-parallax><div class="step-number">01</div><h3>Подключаете аккаунты</h3><p>Добавьте рабочие Telegram‑аккаунты и прокси. Платформа сама заботится о лимитах и безопасной ротации.</p></article>
+                <article class="step-card" data-parallax><div class="step-number">02</div><h3>Запускаете Miner</h3><p>Вставьте ссылку на канал, чат или пост — Miner аккуратно собирает аудиторию по поведенческим сигналам.</p></article>
+                <article class="step-card" data-parallax><div class="step-number">03</div><h3>Включаете Sender</h3><p>Настройте умные сценарии авторассылки: прогрев, оффер, ретаргет по реакции и статусу диалога.</p></article>
+                <article class="step-card" data-parallax><div class="step-number">04</div><h3>Нейрочаттинг 24/7</h3><p>Нейросеть отвечает за вас, уточняет потребности и доводит до оплаты — без спама и выгорания менеджеров.</p></article>
+            </div>
         </div>
-        <ul class="product-list">
-          <li>Поиск по ключевым словам и тематикам</li>
-          <li>Фильтры по активности и вовлеченности</li>
-          <li>Экспорт сегментов в Sender</li>
-        </ul>
-        <a href="{{ url_for('miner_panel') }}" class="btn btn-outline btn-sm">Подробнее о Miner</a>
-      </article>
-      <article class="card-hover product-card" data-reveal>
-        <div class="card-accent"></div>
-        <h3>Sender — умная авторассылка</h3>
-        <p>Масштабируемые рассылки и воронки в Telegram с A/B-тестами, личными кабинетами операторов и AI-ответчиком.</p>
-        <div class="product-meta">
-          <span class="price">от 990₽/мес</span>
-          <span class="pill pill-gold">до 150 000 диалогов / мес</span>
+    </section>
+
+    <section class="section" id="products">
+        <div class="container">
+            <div class="section-header">
+                <h2>Два продукта — одна экосистема</h2>
+                <p>Запускайте отдельно или вместе, чтобы выжать максимум из Telegram‑трафика.</p>
+            </div>
+            <div class="products-grid">
+                <article class="product-card card-hover">
+                    <div class="card-accent"></div>
+                    <h3>TG Lead Miner</h3>
+                    <p>Автоматический сбор целевой аудитории из каналов, чатов, комментариев и реакций без риска банов.</p>
+                    <div class="product-meta"><span class="price">от 490₽/мес</span><span class="pill">Сбор лидов</span></div>
+                    <ul class="product-list"><li>Точный таргет по вовлечённости</li><li>Фильтры по языку и активности</li><li>Экспорт в Sender в один клик</li></ul>
+                    <a href="{{ url_for('miner_panel') }}" class="btn btn-outline btn-sm">Подробнее о Miner</a>
+                </article>
+                <article class="product-card card-hover">
+                    <div class="card-accent card-accent-gold"></div>
+                    <h3>TG Lead Sender</h3>
+                    <p>Гибкий движок авторассылки и нейрочаттинга для прогрева аудитории без блокировок и спама.</p>
+                    <div class="product-meta"><span class="price">от 990₽/мес</span><span class="pill pill-gold">Монетизация</span></div>
+                    <ul class="product-list"><li>Сценарии под арбитраж и инфобизнес</li><li>Умное чередование аккаунтов</li><li>Нейро‑ответы и автоворонки</li></ul>
+                    <a href="{{ url_for('pricing') }}" class="btn btn-outline btn-sm">Смотреть тарифы</a>
+                </article>
+            </div>
         </div>
-        <ul class="product-list">
-          <li>Деревья сценариев и триггерные цепочки</li>
-          <li>Трекинг ответов и конверсий</li>
-          <li>Интеграции с CRM и аналитикой</li>
-        </ul>
-        <a href="{{ url_for('pricing') }}" class="btn btn-outline btn-sm">Смотреть тарифы</a>
-      </article>
-    </div>
-  </div>
-</section>
+    </section>
 
-<section class="section">
-  <div class="container">
-    <div class="card-hover miner-panel" data-reveal>
-      <h2>Готовы масштабировать Telegram?</h2>
-      <p>Подключите TG Lead Wareon и выведите поиск и обработку лидов в Telegram на предсказуемые рельсы.</p>
-      <div class="hero-actions">
-        <a href="{{ url_for('register') }}" class="btn btn-primary">Запустить бесплатный тест</a>
-        <a href="{{ url_for('pricing') }}" class="btn btn-ghost">Посмотреть тарифы</a>
-      </div>
-    </div>
-  </div>
-</section>
-
+    <section class="section" id="cta">
+        <div class="container" style="text-align:center;">
+            <h2>Готовы масштабировать Telegram?</h2>
+            <p style="color:var(--text-muted);margin-bottom:16px;">Подключитесь за минуту и протестируйте все функции бесплатно.</p>
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Попробовать бесплатно</a>
+        </div>
+    </section>
 </main>
+
 <footer class="site-footer">
-  <div class="container footer-inner">
-    <div>© {{ current_year or 2026 }} TG Lead Wareon. Все права защищены.</div>
-    <div class="footer-links">
-      <a href="{{ url_for('faq') }}">FAQ</a>
-      <a href="{{ url_for('support') }}">Поддержка</a>
-      <a href="{{ url_for('pricing') }}">Тарифы</a>
+    <div class="container footer-inner">
+        <div class="footer-left"><span class="logo-text">TG Lead Wareon</span></div>
+        <div class="footer-links">
+            <a href="{{ url_for('faq') }}">FAQ</a>
+            <a href="{{ url_for('support') }}">Поддержка</a>
+            <a href="{{ url_for('pricing') }}">Тарифы</a>
+        </div>
     </div>
-  </div>
 </footer>
+
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
