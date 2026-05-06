@@ -3,85 +3,90 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TG Lead Wareon — Поддержка</title>
-  <link rel="stylesheet" href="{ url_for('static', filename='style.css') }" />
+  <title>Поддержка — TG Lead Wareon</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body class="page-dark">
 <header class="site-header">
-  <div class="container header-inner">
-    <a href="{ url_for('index') }" class="logo">
-      <div class="logo-mark">TG</div>
-      <div class="logo-text">TG Lead Wareon</div>
-    </a>
-    <nav class="nav-main">
-      <a href="{ url_for('index') }">Главная</a>
-      <a href="{ url_for('pricing') }">Тарифы</a>
-      <a href="{ url_for('cases') }">Кейсы</a>
-      <a href="{ url_for('blog') }">Блог</a>
-      <a href="{ url_for('faq') }">FAQ</a>
-      <a href="{ url_for('support') }">Поддержка</a>
-    </nav>
-    <div class="header-actions">
-      <a href="{ url_for('login') }" class="btn btn-ghost btn-sm">Войти</a>
-      <a href="{ url_for('register') }" class="btn btn-primary btn-sm">Регистрация</a>
+    <div class="container header-inner">
+        <a href="{{ url_for('index') }}" class="logo">
+            <span class="logo-mark">TG</span>
+            <span class="logo-text">Lead Wareon</span>
+        </a>
+        <nav class="nav-main">
+            <a href="{{ url_for('index') }}">Главная</a>
+            <a href="{{ url_for('pricing') }}">Тарифы</a>
+            <a href="{{ url_for('cases') }}">Кейсы</a>
+            <a href="{{ url_for('blog') }}">Блог</a>
+            <a href="{{ url_for('faq') }}">FAQ</a>
+            <a href="{{ url_for('support') }}">Поддержка</a>
+        </nav>
+        <div class="header-actions">
+            <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">Войти</a>
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Регистрация</a>
+        </div>
+        <button class="nav-toggle" aria-label="Открыть меню">
+            <span></span><span></span>
+        </button>
     </div>
-    <button class="nav-toggle" type="button" aria-label="Открыть меню"><span></span><span></span></button>
-  </div>
 </header>
+
 <main>
+    <section class="section" id="support">
+        <div class="container">
+            <div class="section-header">
+                <h2>Свяжитесь с нами</h2>
+                <p>Мы на связи 24/7. Ответим на вопросы, поможем с настройкой, разберём ваш кейс лично.</p>
+            </div>
+            <div class="buy-layout">
+                <div class="buy-main glass">
+                    <h2>Напишите нам</h2>
+                    <form class="auth-form" style="margin-top:12px;">
+                        <div class="field"><label>Имя</label><input type="text" placeholder="Ваше имя" /></div>
+                        <div class="field"><label>Email</label><input type="email" placeholder="you@example.com" /></div>
+                        <div class="field"><label>Сообщение</label><textarea style="background:rgba(10,10,10,0.96);border-radius:10px;border:1px solid rgba(255,255,255,0.16);padding:9px 10px;color:var(--text);font-size:14px;min-height:100px;" placeholder="Опишите ваш вопрос..."></textarea></div>
+                        <button type="submit" class="btn btn-primary btn-full" style="margin-top:12px;">Отправить</button>
+                    </form>
+                </div>
+                <aside class="buy-side">
+                    <article class="summary-card">
+                        <h3>Контакты</h3>
+                        <p>Telegram: <a href="https://t.me/{{ SUPPORT_USERNAME or 'Support' }}" style="color:var(--accent-light);">@{{ SUPPORT_USERNAME or 'Support' }}</a></p>
+                        <p>Email: support@tgleadwareon.ru</p>
+                        <p>Часы работы: Круглосуточно, без выходных</p>
+                    </article>
+                    <article class="summary-card">
+                        <h3>Соцсети</h3>
+                        <p>Telegram-канал: <a href="#" style="color:var(--accent-light);">@tgleadwareon</a></p>
+                        <p>YouTube: скоро</p>
+                    </article>
+                </aside>
+            </div>
+        </div>
+    </section>
 
-<section class="section">
-  <div class="container">
-    <div class="section-header" data-reveal>
-      <h2>Поддержка и обратная связь</h2>
-      <p>Ответим на вопросы по настройке, тарифам и интеграциям. Форма ниже не отправляет данные и служит демо-заглушкой.</p>
-    </div>
-    <div class="buy-layout" data-reveal>
-      <div class="card-hover auth-card">
-        <h3>Написать в поддержку</h3>
-        <form class="auth-form" action="#" method="post" onsubmit="return false;">
-          <div class="field">
-            <label for="support_name">Имя</label>
-            <input id="support_name" type="text" placeholder="{{ current_user.full_name or 'Иван' }}" />
-          </div>
-          <div class="field">
-            <label for="support_email">Email</label>
-            <input id="support_email" type="email" placeholder="you@example.com" />
-          </div>
-          <div class="field">
-            <label for="support_msg">Сообщение</label>
-            <input id="support_msg" type="text" placeholder="Опишите задачу или проблему..." />
-          </div>
-          <button class="btn btn-primary btn-lg" style="margin-top:12px;" type="submit">Отправить запрос</button>
-        </form>
-      </div>
-      <div class="summary-card">
-        <p><strong>Контакты команды</strong></p>
-        <p>Telegram: <a href="https://t.me/wareon_support" target="_blank" rel="noreferrer">@wareon_support</a></p>
-        <p>Email: <a href="mailto:support@tgwareon.com">support@tgwareon.com</a></p>
-        <p>Часы работы: Пн–Пт, 10:00–19:00 (MSK)</p>
-        <hr style="border-color:rgba(255,255,255,0.06);margin:10px 0;" />
-        <p>Или начните прямо сейчас:</p>
-        <a href="{{ url_for('register') }}" class="btn btn-primary btn-full">Запустить бесплатный тест</a>
-      </div>
-    </div>
-  </div>
-</section>
-
+    <section class="section" id="cta">
+        <div class="container" style="text-align:center;">
+            <h2>Или начните прямо сейчас</h2>
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Попробовать бесплатно</a>
+        </div>
+    </section>
 </main>
+
 <footer class="site-footer">
-  <div class="container footer-inner">
-    <div>© {{ current_year or 2026 }} TG Lead Wareon. Все права защищены.</div>
-    <div class="footer-links">
-      <a href="{{ url_for('faq') }}">FAQ</a>
-      <a href="{{ url_for('support') }}">Поддержка</a>
-      <a href="{{ url_for('pricing') }}">Тарифы</a>
+    <div class="container footer-inner">
+        <div class="footer-left"><span class="logo-text">TG Lead Wareon</span></div>
+        <div class="footer-links">
+            <a href="{{ url_for('faq') }}">FAQ</a>
+            <a href="{{ url_for('support') }}">Поддержка</a>
+            <a href="{{ url_for('pricing') }}">Тарифы</a>
+        </div>
     </div>
-  </div>
 </footer>
+
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
