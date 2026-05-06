@@ -3,183 +3,141 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TG Lead Wareon — Тарифы</title>
-  <link rel="stylesheet" href="{ url_for('static', filename='style.css') }" />
+  <title>Тарифы — TG Lead Wareon</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body class="page-dark">
 <header class="site-header">
-  <div class="container header-inner">
-    <a href="{ url_for('index') }" class="logo">
-      <div class="logo-mark">TG</div>
-      <div class="logo-text">TG Lead Wareon</div>
-    </a>
-    <nav class="nav-main">
-      <a href="{ url_for('index') }">Главная</a>
-      <a href="{ url_for('pricing') }">Тарифы</a>
-      <a href="{ url_for('cases') }">Кейсы</a>
-      <a href="{ url_for('blog') }">Блог</a>
-      <a href="{ url_for('faq') }">FAQ</a>
-      <a href="{ url_for('support') }">Поддержка</a>
-    </nav>
-    <div class="header-actions">
-      <a href="{ url_for('login') }" class="btn btn-ghost btn-sm">Войти</a>
-      <a href="{ url_for('register') }" class="btn btn-primary btn-sm">Регистрация</a>
+    <div class="container header-inner">
+        <a href="{{ url_for('index') }}" class="logo">
+            <span class="logo-mark">TG</span>
+            <span class="logo-text">Lead Wareon</span>
+        </a>
+        <nav class="nav-main">
+            <a href="{{ url_for('index') }}">Главная</a>
+            <a href="{{ url_for('pricing') }}">Тарифы</a>
+            <a href="{{ url_for('cases') }}">Кейсы</a>
+            <a href="{{ url_for('blog') }}">Блог</a>
+            <a href="{{ url_for('faq') }}">FAQ</a>
+            <a href="{{ url_for('support') }}">Поддержка</a>
+        </nav>
+        <div class="header-actions">
+            <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">Войти</a>
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Регистрация</a>
+        </div>
+        <button class="nav-toggle" aria-label="Открыть меню">
+            <span></span><span></span>
+        </button>
     </div>
-    <button class="nav-toggle" type="button" aria-label="Открыть меню"><span></span><span></span></button>
-  </div>
 </header>
+
 <main>
+    <section class="section" id="pricing">
+        <div class="container">
+            <div class="section-header">
+                <h2>Соберите свой тариф</h2>
+                <p>Выберите базу и добавьте нужные модули. Никаких скрытых платежей.</p>
+            </div>
 
-<section class="section">
-  <div class="container">
-    <div class="section-header" data-reveal>
-      <h2>Соберите свой тариф</h2>
-      <p>Выберите базовый план и добавьте нужные модули. Оплата помесячно, без скрытых комиссий.</p>
-    </div>
-    <div class="billing-toggle">
-      <span class="billing-label active" data-billing="month">Ежемесячно</span>
-      <div class="toggle"><div class="toggle-thumb"></div></div>
-      <span class="billing-label" data-billing="year">За год -15%</span>
-    </div>
-    <div class="pricing-grid">
-      <article class="card-hover pricing-card" data-reveal>
-        <h3>Start</h3>
-        <p>Для первого запуска автоворонки в Telegram.</p>
-        <div class="pricing-price">
-          <span class="price-main" data-price-month="990₽" data-price-year="10 090₽">990₽</span>
-          <span class="price-note">/ мес</span>
-        </div>
-        <ul class="pricing-list">
-          <li>1 лицензия Miner</li>
-          <li>1 лицензия Sender</li>
-          <li>До 50 000 лидов в месяц</li>
-        </ul>
-        <a href="{{ url_for('buy') }}" class="btn btn-outline btn-sm">Выбрать Start</a>
-      </article>
-      <article class="card-hover pricing-card featured" data-reveal>
-        <div class="badge-top">Популярный</div>
-        <h3>Pro</h3>
-        <p>Для активных воронок и нескольких проектов.</p>
-        <div class="pricing-price">
-          <span class="price-main" data-price-month="2 490₽" data-price-year="25 290₽">2 490₽</span>
-          <span class="price-note">/ мес</span>
-        </div>
-        <ul class="pricing-list">
-          <li>2 лицензии Miner</li>
-          <li>3 лицензии Sender</li>
-          <li>До 150 000 лидов в месяц</li>
-        </ul>
-        <a href="{{ url_for('buy') }}" class="btn btn-primary btn-sm">Выбрать Pro</a>
-      </article>
-      <article class="card-hover pricing-card" data-reveal>
-        <h3>Scale</h3>
-        <p>Для масштабных команд, агентств и инфро-экосистем.</p>
-        <div class="pricing-price">
-          <span class="price-main" data-price-month="6 990₽" data-price-year="71 390₽">6 990₽</span>
-          <span class="price-note">/ мес</span>
-        </div>
-        <ul class="pricing-list">
-          <li>5 лицензий Miner</li>
-          <li>10 лицензий Sender</li>
-          <li>Безлимит по лидам</li>
-        </ul>
-        <a href="{{ url_for('buy') }}" class="btn btn-outline btn-sm">Выбрать Scale</a>
-      </article>
-    </div>
-    <p style="margin-top:12px;font-size:12px;color:var(--text-muted);">* Лимиты по лидам считаются по уникальным контактам за расчётный период.</p>
-  </div>
-</section>
+            <div class="billing-toggle">
+                <span class="billing-label active" data-billing="monthly">Помесячно</span>
+                <div class="toggle"><div class="toggle-thumb"></div></div>
+                <span class="billing-label" data-billing="yearly">Годовой (−20%)</span>
+            </div>
 
-<section class="section">
-  <div class="container">
-    <div class="section-header" data-reveal>
-      <h2>Дополнительные модули</h2>
-      <p>Расширьте базовый тариф нужными вам функциями. Цена указана за одну учётную запись.</p>
-    </div>
-    <div class="card-hover miner-panel" data-reveal>
-      <div class="buy-layout">
-        <div>
-          <div class="payment-methods">
-            <label class="payment-option">
-              <input type="checkbox" data-addon-price="390" />
-              <span>Автопрогрев аккаунтов <span class="pill pill-gray">+390₽</span></span>
-            </label>
-            <label class="payment-option">
-              <input type="checkbox" data-addon-price="390" />
-              <span>AI-защита аккаунта <span class="pill pill-gray">+390₽</span></span>
-            </label>
-            <label class="payment-option">
-              <input type="checkbox" data-addon-price="290" />
-              <span>Расширенная аналитика <span class="pill pill-gray">+290₽</span></span>
-            </label>
-            <label class="payment-option">
-              <input type="checkbox" data-addon-price="590" />
-              <span>Нейро-ответчик 2.0 <span class="pill pill-gray">+590₽</span></span>
-            </label>
-            <label class="payment-option">
-              <input type="checkbox" data-addon-price="490" />
-              <span>Интеграция с CRM <span class="pill pill-gray">+490₽</span></span>
-            </label>
-          </div>
-        </div>
-        <div>
-          <div class="summary-card">
-            <div>Базовый тариф: <span data-base-price data-base-price="2490">2 490</span>₽</div>
-            <div>Итоговая сумма: <strong><span data-total-price>2 490</span>₽/мес</strong></div>
-            <p class="buy-subtitle">Сменить базовый тариф можно на шаге оплаты.</p>
-          </div>
-          <a href="{{ url_for('buy') }}" class="btn btn-primary btn-full">Перейти к оформлению</a>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+            <div class="pricing-grid" data-billing-state="monthly">
+                <article class="pricing-card card-hover" data-plan="start">
+                    <div class="card-accent"></div>
+                    <h3>Start</h3>
+                    <p>Для первых связок и теста гипотез.</p>
+                    <div class="pricing-price"><span class="price-main" data-price-monthly="990" data-price-yearly="790">990₽</span><span class="price-note">/ мес</span></div>
+                    <ul class="pricing-list"><li>1 Miner + 1 Sender</li><li>До 50 000 лидов/мес</li><li>Базовый нейрочаттинг</li><li>Стандартная поддержка</li></ul>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline">Выбрать Start</a>
+                </article>
+                <article class="pricing-card card-hover featured" data-plan="pro">
+                    <div class="card-accent card-accent-gold"></div>
+                    <div class="badge-top">Выбор арбитражников</div>
+                    <h3>Pro</h3>
+                    <p>Оптимальный пакет для стабильных связок.</p>
+                    <div class="pricing-price"><span class="price-main" data-price-monthly="2490" data-price-yearly="1990">2 490₽</span><span class="price-note">/ мес</span></div>
+                    <ul class="pricing-list"><li>2 Miner + 3 Sender</li><li>До 150 000 лидов/мес</li><li>Расширенный нейрочаттинг</li><li>Приоритетная поддержка</li></ul>
+                    <a href="{{ url_for('register') }}" class="btn btn-primary">Выбрать Pro</a>
+                </article>
+                <article class="pricing-card card-hover" data-plan="scale">
+                    <div class="card-accent"></div>
+                    <h3>Scale</h3>
+                    <p>Для агентств и масштабных команд.</p>
+                    <div class="pricing-price"><span class="price-main" data-price-monthly="6990" data-price-yearly="5490">6 990₽</span><span class="price-note">/ мес</span></div>
+                    <ul class="pricing-list"><li>5 Miner + 10 Sender</li><li>Безлимит лидов</li><li>Кастомный нейрочаттинг</li><li>Выделенный менеджер</li></ul>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline">Связаться</a>
+                </article>
+            </div>
 
-<section class="section">
-  <div class="container">
-    <div class="section-header" data-reveal>
-      <h2>FAQ по оплате</h2>
-      <p>Ответы на частые вопросы по тарифам и платежам.</p>
-    </div>
-    <div class="faq-list">
-      <div class="faq-item open">
-        <button class="faq-question"><span>Какие способы оплаты поддерживаются?</span><span class="faq-icon"></span></button>
-        <div class="faq-answer">Мы принимаем банковские карты, ЮKassa, корпоративные счета и безналичную оплату для юрлиц.</div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-question"><span>Можно ли менять тариф в процессе?</span><span class="faq-icon"></span></button>
-        <div class="faq-answer">Да, вы можете повысить или снизить тариф в любой момент. Изменения вступают в силу со следующего расчётного периода.</div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-question"><span>Делаете ли вы возвраты?</span><span class="faq-icon"></span></button>
-        <div class="faq-answer">Возвратов нет, но вы можете отменить автопродление в любой момент до следующего списания.</div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-question"><span>Как считаются дополнительные модули?</span><span class="faq-icon"></span></button>
-        <div class="faq-answer">Каждый модуль оплачивается отдельно за учётную запись. Вы видите итоговую стоимость до подтверждения оплаты.</div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-question"><span>Вы выдаёте закрывающие документы и чеки?</span><span class="faq-icon"></span></button>
-        <div class="faq-answer">Да, автоматически формируем электронные чеки и при необходимости предоставляем акты/счета для юрлиц.</div>
-      </div>
-    </div>
-  </div>
-</section>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:8px;">* Лид — уникальный контакт, собранный Miner. Количество сообщений в Sender не ограничено.</p>
+        </div>
+    </section>
 
+    <section class="section" id="addons">
+        <div class="container">
+            <h2>Дополнительные модули</h2>
+            <div class="products-grid">
+                <article class="product-card card-hover">
+                    <h3>🛡️ Автопрогрев аккаунтов</h3>
+                    <p>Имитация человеческого поведения, авто-повышение траста, снижение риска бана.</p>
+                    <div class="product-meta"><span class="price">+390₽/мес</span><span class="pill">Защита</span></div>
+                </article>
+                <article class="product-card card-hover">
+                    <h3>🧠 AI-Защита аккаунта</h3>
+                    <p>Умная ротация прокси, авто-пауза при FloodWait, переключение аккаунтов при блокировке.</p>
+                    <div class="product-meta"><span class="price">+390₽/мес</span><span class="pill">Безопасность</span></div>
+                </article>
+                <article class="product-card card-hover">
+                    <h3>📊 Расширенная аналитика</h3>
+                    <p>Детальные отчёты по воронке, экспорт в PDF, тепловые карты активности.</p>
+                    <div class="product-meta"><span class="price">+290₽/мес</span><span class="pill">Аналитика</span></div>
+                </article>
+                <article class="product-card card-hover">
+                    <h3>🤖 Нейро-ответчик 2.0</h3>
+                    <p>Персонализированные ответы с A/B-тестами, авто-классификация лидов.</p>
+                    <div class="product-meta"><span class="price">+590₽/мес</span><span class="pill">AI</span></div>
+                </article>
+                <article class="product-card card-hover">
+                    <h3>🔗 Интеграция с CRM</h3>
+                    <p>Прямая выгрузка лидов в amoCRM, HubSpot, Google Sheets.</p>
+                    <div class="product-meta"><span class="price">+490₽/мес</span><span class="pill">Интеграция</span></div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="pricing-faq">
+        <div class="container">
+            <h2>FAQ по тарифам</h2>
+            <div class="faq-list">
+                <article class="faq-item"><button class="faq-question"><span>Какие способы оплаты?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Карта (СБП), USDT (TRC20). После оплаты лицензия активируется вручную в течение 5–15 минут.</p></div></article>
+                <article class="faq-item"><button class="faq-question"><span>Можно ли сменить тариф?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Да, вы можете перейти на другой тариф в любой момент. Оставшиеся дни текущего тарифа пересчитываются.</p></div></article>
+                <article class="faq-item"><button class="faq-question"><span>Есть ли возврат средств?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Нет, возврат не предусмотрен. Используйте пробный период для оценки сервиса перед покупкой.</p></div></article>
+                <article class="faq-item"><button class="faq-question"><span>Как работают доп. модули?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Вы добавляете их к базовому тарифу. Стоимость суммируется. Модули можно включить/отключить в любой момент.</p></div></article>
+                <article class="faq-item"><button class="faq-question"><span>Вы выдаёте чеки?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Да, электронные чеки для самозанятых доступны в личном кабинете в разделе «Мои чеки».</p></div></article>
+            </div>
+        </div>
+    </section>
 </main>
+
 <footer class="site-footer">
-  <div class="container footer-inner">
-    <div>© {{ current_year or 2026 }} TG Lead Wareon. Все права защищены.</div>
-    <div class="footer-links">
-      <a href="{{ url_for('faq') }}">FAQ</a>
-      <a href="{{ url_for('support') }}">Поддержка</a>
-      <a href="{{ url_for('pricing') }}">Тарифы</a>
+    <div class="container footer-inner">
+        <div class="footer-left"><span class="logo-text">TG Lead Wareon</span></div>
+        <div class="footer-links">
+            <a href="{{ url_for('faq') }}">FAQ</a>
+            <a href="{{ url_for('support') }}">Поддержка</a>
+            <a href="{{ url_for('pricing') }}">Тарифы</a>
+        </div>
     </div>
-  </div>
 </footer>
+
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
