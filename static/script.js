@@ -1,10 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Mobile nav toggle
-  const navToggle = document.querySelector('.nav-toggle');
-  const header = document.querySelector('.site-header');
-  navToggle?.addEventListener('click', () => {
-    document.body.classList.toggle('nav-open');
-  });
 
   // Intersection Observer reveal
   const revealElems = document.querySelectorAll('[data-reveal]');
