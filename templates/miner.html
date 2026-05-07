@@ -3,83 +3,89 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TG Lead Wareon — Miner</title>
+  <title>TG Lead Miner — Сбор аудитории</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body class="page-dark">
 <header class="site-header">
-  <div class="container header-inner">
-    <a href="{ url_for('index') }" class="logo">
-      <div class="logo-mark">TG</div>
-      <div class="logo-text">TG Lead Wareon</div>
-    </a>
-    <nav class="nav-main">
-      <a href="{ url_for('index') }">Главная</a>
-      <a href="{ url_for('pricing') }">Тарифы</a>
-      <a href="{ url_for('cases') }">Кейсы</a>
-      <a href="{ url_for('blog') }">Блог</a>
-      <a href="{ url_for('faq') }">FAQ</a>
-      <a href="{ url_for('support') }">Поддержка</a>
-    </nav>
-    <div class="header-actions">
-      <a href="{ url_for('login') }" class="btn btn-ghost btn-sm">Войти</a>
-      <a href="{ url_for('register') }" class="btn btn-primary btn-sm">Регистрация</a>
+    <div class="container header-inner">
+        <a href="{{ url_for('index') }}" class="logo">
+            <span class="logo-mark">TG</span>
+            <span class="logo-text">Lead Wareon</span>
+        </a>
+        <nav class="nav-main">
+            <a href="{{ url_for('index') }}">Главная</a>
+            <a href="{{ url_for('pricing') }}">Тарифы</a>
+            <a href="{{ url_for('cases') }}">Кейсы</a>
+            <a href="{{ url_for('blog') }}">Блог</a>
+            <a href="{{ url_for('faq') }}">FAQ</a>
+            <a href="{{ url_for('support') }}">Поддержка</a>
+        </nav>
+        <div class="header-actions">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">Кабинет</a>
+            <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm">Выйти</a>
+        </div>
+        <button class="nav-toggle" aria-label="Открыть меню"><span></span><span></span></button>
     </div>
-    <button class="nav-toggle" type="button" aria-label="Открыть меню"><span></span><span></span></button>
-  </div>
 </header>
+
 <main>
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>TG Lead Miner — Сбор аудитории</h2>
+                <p>Вставьте ссылку на публичный чат или канал Telegram, и Miner соберёт активную аудиторию.</p>
+            </div>
 
-<section class="section">
-  <div class="container">
-    <div class="section-header" data-reveal>
-      <h2>Miner — автосбор аудитории в Telegram</h2>
-      <p>Настройте правила поиска, запустите сканирование — и получайте свежих лидов каждый день.</p>
-    </div>
-    <div class="buy-layout" data-reveal>
-      <div class="card-hover miner-panel">
-        <h2>Настройка поиска</h2>
-        <p>Укажите ключевые слова, типы источников и минимальную активность, чтобы Miner собирал только релевантных пользователей.</p>
-        <form class="miner-form" method="post" action="#" onsubmit="return false;">
-          <div class="field">
-            <label>Ключевые слова</label>
-            <input type="text" placeholder="крипта, трейдинг, defi..." />
-          </div>
-          <div class="field">
-            <label>Источники</label>
-            <input type="text" placeholder="чаты, каналы, комментарии" />
-          </div>
-          <div class="field">
-            <label>Минимальная активность</label>
-            <input type="text" placeholder="Например: ≥ 5 сообщений за 7 дней" />
-          </div>
-          <button class="btn btn-primary btn-lg" type="submit">Сохранить пресет</button>
-        </form>
-      </div>
-      <div class="summary-card">
-        <p><strong>Статистика по Miner</strong></p>
-        <p>Собрано лидов за 30 дней: <strong>{{ miner_leads_30d or '48 320' }}</strong></p>
-        <p>Активных пресетов: {{ miner_presets_count or 7 }}</p>
-        <p>Средняя цена лида: {{ miner_cpl or '23,4₽' }}</p>
-      </div>
-    </div>
-  </div>
-</section>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div style="padding:12px;border-radius:8px;margin-bottom:16px;background:{% if category == 'error' %}rgba(255,107,107,0.1){% else %}rgba(59,232,140,0.1){% endif %};color:{% if category == 'error' %}#ff6b6b{% else %}#3be88c{% endif %};font-size:13px;">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
 
+            <div class="glass" style="padding:24px;border-radius:18px;max-width:500px;margin:0 auto 32px;">
+                <h3 style="margin-bottom:12px;">Новый сбор</h3>
+                <form method="POST" action="{{ url_for('miner_collect') }}">
+                    <div class="field" style="margin-bottom:12px;">
+                        <label>Ссылка на чат или канал</label>
+                        <input name="link" type="text" required placeholder="@chat_name или https://t.me/chat_name" style="width:100%;">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">🚀 Начать сбор</button>
+                </form>
+            </div>
+
+            <h2 style="font-size:18px;margin-bottom:12px;">Последние задачи</h2>
+            <div class="table-minimal">
+                <div class="table-head"><span>Источник</span><span>Статус</span><span>Найдено лидов</span><span>Создано</span></div>
+                {% for job in miner_jobs or [] %}
+                <div class="table-row">
+                    <span>{{ job.source_link[:30] }}...</span>
+                    <span>{{ job.status }}</span>
+                    <span>{{ job.leads_count }}</span>
+                    <span>{{ job.created_at[:10] }}</span>
+                </div>
+                {% else %}
+                <div class="table-empty">Вы ещё не запускали сбор аудитории.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
 </main>
+
 <footer class="site-footer">
-  <div class="container footer-inner">
-    <div>© {{ current_year or 2026 }} TG Lead Wareon. Все права защищены.</div>
-    <div class="footer-links">
-      <a href="{{ url_for('faq') }}">FAQ</a>
-      <a href="{{ url_for('support') }}">Поддержка</a>
-      <a href="{{ url_for('pricing') }}">Тарифы</a>
+    <div class="container footer-inner">
+        <div class="footer-left"><span class="logo-text">TG Lead Wareon</span></div>
+        <div class="footer-links">
+            <a href="{{ url_for('faq') }}">FAQ</a>
+            <a href="{{ url_for('support') }}">Поддержка</a>
+            <a href="{{ url_for('pricing') }}">Тарифы</a>
+        </div>
     </div>
-  </div>
 </footer>
+
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
