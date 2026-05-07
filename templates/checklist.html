@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Чек-лист «10 шагов безопасной рассылки» — TG Lead Wareon</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body class="page-dark">
+<header class="site-header">
+    <div class="container header-inner">
+        <a href="{{ url_for('index') }}" class="logo">
+            <span class="logo-mark">TG</span>
+            <span class="logo-text">Lead Wareon</span>
+        </a>
+        <nav class="nav-main">
+            <a href="{{ url_for('index') }}">Главная</a>
+            <a href="{{ url_for('register') }}">Регистрация</a>
+        </nav>
+    </div>
+</header>
+
+<main class="section">
+    <div class="container" style="max-width:600px;margin:0 auto;">
+        <h1 style="text-align:center;margin-bottom:4px;">📋 Чек-лист «10 шагов безопасной рассылки»</h1>
+        <p style="text-align:center;color:var(--text-muted);margin-bottom:24px;">Скачайте PDF и узнайте, как рассылать сообщения без блокировок</p>
+        
+        <div class="glass" style="padding:24px;border-radius:18px;margin-bottom:16px;">
+            <div style="text-align:center;font-size:48px;margin-bottom:16px;">📄</div>
+            <h3 style="text-align:center;margin-bottom:8px;">Что внутри:</h3>
+            <ul style="color:var(--text-muted);font-size:14px;list-style:none;padding:0;text-align:center;">
+                <li>✅ Как прогреть аккаунт перед рассылкой</li>
+                <li>✅ Лимиты Telegram: что можно, а что нет</li>
+                <li>✅ Настройка прокси и ротация аккаунтов</li>
+                <li>✅ Текст, который не попадает в спам</li>
+                <li>✅ Восстановление после блокировки</li>
+            </ul>
+        </div>
+
+        <div class="glass" style="padding:24px;border-radius:18px;">
+            <p style="text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:16px;">Оставьте email и получите чек-лист мгновенно на почту. Мы не спамим.</p>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div style="padding:12px;border-radius:8px;margin-bottom:16px;text-align:center;background:rgba(59,232,140,0.1);color:#3be88c;font-size:13px;">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST" action="{{ url_for('checklist_download') }}">
+                <div class="field" style="margin-bottom:12px;">
+                    <input name="email" type="email" required placeholder="you@example.com" style="width:100%;">
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Скачать чек-лист бесплатно</button>
+            </form>
+        </div>
+    </div>
+</main>
+</body>
+</html>
