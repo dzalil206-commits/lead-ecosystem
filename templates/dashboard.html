@@ -3,166 +3,214 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TG Lead Wareon — Дашборд</title>
-  <link rel="stylesheet" href="{ url_for('static', filename='style.css') }" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <title>Личный кабинет — TG Lead Wareon</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body class="page-dark">
-<header class="site-header">
-  <div class="container header-inner">
-    <a href="{ url_for('index') }" class="logo">
-      <div class="logo-mark">TG</div>
-      <div class="logo-text">TG Lead Wareon</div>
-    </a>
-    <nav class="nav-main">
-      <a href="{ url_for('index') }">Главная</a>
-      <a href="{ url_for('pricing') }">Тарифы</a>
-      <a href="{ url_for('cases') }">Кейсы</a>
-      <a href="{ url_for('blog') }">Блог</a>
-      <a href="{ url_for('faq') }">FAQ</a>
-      <a href="{ url_for('support') }">Поддержка</a>
-    </nav>
-    <div class="header-actions">
-      <a href="{ url_for('login') }" class="btn btn-ghost btn-sm">Войти</a>
-      <a href="{ url_for('register') }" class="btn btn-primary btn-sm">Регистрация</a>
+<div class="layout">
+    <!-- Боковая панель -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <a href="{{ url_for('index') }}" class="logo">
+                <span class="logo-mark">TG</span>
+                <span class="logo-text">Lead Wareon</span>
+            </a>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard') }}" class="nav-item active">Обзор</a>
+            <a href="{{ url_for('miner_panel') }}" class="nav-item">Miner</a>
+            <a href="#sender" class="nav-item">Sender</a>
+            <a href="#settings" class="nav-item">Настройки</a>
+        </nav>
+        <div class="sidebar-footer">
+            <span class="sidebar-user">{{ current_user.full_name or current_user.email }}</span>
+            <a href="{{ url_for('logout') }}" class="sidebar-logout">Выйти</a>
+        </div>
+    </aside>
+
+    <!-- Основной контент -->
+    <main class="main">
+        <!-- Приветствие -->
+        <header class="dashboard-header">
+            <div>
+                <h1>Добро пожаловать, {{ current_user.full_name or 'Пользователь' }}!</h1>
+                <p class="dashboard-subtitle">Управляйте своими продуктами TG Lead из одного кабинета.</p>
+            </div>
+            <div class="dashboard-badge">
+                <span class="dot-live"></span>
+                Аккаунт активен
+            </div>
+        </header>
+
+        <!-- Онбординг: Запуск за 15 минут -->
+        <div class="glass" style="padding:16px;border-radius:18px;margin-bottom:20px;">
+            <h3 style="margin-bottom:12px;">🚀 Запуск за 15 минут</h3>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="width:28px;height:28px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;color:#111;flex-shrink:0;">1</span>
+                    <span style="flex:1;">Добавьте аккаунт и прокси для безопасной работы</span>
+                    <button class="btn btn-outline btn-sm" data-modal-open="modalAddAccount">Добавить</button>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="width:28px;height:28px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;color:#111;flex-shrink:0;">2</span>
+                    <span style="flex:1;">Запустите Miner для сбора аудитории</span>
+                    <a href="{{ url_for('miner_panel') }}" class="btn btn-outline btn-sm">Запустить</a>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="width:28px;height:28px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;color:#111;flex-shrink:0;">3</span>
+                    <span style="flex:1;">Настройте Sender для авторассылки</span>
+                    <button class="btn btn-outline btn-sm">Настроить</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Статистика -->
+        <section class="dashboard-section">
+            <div class="stats-grid">
+                <article class="stat-card">
+                    <div class="stat-label">Активные лицензии</div>
+                    <div class="stat-value">{{ active_licenses_count or 0 }}</div>
+                    <div class="stat-sub">Miner и Sender в работе</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-label">Собрано лидов</div>
+                    <div class="stat-value">{{ total_leads_collected or 0 }}</div>
+                    <div class="stat-sub">через TG Lead Miner</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-label">Отправлено сообщений</div>
+                    <div class="stat-value">{{ total_messages_sent or 0 }}</div>
+                    <div class="stat-sub">через TG Lead Sender</div>
+                </article>
+            </div>
+        </section>
+
+        <!-- Продукты -->
+        <section class="dashboard-section">
+            <h2 style="margin-bottom:14px;">Ваши продукты</h2>
+            <div class="products-grid dashboard-products">
+                <!-- Miner -->
+                <article class="product-card card-hover">
+                    <div class="card-accent"></div>
+                    <h3>TG Lead Miner</h3>
+                    <p>Автосбор аудитории из каналов и чатов.</p>
+                    <div class="product-meta-inline">
+                        {% if miner_license and miner_license.is_active %}
+                            <span class="pill">Активно до {{ miner_license.expires_at[:10] }}</span>
+                            <a href="{{ url_for('miner_panel') }}" class="btn btn-outline btn-sm">Управлять</a>
+                        {% else %}
+                            <span class="pill pill-gray">Лицензия не найдена</span>
+                            <a href="{{ url_for('buy', product='miner') }}" class="btn btn-primary btn-sm">Купить</a>
+                        {% endif %}
+                    </div>
+                </article>
+                <!-- Sender -->
+                <article class="product-card card-hover">
+                    <div class="card-accent card-accent-gold"></div>
+                    <h3>TG Lead Sender</h3>
+                    <p>Авторассылка и нейрочаттинг для монетизации.</p>
+                    <div class="product-meta-inline">
+                        {% if sender_license and sender_license.is_active %}
+                            <span class="pill pill-gold">Активно до {{ sender_license.expires_at[:10] }}</span>
+                            <a href="#sender" class="btn btn-outline btn-sm">Управлять</a>
+                        {% else %}
+                            <span class="pill pill-gray">Лицензия не найдена</span>
+                            <a href="{{ url_for('buy', product='sender') }}" class="btn btn-primary btn-sm">Купить</a>
+                        {% endif %}
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- Быстрые действия -->
+        <section class="dashboard-section" id="sender">
+            <div class="section-header-inline">
+                <h2>Sender — аккаунты и прокси</h2>
+                <div class="section-actions">
+                    <button class="btn btn-outline btn-sm" data-modal-open="modalAddAccount">Добавить аккаунт</button>
+                    <button class="btn btn-outline btn-sm" data-modal-open="modalAddProxy">Добавить прокси</button>
+                </div>
+            </div>
+            <div class="sender-grid">
+                <div class="sender-block">
+                    <h3>Аккаунты</h3>
+                    <div class="table-minimal">
+                        <div class="table-head"><span>Телефон</span><span>Статус</span><span>Создан</span></div>
+                        {% for acc in sender_accounts or [] %}
+                        <div class="table-row"><span>{{ acc.phone }}</span><span>{{ "Активен" if acc.is_active else "Отключен" }}</span><span>{{ acc.created_at[:10] }}</span></div>
+                        {% else %}
+                        <div class="table-empty">Аккаунты ещё не добавлены.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="sender-block">
+                    <h3>Прокси</h3>
+                    <div class="table-minimal">
+                        <div class="table-head"><span>Тип</span><span>Хост</span><span>Статус</span></div>
+                        {% for proxy in proxies or [] %}
+                        <div class="table-row"><span>{{ proxy.type }}</span><span>{{ proxy.host }}:{{ proxy.port }}</span><span>{{ "Активен" if proxy.is_active else "Отключен" }}</span></div>
+                        {% else %}
+                        <div class="table-empty">Прокси ещё не добавлены.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Настройки -->
+        <section class="dashboard-section" id="settings">
+            <h2>Настройки аккаунта</h2>
+            <div class="settings-grid">
+                <article class="settings-card">
+                    <h3>Профиль</h3>
+                    <p>Имя: {{ current_user.full_name or "Не указано" }}</p>
+                    <p>Email: {{ current_user.email }}</p>
+                </article>
+                <article class="settings-card">
+                    <h3>Баланс и платежи</h3>
+                    <p>Баланс: {{ user_balance or 0 }}₽</p>
+                    <p>Всего пополнено: {{ user_total_spent or 0 }}₽</p>
+                </article>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- Модальное окно: Добавить аккаунт -->
+<div class="modal" id="modalAddAccount">
+    <div class="modal-backdrop" data-modal-close></div>
+    <div class="modal-dialog">
+        <button class="modal-close" data-modal-close>&times;</button>
+        <h2>Добавить Sender‑аккаунт</h2>
+        <p class="modal-subtitle">Укажите параметры Telegram‑клиента для авторассылки.</p>
+        <form method="POST" action="{{ url_for('sender_add_account') }}" class="modal-form">
+            <div class="field"><label for="phone">Телефон аккаунта</label><input id="phone" name="phone" type="tel" required placeholder="+7 900 000‑00‑00"></div>
+            <div class="field"><label for="api_id">API ID</label><input id="api_id" name="api_id" type="text" required></div>
+            <div class="field"><label for="api_hash">API Hash</label><input id="api_hash" name="api_hash" type="text" required></div>
+            <button type="submit" class="btn btn-primary btn-full">Добавить аккаунт</button>
+        </form>
     </div>
-    <button class="nav-toggle" type="button" aria-label="Открыть меню"><span></span><span></span></button>
-  </div>
-</header>
-<main>
+</div>
 
-<section class="layout">
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <a href="{{ url_for('index') }}" class="logo">
-        <div class="logo-mark">TG</div>
-        <div class="logo-text">TG Lead Wareon</div>
-      </a>
+<!-- Модальное окно: Добавить прокси -->
+<div class="modal" id="modalAddProxy">
+    <div class="modal-backdrop" data-modal-close></div>
+    <div class="modal-dialog">
+        <button class="modal-close" data-modal-close>&times;</button>
+        <h2>Добавить прокси</h2>
+        <p class="modal-subtitle">Подключите собственную прокси‑инфраструктуру для безопасных рассылок.</p>
+        <form method="POST" action="{{ url_for('sender_add_proxy') }}" class="modal-form">
+            <div class="field"><label for="type">Тип</label><input id="type" name="type" type="text" required placeholder="socks5 / http"></div>
+            <div class="field"><label for="host">Хост</label><input id="host" name="host" type="text" required></div>
+            <div class="field"><label for="port">Порт</label><input id="port" name="port" type="number" required></div>
+            <div class="field"><label for="username">Логин (опционально)</label><input id="username" name="username" type="text"></div>
+            <div class="field"><label for="password">Пароль (опционально)</label><input id="password" name="password" type="password"></div>
+            <button type="submit" class="btn btn-primary btn-full">Добавить прокси</button>
+        </form>
     </div>
-    <nav class="sidebar-nav">
-      <a href="{{ url_for('dashboard') }}" class="nav-item active">Дашборд</a>
-      <a href="{{ url_for('miner') }}" class="nav-item">Miner</a>
-      <a href="{{ url_for('buy') }}" class="nav-item">Тариф и биллинг</a>
-      <a href="{{ url_for('support') }}" class="nav-item">Поддержка</a>
-    </nav>
-    <div class="sidebar-footer">
-      <div class="sidebar-user">{{ current_user.full_name or 'TG Lead Manager' }}</div>
-      <div>{{ current_user.email or 'you@company.com' }}</div>
-      <a href="{{ url_for('logout') }}" class="sidebar-logout">Выйти</a>
-    </div>
-  </aside>
-  <div class="main">
-    <header class="dashboard-header">
-      <div>
-        <h1>Дашборд</h1>
-        <p class="dashboard-subtitle">Краткий обзор лидов, диалогов и лицензий за последние 30 дней.</p>
-      </div>
-      <div class="dashboard-badge">
-        <span class="pulse-dot"></span>
-        <span>Активных лицензий: {{ active_licenses_count or 3 }}</span>
-      </div>
-    </header>
+</div>
 
-    <section class="dashboard-section stats-grid">
-      <div class="stat-card">
-        <div class="stat-label">Новые лиды</div>
-        <div class="stat-value">{{ leads_30d or '12 840' }}</div>
-        <div class="stat-sub">за последние 30 дней</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Открытых диалогов</div>
-        <div class="stat-value">{{ open_dialogs or '384' }}</div>
-        <div class="stat-sub">в работе у команды</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Конверсия в заявку</div>
-        <div class="stat-value">{{ conversion_rate or '18,4%' }}</div>
-        <div class="stat-sub">по всем сценариям</div>
-      </div>
-    </section>
-
-    <section class="dashboard-section">
-      <div class="section-header-inline">
-        <h2>Лицензии</h2>
-      </div>
-      <div class="table-minimal">
-        <div class="table-head">
-          <div>Продукт</div>
-          <div>Статус</div>
-          <div>Действует до</div>
-        </div>
-        <div class="table-row">
-          <div>Miner #1</div>
-          <div>Активна</div>
-          <div>{{ miner_license.expires_at or '12.06.2026' }}</div>
-        </div>
-        <div class="table-row">
-          <div>Miner #2</div>
-          <div>Активна</div>
-          <div>28.06.2026</div>
-        </div>
-        <div class="table-row">
-          <div>Sender #1</div>
-          <div>Активна</div>
-          <div>12.06.2026</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="dashboard-section sender-grid">
-      <div class="card-hover sender-block">
-        <h3>Активные сценарии Sender</h3>
-        <p class="dashboard-subtitle">Краткий список ключевых рассылок и автоворонок.</p>
-        <div class="table-minimal" style="margin-top:10px;">
-          <div class="table-head">
-            <div>Сценарий</div>
-            <div>Статус</div>
-            <div>Лиды</div>
-          </div>
-          <div class="table-row">
-            <div>Welcome-серия для новых подписчиков</div>
-            <div>Активен</div>
-            <div>4 230</div>
-          </div>
-          <div class="table-row">
-            <div>Реактивация базы 90+ дней</div>
-            <div>Пауза</div>
-            <div>18 204</div>
-          </div>
-          <div class="table-row">
-            <div>Квиз → консультация</div>
-            <div>Активен</div>
-            <div>1 280</div>
-          </div>
-        </div>
-      </div>
-      <div class="settings-grid">
-        <div class="settings-card">
-          <p><strong>AI-нейроответчик</strong></p>
-          <p>Режим: {{ ai_mode or 'Продажи и квалификация' }}</p>
-        </div>
-        <div class="settings-card">
-          <p><strong>Интеграции</strong></p>
-          <p>Подключено: AmoCRM, Битрикс24, вебхуки.</p>
-        </div>
-      </div>
-    </section>
-  </div>
-</section>
-
-</main>
-<footer class="site-footer">
-  <div class="container footer-inner">
-    <div>© {{ current_year or 2026 }} TG Lead Wareon. Все права защищены.</div>
-    <div class="footer-links">
-      <a href="{{ url_for('faq') }}">FAQ</a>
-      <a href="{{ url_for('support') }}">Поддержка</a>
-      <a href="{{ url_for('pricing') }}">Тарифы</a>
-    </div>
-  </div>
-</footer>
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
