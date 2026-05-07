@@ -184,3 +184,34 @@ if (navToggle) {
         headerActions.classList.toggle('nav-open');
     });
 }
+
+// Reviews carousel
+const carousel = document.querySelector('[data-carousel]');
+if (carousel) {
+    const track = carousel.querySelector('.carousel-track');
+    const cards = Array.from(track.querySelectorAll('.review-card'));
+    const prevBtn = carousel.querySelector('[data-carousel-prev]');
+    const nextBtn = carousel.querySelector('[data-carousel-next]');
+    let index = 0;
+    let timer;
+
+    function show(i) {
+        index = (i + cards.length) % cards.length;
+        cards.forEach((card, idx) => {
+            card.classList.toggle('active', idx === index);
+        });
+    }
+
+    function next() { show(index + 1); }
+    function startAuto() { timer = setInterval(next, 5000); }
+    function stopAuto() { clearInterval(timer); }
+
+    if (prevBtn) prevBtn.addEventListener('click', () => { stopAuto(); show(index - 1); startAuto(); });
+    if (nextBtn) nextBtn.addEventListener('click', () => { stopAuto(); show(index + 1); startAuto(); });
+
+    carousel.addEventListener('mouseenter', stopAuto);
+    carousel.addEventListener('mouseleave', startAuto);
+
+    show(0);
+    startAuto();
+}
