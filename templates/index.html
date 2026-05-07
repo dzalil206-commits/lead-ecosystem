@@ -28,6 +28,14 @@
         <div class="header-actions">
             <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">Войти</a>
             <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Регистрация</a>
+          <button id="theme-toggle" style="background:none;border:none;cursor:pointer;font-size:18px;">🌓</button>
+          <script>
+    const toggle = document.getElementById('theme-toggle');
+    toggle.addEventListener('click', () => {
+        document.body.classList.toggle('light-theme');
+        toggle.textContent = document.body.classList.contains('light-theme') ? '☀️' : '🌓';
+    });
+</script>
         </div>
         <button class="nav-toggle" aria-label="Открыть меню">
             <span></span><span></span>
