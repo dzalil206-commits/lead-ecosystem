@@ -1497,4 +1497,11 @@ body {
     .hero-subtitle {
         font-size: 15px;
     }
+        .nav-main.nav-open,
+    .header-actions.nav-open {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px 0;
+    }
 }
