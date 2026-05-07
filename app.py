@@ -294,6 +294,39 @@ def miner_collect():
     flash(f'Сбор из {link} запущен. Результат появится в списке задач.', 'success')
     return redirect(url_for('miner'))
 
+# ---------- МАГАЗИН ПРОКСИ ----------
+@app.route('/buy_proxy')
+@login_required
+def buy_proxy():
+    db = get_db()
+    # Показываем прокси пул
+    available = db.execute("SELECT COUNT(*) FROM proxy_pool WHERE is_sold = 0").fetchone()[0]
+    return render_template('buy_proxy.html', available_count=available, price_per_proxy=150)
+
+@app.route('/buy_proxy/checkout', methods=['POST'])
+@login_required
+def buy_proxy_checkout():
+    db = get_db()
+    quantity = int(request.form.get('quantity', 1))
+    # Находим свободные прокси
+    proxies = db.execute("SELECT id, host, port, type, username, password FROM proxy_pool WHERE is_sold = 0 LIMIT ?", (quantity,)).fetchall()
+    
+    if len(proxies) < quantity:
+        flash('Недостаточно прокси в наличии. Обратитесь в поддержку.', 'error')
+        return redirect(url_for('buy_proxy'))
+    
+    # Продаём прокси
+    for proxy in proxies:
+        db.execute("UPDATE proxy_pool SET is_sold = 1, sold_to = ?, sold_at = ? WHERE id = ?",
+                   (current_user.id, datetime.now(), proxy['id']))
+        # Добавляем прокси в аккаунт пользователя
+        db.execute("INSERT INTO proxies (user_id, type, host, port, username, password, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)",
+                   (current_user.id, proxy['type'], proxy['host'], proxy['port'], proxy['username'], proxy['password']))
+    
+    db.commit()
+    flash(f'Куплено {len(proxies)} прокси! Они уже добавлены в ваш аккаунт.', 'success')
+    return redirect(url_for('dashboard'))
+
 # ---------- АДМИН-ПАНЕЛЬ ----------
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
