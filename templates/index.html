@@ -107,6 +107,75 @@
     }, 3000);
 </script>
 
+  <section class="section" id="tour">
+    <div class="container">
+        <div class="section-header" style="text-align:center;">
+            <h2>Загляните в кабинет до регистрации</h2>
+            <p>Покрутите, увеличьте, изучите интерфейс как будто вы уже внутри</p>
+        </div>
+        <div style="perspective:1000px;max-width:700px;margin:0 auto;">
+            <div id="tour-card" style="background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:18px;padding:20px;transform:rotateY(0deg) rotateX(0deg);transition:transform 0.1s ease-out;cursor:grab;user-select:none;">
+                <!-- Имитация сайдбара и контента кабинета -->
+                <div style="display:grid;grid-template-columns:180px 1fr;gap:16px;">
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        <div style="height:8px;background:var(--accent);border-radius:4px;width:40px;"></div>
+                        <div style="height:6px;background:var(--text-muted);border-radius:3px;width:80px;margin-bottom:8px;"></div>
+                        <div style="height:20px;background:rgba(212,165,116,0.1);border-radius:4px;"></div>
+                        <div style="height:20px;background:rgba(255,255,255,0.03);border-radius:4px;"></div>
+                        <div style="height:20px;background:rgba(255,255,255,0.03);border-radius:4px;"></div>
+                        <div style="height:20px;background:rgba(255,255,255,0.03);border-radius:4px;"></div>
+                    </div>
+                    <div>
+                        <div style="height:6px;background:var(--text-muted);border-radius:3px;width:120px;margin-bottom:12px;"></div>
+                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
+                            <div style="height:50px;background:rgba(59,232,140,0.1);border-radius:8px;border:1px solid rgba(59,232,140,0.2);"></div>
+                            <div style="height:50px;background:rgba(212,165,116,0.1);border-radius:8px;border:1px solid rgba(212,165,116,0.2);"></div>
+                            <div style="height:50px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid var(--border-subtle);"></div>
+                        </div>
+                        <div style="height:100px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid var(--border-subtle);"></div>
+                    </div>
+                </div>
+                <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--text-muted);">
+                    🖱️ Двигайте мышью для поворота
+                </div>
+            </div>
+        </div>
+        <div style="text-align:center;margin-top:16px;">
+            <a href="{{ url_for('register') }}" class="btn btn-primary">Попробовать в реальном кабинете</a>
+        </div>
+    </div>
+</section>
+
+<script>
+    const tourCard = document.getElementById('tour-card');
+    let isDragging = false;
+    let startX, startY, rotX = 0, rotY = 0;
+
+    tourCard.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        tourCard.style.cursor = 'grabbing';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        rotY += dx * 0.3;
+        rotX -= dy * 0.3;
+        rotX = Math.max(-15, Math.min(15, rotX));
+        rotY = Math.max(-15, Math.min(15, rotY));
+        tourCard.style.transform = `rotateY(${rotY}deg) rotateX(${rotX}deg)`;
+        startX = e.clientX;
+        startY = e.clientY;
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+        tourCard.style.cursor = 'grab';
+    });
+</script>
     <section class="section" id="how">
         <div class="container">
             <div class="section-header">
