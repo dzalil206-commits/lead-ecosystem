@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Админ-панель — TG Lead Wareon</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body class="page-dark">
+<div class="container" style="padding:40px 20px;max-width:900px;margin:0 auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+        <h1 style="font-size:24px;">👑 Админ-панель</h1>
+        <a href="{{ url_for('admin_logout') }}" class="btn btn-ghost btn-sm">Выйти</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div style="padding:12px;border-radius:8px;margin-bottom:16px;background:{% if category == 'error' %}rgba(255,107,107,0.1){% else %}rgba(59,232,140,0.1){% endif %};color:{% if category == 'error' %}#ff6b6b{% else %}#3be88c{% endif %};font-size:13px;">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Выдача лицензий -->
+    <div class="glass" style="padding:20px;border-radius:18px;margin-bottom:20px;">
+        <h2 style="font-size:18px;margin-bottom:16px;">🎫 Выдать лицензию</h2>
+        <form method="POST" action="{{ url_for('admin_give_license') }}">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;">
+                <div class="field">
+                    <label>Email пользователя</label>
+                    <input name="email" type="email" required placeholder="user@example.com" style="width:100%;">
+                </div>
+                <div class="field">
+                    <label>Продукт</label>
+                    <select name="product" style="width:100%;background:rgba(10,10,10,0.96);border-radius:10px;border:1px solid rgba(255,255,255,0.16);padding:9px 10px;color:var(--text);font-size:14px;">
+                        <option value="miner">Miner</option>
+                        <option value="sender">Sender</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Дней</label>
+                    <input name="days" type="number" value="30" style="width:100%;">
+                </div>
+                <button type="submit" class="btn btn-primary">Выдать</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Активные лицензии -->
+    <div class="glass" style="padding:20px;border-radius:18px;margin-bottom:20px;">
+        <h2 style="font-size:18px;margin-bottom:16px;">📋 Лицензии (последние 20)</h2>
+        <table class="data-table" style="width:100%;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Ключ</th>
+                    <th>Продукт</th>
+                    <th>Истекает</th>
+                    <th>Статус</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lic in licenses %}
+                <tr>
+                    <td>{{ lic.id }}</td>
+                    <td><code style="font-size:11px;">{{ lic.license_key[:16] }}...</code></td>
+                    <td>{{ lic.product }}</td>
+                    <td>{{ lic.expires_at[:10] }}</td>
+                    <td>
+                        {% if lic.is_active and lic.expires_at > datetime.now() %}
+                            <span style="color:#3be88c;">Активна</span>
+                        {% else %}
+                            <span style="color:#ff6b6b;">Неактивна</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('admin_revoke_license', license_id=lic.id) }}" class="btn btn-ghost btn-sm" style="color:#ff6b6b;font-size:11px;">Отозвать</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">Нет лицензий</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Пользователи -->
+    <div class="glass" style="padding:20px;border-radius:18px;">
+        <h2 style="font-size:18px;margin-bottom:16px;">👥 Пользователи (последние 20)</h2>
+        <table class="data-table" style="width:100%;">
+            <thead>
+                <tr><th>ID</th><th>Email</th><th>Имя</th><th>Дата регистрации</th></tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.full_name or '—' }}</td>
+                    <td>{{ user.created_at[:10] }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Нет пользователей</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
