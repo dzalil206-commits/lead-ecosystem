@@ -277,5 +277,39 @@
     });
     // Модалки (из script.js)
 </script>
+<script>
+// Переключение секций
+document.querySelectorAll('.sidebar-link[data-section]').forEach(link => {
+    link.addEventListener('click', () => {
+        document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+        document.getElementById('section-' + link.dataset.section).classList.add('active');
+    });
+});
+
+// Модальные окна
+document.querySelectorAll('[data-modal-open]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-modal-open');
+        const modal = document.getElementById(id);
+        if (modal) modal.classList.add('open');
+    });
+});
+
+document.querySelectorAll('[data-modal-close]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const modal = btn.closest('.modal');
+        if (modal) modal.classList.remove('open');
+    });
+});
+
+// Закрытие модалки по ESC
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
+    }
+});
+</script>
 </body>
 </html>
