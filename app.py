@@ -199,45 +199,35 @@ def logout():
 @login_required
 def dashboard():
     db = get_db()
-    
-    # Статистика
     active_licenses_count = db.execute(
         "SELECT COUNT(*) FROM licenses WHERE user_id = ? AND is_active = 1",
         (current_user.id,)
     ).fetchone()[0]
-    
     total_leads_collected = db.execute(
         "SELECT COALESCE(SUM(leads_count), 0) FROM miner_jobs WHERE user_id = ?",
         (current_user.id,)
     ).fetchone()[0]
-    
     total_messages_sent = db.execute(
         "SELECT COALESCE(total_sent, 0) FROM users WHERE id = ?",
         (current_user.id,)
     ).fetchone()[0]
-    
-    # Лицензии
     miner_license = db.execute(
         "SELECT * FROM licenses WHERE user_id = ? AND is_active = 1 AND product = 'Miner' ORDER BY expires_at DESC LIMIT 1",
         (current_user.id,)
     ).fetchone()
-    
     sender_license = db.execute(
         "SELECT * FROM licenses WHERE user_id = ? AND is_active = 1 AND product = 'Sender' ORDER BY expires_at DESC LIMIT 1",
         (current_user.id,)
     ).fetchone()
-    
-    # Аккаунты и прокси
     sender_accounts = db.execute(
         "SELECT * FROM sender_accounts WHERE user_id = ?",
         (current_user.id,)
     ).fetchall()
-    
     proxies = db.execute(
         "SELECT * FROM proxies WHERE user_id = ?",
         (current_user.id,)
     ).fetchall()
-    
+
     return render_template('dashboard.html',
                            active_licenses_count=active_licenses_count,
                            total_leads_collected=total_leads_collected,
