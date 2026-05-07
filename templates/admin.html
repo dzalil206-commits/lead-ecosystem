@@ -68,7 +68,7 @@
                     <td>{{ lic.product }}</td>
                     <td>{{ lic.expires_at[:10] }}</td>
                     <td>
-                        {% if lic.is_active and lic.expires_at > datetime.now() %}
+                        {% if lic.is_active and lic.expires_at > datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S') %}
                             <span style="color:#3be88c;">Активна</span>
                         {% else %}
                             <span style="color:#ff6b6b;">Неактивна</span>
