@@ -5,34 +5,102 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Вход — TG Lead Wareon</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    .auth-split { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+    .auth-form-side { display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: var(--bg); }
+    .auth-info-side { display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: radial-gradient(circle at 30% 30%, rgba(232,201,160,0.12), transparent 60%), var(--bg-elevated); border-left: 1px solid var(--border-subtle); }
+    .auth-form-wrapper { width: 100%; max-width: 400px; }
+    .auth-logo { margin-bottom: 32px; }
+    .auth-form-wrapper h1 { font-size: 26px; margin-bottom: 4px; }
+    .auth-form-wrapper .auth-subtitle { margin-bottom: 24px; color: var(--text-muted); font-size: 14px; }
+    .auth-form .field { margin-bottom: 16px; }
+    .auth-form .field input { width: 100%; }
+    .auth-form .btn { margin-top: 8px; }
+    .auth-meta { margin-top: 16px; text-align: center; font-size: 13px; color: var(--text-muted); }
+    .auth-meta a { color: var(--accent-light); text-decoration: none; }
+    .forgot-link { text-align: right; margin-top: -8px; margin-bottom: 8px; }
+    .forgot-link a { font-size: 12px; color: var(--text-muted); text-decoration: none; }
+    .forgot-link a:hover { color: var(--accent-light); }
+    .auth-info-content { max-width: 380px; }
+    .auth-info-content h2 { font-size: 22px; margin-bottom: 12px; }
+    .auth-info-content p { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
+    .auth-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .auth-stat { text-align: center; }
+    .auth-stat-value { font-size: 20px; font-weight: 600; color: var(--accent-light); }
+    .auth-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .auth-features { list-style: none; padding: 0; }
+    .auth-features li { padding: 6px 0; font-size: 13px; color: var(--text-muted); }
+    .auth-features li::before { content: "✓ "; color: var(--accent-light); }
+    @media (max-width: 768px) {
+      .auth-split { grid-template-columns: 1fr; }
+      .auth-info-side { display: none; }
+    }
+  </style>
 </head>
-<body class="auth-page page-dark">
-<div class="auth-wrapper">
-    <div class="auth-card glass">
-        <a href="{{ url_for('index') }}" class="logo auth-logo">
-            <span class="logo-mark">TG</span>
-            <span class="logo-text">Lead Wareon</span>
-        </a>
-        <h1>Вход в экосистему</h1>
-        <p class="auth-subtitle">Продолжайте управлять Miner, Sender и нейрочаттингом из единого кабинета.</p>
+<body class="page-dark">
+<div class="auth-split">
+    <!-- Форма входа -->
+    <div class="auth-form-side">
+        <div class="auth-form-wrapper">
+            <a href="{{ url_for('index') }}" class="logo auth-logo">
+                <span class="logo-mark">TG</span>
+                <span class="logo-text">Lead Wareon</span>
+            </a>
+            <h1>Вход в экосистему</h1>
+            <p class="auth-subtitle">Продолжайте управлять Miner, Sender и нейрочаттингом из единого кабинета.</p>
 
-        <form method="POST" action="{{ url_for('login') }}" class="auth-form">
-            <div class="field">
-                <label for="email">Email</label>
-                <input id="email" name="email" type="email" required placeholder="you@example.com">
-            </div>
-            <div class="field">
-                <label for="password">Пароль</label>
-                <input id="password" name="password" type="password" required placeholder="••••••••">
-            </div>
-            <button type="submit" class="btn btn-primary btn-full">Войти</button>
-        </form>
+            <form method="POST" action="{{ url_for('login') }}" class="auth-form">
+                <div class="field">
+                    <label for="email">Email</label>
+                    <input id="email" name="email" type="email" required placeholder="you@example.com">
+                </div>
+                <div class="field">
+                    <label for="password">Пароль</label>
+                    <input id="password" name="password" type="password" required placeholder="••••••••">
+                </div>
+                <div class="forgot-link">
+                    <a href="{{ url_for('support') }}">Забыли пароль?</a>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Войти</button>
+            </form>
 
-        <p class="auth-meta">
-            Нет аккаунта?
-            <a href="{{ url_for('register') }}">Создать аккаунт</a>
-        </p>
+            <p class="auth-meta">
+                Нет аккаунта?
+                <a href="{{ url_for('register') }}">Создать аккаунт</a>
+            </p>
+            <p class="auth-meta" style="margin-top:8px;">
+                <a href="{{ url_for('index') }}">← Вернуться на главную</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Информационная панель -->
+    <div class="auth-info-side">
+        <div class="auth-info-content">
+            <h2>TG Lead Wareon — ваш Telegram-комбайн</h2>
+            <p>Автосбор аудитории, умная авторассылка и нейрочаттинг в одном премиум-интерфейсе. Уже используют сотни арбитражников и агентств.</p>
+            <div class="auth-stats">
+                <div class="auth-stat">
+                    <div class="auth-stat-value">274+</div>
+                    <div class="auth-stat-label">активных клиентов</div>
+                </div>
+                <div class="auth-stat">
+                    <div class="auth-stat-value">180K+</div>
+                    <div class="auth-stat-label">собранных лидов</div>
+                </div>
+                <div class="auth-stat">
+                    <div class="auth-stat-value">3</div>
+                    <div class="auth-stat-label">года на рынке</div>
+                </div>
+            </div>
+            <ul class="auth-features">
+                <li>Безопасная работа с Telegram API</li>
+                <li>AI-защита от банов и автопрогрев</li>
+                <li>Экспорт лидов в CRM и Google Sheets</li>
+                <li>Поддержка 24/7</li>
+            </ul>
+        </div>
     </div>
 </div>
 </body>
