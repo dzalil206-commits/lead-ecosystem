@@ -55,7 +55,7 @@
                 <div style="display:flex;align-items:center;gap:10px;">
                     <span style="width:28px;height:28px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;color:#111;flex-shrink:0;">2</span>
                     <span style="flex:1;">Запустите Miner для сбора аудитории</span>
-                    <a href="{{ url_for('miner_panel') }}" class="btn btn-outline btn-sm">Запустить</a>
+                    <a href="{{ url_for('miner') }}" class="btn btn-outline btn-sm">Запустить</a>
                 </div>
                 <div style="display:flex;align-items:center;gap:10px;">
                     <span style="width:28px;height:28px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;color:#111;flex-shrink:0;">3</span>
@@ -98,7 +98,7 @@
                     <div class="product-meta-inline">
                         {% if miner_license and miner_license.is_active %}
                             <span class="pill">Активно до {{ miner_license.expires_at[:10] }}</span>
-                            <a href="{{ url_for('miner_panel') }}" class="btn btn-outline btn-sm">Управлять</a>
+                            <a href="{{ url_for('miner') }}" class="btn btn-outline btn-sm">Управлять</a>
                         {% else %}
                             <span class="pill pill-gray">Лицензия не найдена</span>
                             <a href="{{ url_for('buy', product='miner') }}" class="btn btn-primary btn-sm">Купить</a>
