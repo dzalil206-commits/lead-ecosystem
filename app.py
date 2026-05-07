@@ -165,6 +165,10 @@ def privacy():
 def terms():
     return render_template('terms.html')
 
+@app.route('/wheel')
+def wheel():
+    return render_template('wheel.html')
+
 # ---------- РЕГИСТРАЦИЯ / ВХОД ----------
 @app.route('/register', methods=['GET', 'POST'])
 def register():
