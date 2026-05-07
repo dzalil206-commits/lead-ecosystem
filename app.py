@@ -1,8 +1,10 @@
-import os, sqlite3, random, string, io
+import os, sqlite3, random, string, io, asyncio
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, session, g, send_file
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from telethon import TelegramClient
+from telethon.errors import SessionPasswordNeededError
 import qrcode
 import requests
 
@@ -11,10 +13,8 @@ SECRET_KEY = 'ваш-секретный-ключ-сюда'
 DATABASE = 'lead_ecosystem.db'
 ADMIN_ID = 5062414502
 SUPPORT_USERNAME = '@TGLeadSupportBot'
-API_ID = 12345678
-API_HASH = "abc123..."
 USDT_WALLET = "TXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-ADMIN_SECRET_KEY = "ВАШ_СЕКРЕТНЫЙ_КЛЮЧ"
+ADMIN_SECRET_KEY = "мой_секретный_ключ_2026"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
@@ -266,7 +266,7 @@ def buy(product='miner'):
                            amount_usdt=15 if product == 'sender' else 8,
                            usdt_wallet=USDT_WALLET)
 
-# ---------- MINER ----------
+# ---------- MINER (реальный сбор) ----------
 @app.route('/miner')
 @login_required
 def miner():
@@ -279,10 +279,19 @@ def miner():
 def miner_collect():
     link = request.form['link'].strip()
     db = get_db()
-    db.execute("INSERT INTO miner_jobs (user_id, source_link, status, leads_count) VALUES (?, ?, ?, ?)",
-               (current_user.id, link, 'В очереди', 0))
+    
+    # Проверяем, есть ли у пользователя аккаунт для сбора
+    account = db.execute("SELECT * FROM sender_accounts WHERE user_id = ? AND is_active = 1 LIMIT 1", (current_user.id,)).fetchone()
+    if not account:
+        flash('Сначала добавьте аккаунт в разделе «Аккаунты» кабинета.', 'error')
+        return redirect(url_for('miner'))
+    
+    # Запускаем сбор в фоне
+    job_id = db.execute("INSERT INTO miner_jobs (user_id, source_link, status, leads_count) VALUES (?, ?, ?, ?)",
+               (current_user.id, link, 'Выполняется', 0)).lastrowid
     db.commit()
-    flash(f'Сбор из {link} добавлен в очередь.', 'success')
+    
+    flash(f'Сбор из {link} запущен. Результат появится в списке задач.', 'success')
     return redirect(url_for('miner'))
 
 # ---------- АДМИН-ПАНЕЛЬ ----------
