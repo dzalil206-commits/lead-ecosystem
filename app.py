@@ -169,6 +169,15 @@ def terms():
 def wheel():
     return render_template('wheel.html')
 
+@app.route('/checklist', methods=['GET', 'POST'])
+def checklist():
+    return render_template('checklist.html')
+
+@app.route('/checklist/download', methods=['POST'])
+def checklist_download():
+    email = request.form.get('email', '')
+    return send_file('static/checklist.pdf', as_attachment=True)
+
 # ---------- РЕГИСТРАЦИЯ / ВХОД ----------
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -399,12 +408,3 @@ def admin_logout():
 if __name__ == '__main__':
     with app.app_context():
         init_db()
-
-@app.route('/checklist', methods=['GET', 'POST'])
-def checklist():
-    return render_template('checklist.html')
-
-@app.route('/checklist/download', methods=['POST'])
-def checklist_download():
-    email = request.form.get('email', '')
-    return send_file('static/checklist.pdf', as_attachment=True)
