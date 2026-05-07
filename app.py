@@ -407,7 +407,4 @@ def checklist():
 @app.route('/checklist/download', methods=['POST'])
 def checklist_download():
     email = request.form.get('email', '')
-    # Можно сохранить email в базу для рассылки
-    flash('Чек-лист отправлен на ' + email + '! Проверьте почту.', 'success')
-    return redirect(url_for('checklist'))
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    return send_file('static/checklist.pdf', as_attachment=True)
