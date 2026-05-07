@@ -319,18 +319,68 @@ def miner_collect():
     flash(f'Сбор из {link} добавлен в очередь.', 'success')
     return redirect(url_for('miner'))
 
-# ---------- АДМИН-ПАНЕЛЬ ----------
+# =============================================
+# АДМИН-ПАНЕЛЬ
+# =============================================
+ADMIN_SECRET_KEY = "2323dfasfkafar2jk2dawk"  # Придумайте длинную строку
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        key = request.form.get('key', '')
+        if key == ADMIN_SECRET_KEY:
+            session['is_admin'] = True
+            return redirect(url_for('admin_dashboard'))
+        flash('Неверный ключ доступа', 'error')
+    return render_template('admin_login.html')
+
 @app.route('/admin')
-@login_required
-def admin_panel():
-    if current_user.id != ADMIN_ID:
-        return "Доступ запрещен", 403
+def admin_dashboard():
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
     db = get_db()
-    users = db.execute("SELECT * FROM users ORDER BY created_at DESC LIMIT 20").fetchall()
-    licenses = db.execute("SELECT * FROM licenses ORDER BY created_at DESC LIMIT 20").fetchall()
+    users = db.execute("SELECT * FROM users ORDER BY created_at DESC").fetchall()
+    licenses = db.execute("SELECT * FROM licenses ORDER BY created_at DESC").fetchall()
     return render_template('admin.html', users=users, licenses=licenses)
 
-if __name__ == '__main__':
-    with app.app_context():
-        init_db()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+@app.route('/admin/give_license', methods=['POST'])
+def admin_give_license():
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
+    
+    user_email = request.form.get('email', '').strip()
+    product = request.form.get('product', 'miner')
+    days = int(request.form.get('days', 30))
+    
+    db = get_db()
+    user_row = db.execute("SELECT id FROM users WHERE email = ?", (user_email,)).fetchone()
+    
+    if not user_row:
+        flash('Пользователь с таким email не найден. Попросите его зарегистрироваться на сайте.', 'error')
+        return redirect(url_for('admin_dashboard'))
+    
+    user_id = user_row['id']
+    license_key = generate_license_key()
+    expires_at = datetime.now() + timedelta(days=days)
+    
+    db.execute("INSERT INTO licenses (user_id, license_key, product, price, expires_at, is_active) VALUES (?, ?, ?, ?, ?, 1)",
+               (user_id, license_key, product, 0, expires_at))
+    db.commit()
+    
+    flash(f'Лицензия {product} выдана пользователю {user_email} на {days} дней. Ключ: {license_key}', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/revoke_license/<int:license_id>')
+def admin_revoke_license(license_id):
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
+    db = get_db()
+    db.execute("UPDATE licenses SET is_active = 0 WHERE id = ?", (license_id,))
+    db.commit()
+    flash('Лицензия отозвана', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('is_admin', None)
+    return redirect(url_for('index'))
