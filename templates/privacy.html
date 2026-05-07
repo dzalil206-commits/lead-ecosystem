@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Политика конфиденциальности — TG Lead Wareon</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body class="page-dark">
+<header class="site-header">
+    <div class="container header-inner">
+        <a href="{{ url_for('index') }}" class="logo">
+            <span class="logo-mark">TG</span>
+            <span class="logo-text">Lead Wareon</span>
+        </a>
+        <nav class="nav-main">
+            <a href="{{ url_for('index') }}">Главная</a>
+        </nav>
+    </div>
+</header>
+
+<main class="section">
+    <div class="container" style="max-width:800px;">
+        <h1 style="font-size:28px;margin-bottom:20px;">Политика конфиденциальности</h1>
+        <p style="color:var(--text-muted);margin-bottom:8px;">Последнее обновление: 07.05.2026</p>
+
+        <div class="glass" style="padding:24px;border-radius:18px;margin-bottom:16px;">
+            <h3>1. Какие данные мы собираем</h3>
+            <p style="color:var(--text-muted);font-size:14px;">При регистрации мы запрашиваем email и имя. Это минимальная информация, необходимая для работы сервиса. Мы не собираем номера телефонов, паспортные данные, платёжную информацию (она обрабатывается платёжными системами).</p>
+        </div>
+
+        <div class="glass" style="padding:24px;border-radius:18px;margin-bottom:16px;">
+            <h3>2. Как мы используем данные</h3>
+            <p style="color:var(--text-muted);font-size:14px;">Email используется для входа в аккаунт и отправки уведомлений о статусе лицензий. Имя отображается в личном кабинете. Данные не используются для рекламных рассылок без вашего согласия.</p>
+        </div>
+
+        <div class="glass" style="padding:24px;border-radius:18px;margin-bottom:16px;">
+            <h3>3. Хранение данных</h3>
+            <p style="color:var(--text-muted);font-size:14px;">Данные хранятся на защищённом сервере. Пароли хешируются. Доступ к базе данных имеет только администратор сервиса.</p>
+        </div>
+
+        <div class="glass" style="padding:24px;border-radius:18px;margin-bottom:16px;">
+            <h3>4. Передача третьим лицам</h3>
+            <p style="color:var(--text-muted);font-size:14px;">Мы не передаём ваши данные третьим лицам, за исключением случаев, предусмотренных законодательством РФ.</p>
+        </div>
+
+        <div class="glass" style="padding:24px;border-radius:18px;">
+            <h3>5. Удаление данных</h3>
+            <p style="color:var(--text-muted);font-size:14px;">Вы можете запросить удаление аккаунта и всех связанных данных, написав в поддержку. Данные будут удалены в течение 7 рабочих дней.</p>
+        </div>
+    </div>
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <div class="footer-left"><span class="logo-text">TG Lead Wareon</span></div>
+        <div class="footer-links">
+            <a href="{{ url_for('privacy') }}">Политика конфиденциальности</a>
+            <a href="{{ url_for('terms') }}">Пользовательское соглашение</a>
+            <a href="{{ url_for('support') }}">Поддержка</a>
+        </div>
+    </div>
+</footer>
+</body>
+</html>
