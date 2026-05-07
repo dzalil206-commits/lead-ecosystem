@@ -157,6 +157,14 @@ def support():
         return redirect(url_for('support'))
     return render_template('support.html')
 
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
 # ---------- РЕГИСТРАЦИЯ / ВХОД ----------
 @app.route('/register', methods=['GET', 'POST'])
 def register():
