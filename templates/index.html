@@ -291,6 +291,51 @@
     </section>
 </main>
 
+  <section class="section" id="romi-calc">
+    <div class="container">
+        <div class="section-header" style="text-align:center;">
+            <h2>Посчитайте окупаемость</h2>
+            <p>Узнайте, сколько вы заработаете с TG Lead Wareon</p>
+        </div>
+        <div class="glass" style="padding:24px;border-radius:18px;max-width:500px;margin:0 auto;">
+            <div class="field" style="margin-bottom:12px;">
+                <label>Сколько лидов планируете в месяц?</label>
+                <input id="romi-leads" type="number" value="10000" style="width:100%;">
+            </div>
+            <div class="field" style="margin-bottom:12px;">
+                <label>Средний чек (₽)</label>
+                <input id="romi-check" type="number" value="5000" style="width:100%;">
+            </div>
+            <div class="field" style="margin-bottom:12px;">
+                <label>Конверсия из лида в клиента (%)</label>
+                <input id="romi-conv" type="number" value="5" style="width:100%;">
+            </div>
+            <div style="text-align:center;margin-top:16px;">
+                <div style="font-size:14px;color:var(--text-muted);">Потенциальная выручка</div>
+                <div id="romi-revenue" style="font-size:32px;font-weight:700;color:var(--accent-light);">0₽</div>
+                <div style="font-size:14px;color:var(--text-muted);">Затраты на TG Lead: <span id="romi-cost">990₽</span></div>
+                <div style="font-size:20px;font-weight:600;color:#3be88c;margin-top:4px;">ROMI: <span id="romi-result">0%</span></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    function calcROMI() {
+        const leads = parseInt(document.getElementById('romi-leads').value) || 0;
+        const check = parseInt(document.getElementById('romi-check').value) || 0;
+        const conv = parseFloat(document.getElementById('romi-conv').value) || 0;
+        const revenue = Math.round(leads * (conv / 100) * check);
+        const cost = document.getElementById('romi-cost').textContent.includes('0') ? parseInt(document.getElementById('romi-cost').textContent) || 990 : parseInt(document.getElementById('romi-cost').textContent) || 990;
+        const romi = Math.round(((revenue - cost) / cost) * 100);
+        document.getElementById('romi-revenue').textContent = revenue.toLocaleString('ru-RU') + '₽';
+        document.getElementById('romi-result').textContent = romi + '%';
+    }
+    document.getElementById('romi-leads').addEventListener('input', calcROMI);
+    document.getElementById('romi-check').addEventListener('input', calcROMI);
+    document.getElementById('romi-conv').addEventListener('input', calcROMI);
+    calcROMI();
+</script>
 <footer class="site-footer">
     <div class="container footer-inner">
         <div class="footer-left">
