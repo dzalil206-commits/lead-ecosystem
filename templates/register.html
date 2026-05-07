@@ -3,78 +3,103 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TG Lead Wareon — Регистрация</title>
-  <link rel="stylesheet" href="{ url_for('static', filename='style.css') }" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <title>Регистрация — TG Lead Wareon</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    .auth-split { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+    .auth-form-side { display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: var(--bg); }
+    .auth-info-side { display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: radial-gradient(circle at 30% 30%, rgba(232,201,160,0.12), transparent 60%), var(--bg-elevated); border-left: 1px solid var(--border-subtle); }
+    .auth-form-wrapper { width: 100%; max-width: 400px; }
+    .auth-logo { margin-bottom: 32px; }
+    .auth-form-wrapper h1 { font-size: 26px; margin-bottom: 4px; }
+    .auth-form-wrapper .auth-subtitle { margin-bottom: 24px; color: var(--text-muted); font-size: 14px; }
+    .auth-form .field { margin-bottom: 16px; }
+    .auth-form .field input { width: 100%; }
+    .auth-form .btn { margin-top: 8px; }
+    .auth-meta { margin-top: 16px; text-align: center; font-size: 13px; color: var(--text-muted); }
+    .auth-meta a { color: var(--accent-light); text-decoration: none; }
+    .auth-info-content { max-width: 380px; }
+    .auth-info-content h2 { font-size: 22px; margin-bottom: 12px; }
+    .auth-info-content p { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
+    .auth-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .auth-stat { text-align: center; }
+    .auth-stat-value { font-size: 20px; font-weight: 600; color: var(--accent-light); }
+    .auth-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .auth-features { list-style: none; padding: 0; }
+    .auth-features li { padding: 6px 0; font-size: 13px; color: var(--text-muted); }
+    .auth-features li::before { content: "✓ "; color: var(--accent-light); }
+    @media (max-width: 768px) {
+      .auth-split { grid-template-columns: 1fr; }
+      .auth-info-side { display: none; }
+    }
+  </style>
 </head>
 <body class="page-dark">
-<header class="site-header">
-  <div class="container header-inner">
-    <a href="{ url_for('index') }" class="logo">
-      <div class="logo-mark">TG</div>
-      <div class="logo-text">TG Lead Wareon</div>
-    </a>
-    <nav class="nav-main">
-      <a href="{ url_for('index') }">Главная</a>
-      <a href="{ url_for('pricing') }">Тарифы</a>
-      <a href="{ url_for('cases') }">Кейсы</a>
-      <a href="{ url_for('blog') }">Блог</a>
-      <a href="{ url_for('faq') }">FAQ</a>
-      <a href="{ url_for('support') }">Поддержка</a>
-    </nav>
-    <div class="header-actions">
-      <a href="{ url_for('login') }" class="btn btn-ghost btn-sm">Войти</a>
-      <a href="{ url_for('register') }" class="btn btn-primary btn-sm">Регистрация</a>
-    </div>
-    <button class="nav-toggle" type="button" aria-label="Открыть меню"><span></span><span></span></button>
-  </div>
-</header>
-<main>
+<div class="auth-split">
+    <!-- Форма регистрации -->
+    <div class="auth-form-side">
+        <div class="auth-form-wrapper">
+            <a href="{{ url_for('index') }}" class="logo auth-logo">
+                <span class="logo-mark">TG</span>
+                <span class="logo-text">Lead Wareon</span>
+            </a>
+            <h1>Создать аккаунт</h1>
+            <p class="auth-subtitle">Подключите Miner и Sender, чтобы автоматизировать Telegram‑связки.</p>
 
-<section class="auth-page">
-  <div class="auth-wrapper">
-    <div class="auth-card glass">
-      <div class="auth-logo">
-        <a href="{{ url_for('index') }}" class="logo">
-          <div class="logo-mark">TG</div>
-          <div class="logo-text">TG Lead Wareon</div>
-        </a>
-      </div>
-      <h1>Создать аккаунт</h1>
-      <p class="auth-subtitle">Запустите автопоиск лидов и рассылки в Telegram за несколько минут.</p>
-      <form class="auth-form" method="post" action="{{ url_for('register') }}">
-        <div class="field">
-          <label for="full_name">Имя и фамилия</label>
-          <input id="full_name" name="full_name" type="text" placeholder="{{ current_user.full_name or 'Иван Иванов' }}" required />
-        </div>
-        <div class="field">
-          <label for="email">Рабочий email</label>
-          <input id="email" name="email" type="email" placeholder="you@company.com" required />
-        </div>
-        <div class="field">
-          <label for="password">Пароль</label>
-          <input id="password" name="password" type="password" required />
-        </div>
-        <button class="btn btn-primary btn-full btn-lg" style="margin-top:14px;" type="submit">Зарегистрироваться</button>
-      </form>
-      <p class="auth-meta">Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a></p>
-    </div>
-  </div>
-</section>
+            <form method="POST" action="{{ url_for('register') }}" class="auth-form">
+                <div class="field">
+                    <label for="full_name">Имя и фамилия</label>
+                    <input id="full_name" name="full_name" type="text" required placeholder="Иван Иванов">
+                </div>
+                <div class="field">
+                    <label for="email">Рабочий email</label>
+                    <input id="email" name="email" type="email" required placeholder="you@example.com">
+                </div>
+                <div class="field">
+                    <label for="password">Пароль</label>
+                    <input id="password" name="password" type="password" required placeholder="Минимум 8 символов">
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Зарегистрироваться</button>
+            </form>
 
-</main>
-<footer class="site-footer">
-  <div class="container footer-inner">
-    <div>© {{ current_year or 2026 }} TG Lead Wareon. Все права защищены.</div>
-    <div class="footer-links">
-      <a href="{{ url_for('faq') }}">FAQ</a>
-      <a href="{{ url_for('support') }}">Поддержка</a>
-      <a href="{{ url_for('pricing') }}">Тарифы</a>
+            <p class="auth-meta">
+                Уже есть аккаунт?
+                <a href="{{ url_for('login') }}">Войти</a>
+            </p>
+            <p class="auth-meta" style="margin-top:8px;">
+                <a href="{{ url_for('index') }}">← Вернуться на главную</a>
+            </p>
+        </div>
     </div>
-  </div>
-</footer>
-<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+    <!-- Информационная панель -->
+    <div class="auth-info-side">
+        <div class="auth-info-content">
+            <h2>Начните бесплатно прямо сейчас</h2>
+            <p>7 дней полного доступа ко всем функциям. Без привязки карты. Отмените в любой момент.</p>
+            <div class="auth-stats">
+                <div class="auth-stat">
+                    <div class="auth-stat-value">7 дней</div>
+                    <div class="auth-stat-label">бесплатного теста</div>
+                </div>
+                <div class="auth-stat">
+                    <div class="auth-stat-value">15 мин</div>
+                    <div class="auth-stat-label">на запуск</div>
+                </div>
+                <div class="auth-stat">
+                    <div class="auth-stat-value">24/7</div>
+                    <div class="auth-stat-label">поддержка</div>
+                </div>
+            </div>
+            <ul class="auth-features">
+                <li>Все функции доступны сразу после регистрации</li>
+                <li>Никаких скрытых платежей</li>
+                <li>Мгновенная активация аккаунта</li>
+                <li>Поддержка ответит на любой вопрос</li>
+            </ul>
+        </div>
+    </div>
+</div>
 </body>
 </html>
