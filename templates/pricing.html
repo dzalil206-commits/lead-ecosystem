@@ -74,6 +74,44 @@
         </div>
     </section>
 
+<section class="section" id="calculator">
+    <div class="container">
+        <div class="glass" style="padding:24px;border-radius:18px;max-width:500px;margin:0 auto;">
+            <h3 style="text-align:center;margin-bottom:16px;">Посчитайте вашу выгоду</h3>
+            <div class="field" style="margin-bottom:12px;">
+                <label>Сколько лидов планируете собирать в месяц?</label>
+                <input id="calc-leads" type="number" value="10000" placeholder="10000" style="width:100%;" />
+            </div>
+            <div class="field" style="margin-bottom:12px;">
+                <label>Средний чек с клиента (₽)</label>
+                <input id="calc-check" type="number" value="5000" placeholder="5000" style="width:100%;" />
+            </div>
+            <div class="field" style="margin-bottom:12px;">
+                <label>Конверсия из лида в клиента (%)</label>
+                <input id="calc-conv" type="number" value="5" placeholder="5" style="width:100%;" />
+            </div>
+            <div style="text-align:center;margin-top:16px;">
+                <div style="font-size:14px;color:var(--text-muted);">Потенциальная выручка</div>
+                <div id="calc-result" style="font-size:28px;font-weight:700;color:var(--accent-light);">0₽</div>
+                <div style="font-size:12px;color:var(--text-muted);">в месяц</div>
+            </div>
+        </div>
+    </div>
+</section>
+<script>
+    function updateCalc() {
+        const leads = parseInt(document.getElementById('calc-leads').value) || 0;
+        const check = parseInt(document.getElementById('calc-check').value) || 0;
+        const conv = parseFloat(document.getElementById('calc-conv').value) || 0;
+        const result = Math.round(leads * (conv / 100) * check);
+        document.getElementById('calc-result').textContent = result.toLocaleString('ru-RU') + '₽';
+    }
+    document.getElementById('calc-leads').addEventListener('input', updateCalc);
+    document.getElementById('calc-check').addEventListener('input', updateCalc);
+    document.getElementById('calc-conv').addEventListener('input', updateCalc);
+    updateCalc();
+</script>
+  
     <section class="section" id="addons">
         <div class="container">
             <h2>Дополнительные модули</h2>
