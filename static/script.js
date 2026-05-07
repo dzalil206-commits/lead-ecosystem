@@ -172,3 +172,15 @@ document.addEventListener('DOMContentLoaded', () => {
     tick();
   });
 });
+
+// Мобильное меню
+const navToggle = document.querySelector('.nav-toggle');
+const navMain = document.querySelector('.nav-main');
+const headerActions = document.querySelector('.header-actions');
+
+if (navToggle) {
+    navToggle.addEventListener('click', () => {
+        navMain.classList.toggle('nav-open');
+        headerActions.classList.toggle('nav-open');
+    });
+}
