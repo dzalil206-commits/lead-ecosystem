@@ -4,22 +4,23 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import qrcode
+import requests
 
-# ---------- НАСТРОЙКИ (замените на свои) ----------
+# ---------- НАСТРОЙКИ ----------
 SECRET_KEY = 'ваш-секретный-ключ-сюда'
 DATABASE = 'lead_ecosystem.db'
-ADMIN_ID = 123456789
-SUPPORT_USERNAME = '@Support'
+ADMIN_ID = 5062414502
+SUPPORT_USERNAME = '@TGLeadSupportBot'
 API_ID = 12345678
 API_HASH = "abc123..."
 USDT_WALLET = "TXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+ADMIN_SECRET_KEY = "ВАШ_СЕКРЕТНЫЙ_КЛЮЧ"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# ---------- КОНТЕКСТНЫЙ ПРОЦЕССОР ----------
 @app.context_processor
 def utility_processor():
     return dict(ADMIN_ID=ADMIN_ID, SUPPORT_USERNAME=SUPPORT_USERNAME, datetime=datetime)
@@ -48,6 +49,7 @@ def init_db():
             balance INTEGER DEFAULT 0,
             total_spent INTEGER DEFAULT 0,
             trial_used INTEGER DEFAULT 0,
+            total_sent INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS licenses (
@@ -101,7 +103,6 @@ def init_db():
     ''')
     db.commit()
 
-# ---------- МОДЕЛЬ ПОЛЬЗОВАТЕЛЯ ----------
 class User(UserMixin):
     def __init__(self, id, email, full_name):
         self.id = id
@@ -116,16 +117,16 @@ def load_user(user_id):
         return User(row['id'], row['email'], row['full_name'])
     return None
 
-# ---------- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ----------
 def generate_license_key():
     chars = string.ascii_uppercase + string.digits
     return f"TGLS-{''.join(random.choices(chars, k=4))}-{''.join(random.choices(chars, k=4))}-{''.join(random.choices(chars, k=4))}-{''.join(random.choices(chars, k=4))}"
 
-# ---------- ГЛАВНАЯ СТРАНИЦА ----------
+# ---------- ГЛАВНАЯ ----------
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# ---------- СТРАНИЦЫ ----------
 @app.route('/pricing')
 def pricing():
     return render_template('pricing.html')
@@ -137,6 +138,7 @@ def cases():
 @app.route('/blog')
 def blog():
     return render_template('blog.html')
+
 @app.route('/blog/<slug>')
 def blog_post(slug):
     return render_template(f'blog/{slug}.html')
@@ -194,40 +196,18 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
-# ---------- ЛИЧНЫЙ КАБИНЕТ (ОБНОВЛЁН) ----------
+# ---------- ЛИЧНЫЙ КАБИНЕТ ----------
 @app.route('/dashboard')
 @login_required
 def dashboard():
     db = get_db()
-    active_licenses_count = db.execute(
-        "SELECT COUNT(*) FROM licenses WHERE user_id = ? AND is_active = 1",
-        (current_user.id,)
-    ).fetchone()[0]
-    total_leads_collected = db.execute(
-        "SELECT COALESCE(SUM(leads_count), 0) FROM miner_jobs WHERE user_id = ?",
-        (current_user.id,)
-    ).fetchone()[0]
-    total_messages_sent = db.execute(
-        "SELECT COALESCE(total_sent, 0) FROM users WHERE id = ?",
-        (current_user.id,)
-    ).fetchone()[0]
-    miner_license = db.execute(
-        "SELECT * FROM licenses WHERE user_id = ? AND is_active = 1 AND product = 'Miner' ORDER BY expires_at DESC LIMIT 1",
-        (current_user.id,)
-    ).fetchone()
-    sender_license = db.execute(
-        "SELECT * FROM licenses WHERE user_id = ? AND is_active = 1 AND product = 'Sender' ORDER BY expires_at DESC LIMIT 1",
-        (current_user.id,)
-    ).fetchone()
-    sender_accounts = db.execute(
-        "SELECT * FROM sender_accounts WHERE user_id = ?",
-        (current_user.id,)
-    ).fetchall()
-    proxies = db.execute(
-        "SELECT * FROM proxies WHERE user_id = ?",
-        (current_user.id,)
-    ).fetchall()
-
+    active_licenses_count = db.execute("SELECT COUNT(*) FROM licenses WHERE user_id = ? AND is_active = 1", (current_user.id,)).fetchone()[0]
+    total_leads_collected = db.execute("SELECT COALESCE(SUM(leads_count), 0) FROM miner_jobs WHERE user_id = ?", (current_user.id,)).fetchone()[0]
+    total_messages_sent = db.execute("SELECT COALESCE(total_sent, 0) FROM users WHERE id = ?", (current_user.id,)).fetchone()[0]
+    miner_license = db.execute("SELECT * FROM licenses WHERE user_id = ? AND is_active = 1 AND product = 'Miner' ORDER BY expires_at DESC LIMIT 1", (current_user.id,)).fetchone()
+    sender_license = db.execute("SELECT * FROM licenses WHERE user_id = ? AND is_active = 1 AND product = 'Sender' ORDER BY expires_at DESC LIMIT 1", (current_user.id,)).fetchone()
+    sender_accounts = db.execute("SELECT * FROM sender_accounts WHERE user_id = ?", (current_user.id,)).fetchall()
+    proxies = db.execute("SELECT * FROM proxies WHERE user_id = ?", (current_user.id,)).fetchall()
     return render_template('dashboard.html',
                            active_licenses_count=active_licenses_count,
                            total_leads_collected=total_leads_collected,
@@ -237,8 +217,7 @@ def dashboard():
                            sender_accounts=sender_accounts,
                            proxies=proxies)
 
-# ---------- УПРАВЛЕНИЕ АККАУНТАМИ SENDER ----------
-@app.route('/sender/add_account', methods=['POST'])
+@app.route('/sender_add_account', methods=['POST'])
 @login_required
 def sender_add_account():
     phone = request.form['phone'].strip()
@@ -251,7 +230,7 @@ def sender_add_account():
     flash(f'Аккаунт {phone} добавлен.', 'info')
     return redirect(url_for('dashboard'))
 
-@app.route('/sender/add_proxy', methods=['POST'])
+@app.route('/sender_add_proxy', methods=['POST'])
 @login_required
 def sender_add_proxy():
     db = get_db()
@@ -266,46 +245,33 @@ def sender_add_proxy():
     flash('Прокси добавлен.', 'success')
     return redirect(url_for('dashboard'))
 
-# ---------- ПОКУПКА (ОБНОВЛЁН) ----------
+# ---------- ПОКУПКА ----------
 @app.route('/buy/<product>', methods=['GET', 'POST'])
 @app.route('/buy', methods=['GET', 'POST'])
 @login_required
 def buy(product='miner'):
     if product not in ['miner', 'sender']:
         product = 'miner'
-    
     if request.method == 'POST':
         method = request.form.get('method', 'card')
         db = get_db()
-        
-        # Фиктивная сумма для примера
         amount_rub = 990 if product == 'sender' else 490
-        amount_usdt = 15 if product == 'sender' else 8
-        
         db.execute("INSERT INTO payments (user_id, product, amount) VALUES (?, ?, ?)",
                    (current_user.id, product, amount_rub))
         db.commit()
-        
         flash('Платёж зафиксирован. Ожидайте активацию лицензии.', 'success')
         return redirect(url_for('dashboard'))
-    
-    return render_template('buy.html',
-                           product=product,
-                           selected_plan='Pro',
-                           billing_period='1 месяц',
+    return render_template('buy.html', product=product, selected_plan='Pro', billing_period='1 месяц',
                            amount_rub=990 if product == 'sender' else 490,
                            amount_usdt=15 if product == 'sender' else 8,
                            usdt_wallet=USDT_WALLET)
 
-# ---------- TG LEAD MINER (ОБНОВЛЁН) ----------
+# ---------- MINER ----------
 @app.route('/miner')
 @login_required
 def miner():
     db = get_db()
-    miner_jobs = db.execute(
-        "SELECT * FROM miner_jobs WHERE user_id = ? ORDER BY created_at DESC LIMIT 10",
-        (current_user.id,)
-    ).fetchall()
+    miner_jobs = db.execute("SELECT * FROM miner_jobs WHERE user_id = ? ORDER BY created_at DESC LIMIT 10", (current_user.id,)).fetchall()
     return render_template('miner.html', miner_jobs=miner_jobs)
 
 @app.route('/miner/collect', methods=['POST'])
@@ -319,11 +285,7 @@ def miner_collect():
     flash(f'Сбор из {link} добавлен в очередь.', 'success')
     return redirect(url_for('miner'))
 
-# =============================================
-# АДМИН-ПАНЕЛЬ
-# =============================================
-ADMIN_SECRET_KEY = "2323dfasfkafar2jk2dawk"  # Придумайте длинную строку
-
+# ---------- АДМИН-ПАНЕЛЬ ----------
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
@@ -347,27 +309,21 @@ def admin_dashboard():
 def admin_give_license():
     if not session.get('is_admin'):
         return redirect(url_for('admin_login'))
-    
     user_email = request.form.get('email', '').strip()
     product = request.form.get('product', 'miner')
     days = int(request.form.get('days', 30))
-    
     db = get_db()
     user_row = db.execute("SELECT id FROM users WHERE email = ?", (user_email,)).fetchone()
-    
     if not user_row:
-        flash('Пользователь с таким email не найден. Попросите его зарегистрироваться на сайте.', 'error')
+        flash('Пользователь с таким email не найден.', 'error')
         return redirect(url_for('admin_dashboard'))
-    
     user_id = user_row['id']
     license_key = generate_license_key()
     expires_at = datetime.now() + timedelta(days=days)
-    
     db.execute("INSERT INTO licenses (user_id, license_key, product, price, expires_at, is_active) VALUES (?, ?, ?, ?, ?, 1)",
                (user_id, license_key, product, 0, expires_at))
     db.commit()
-    
-    flash(f'Лицензия {product} выдана пользователю {user_email} на {days} дней. Ключ: {license_key}', 'success')
+    flash(f'Лицензия {product} выдана пользователю {user_email} на {days} дней.', 'success')
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/revoke_license/<int:license_id>')
@@ -385,6 +341,7 @@ def admin_logout():
     session.pop('is_admin', None)
     return redirect(url_for('index'))
 
+# ---------- ЗАПУСК ----------
 if __name__ == '__main__':
     with app.app_context():
         init_db()
