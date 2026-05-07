@@ -1549,3 +1549,7 @@ body {
         display: flex;
     }
 }
+
+body.light-theme { background: #f5f5f5; color: #111; }
+body.light-theme .header { background: #fff; }
+body.light-theme .card-hover { background: #fff; border-color: #ddd; }
