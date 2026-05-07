@@ -300,7 +300,7 @@ def buy(product='miner'):
 # ---------- TG LEAD MINER (ОБНОВЛЁН) ----------
 @app.route('/miner')
 @login_required
-def miner_panel():
+def miner():
     db = get_db()
     miner_jobs = db.execute(
         "SELECT * FROM miner_jobs WHERE user_id = ? ORDER BY created_at DESC LIMIT 10",
@@ -317,7 +317,7 @@ def miner_collect():
                (current_user.id, link, 'В очереди', 0))
     db.commit()
     flash(f'Сбор из {link} добавлен в очередь.', 'success')
-    return redirect(url_for('miner_panel'))
+    return redirect(url_for('miner'))
 
 # ---------- АДМИН-ПАНЕЛЬ ----------
 @app.route('/admin')
