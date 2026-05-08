@@ -393,14 +393,18 @@ def admin_logout():
 # ---------- API ДЛЯ БОТА ВЕРИФИКАЦИИ ----------
 @app.route('/api/check_account')
 def api_check_account():
-    phone = request.args.get('phone', '').strip()
+    phone = request.args.get('phone', '').strip().replace(' ', '').replace('+', '')
     telegram_id = request.args.get('telegram_id', '').strip()
     
     db = get_db()
-    account = db.execute(
-        "SELECT * FROM sender_accounts WHERE phone = ? AND is_active = 0 LIMIT 1",
-        (phone,)
-    ).fetchone()
+    # Ищем по номеру без пробелов
+    all_accounts = db.execute("SELECT * FROM sender_accounts WHERE is_active = 0").fetchall()
+    account = None
+    for acc in all_accounts:
+        db_phone = acc['phone'].replace(' ', '').replace('+', '')
+        if db_phone == phone:
+            account = acc
+            break
     
     if not account:
         return jsonify({'error': 'Аккаунт не найден'}), 404
@@ -409,7 +413,7 @@ def api_check_account():
         'api_id': account['api_id'],
         'api_hash': account['api_hash']
     })
-
+    
 @app.route('/api/activate_account', methods=['POST'])
 def api_activate_account():
     data = request.get_json()
