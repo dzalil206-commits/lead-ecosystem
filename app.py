@@ -260,15 +260,16 @@ def sender_add_account():
         async def send_code():
             client = TelegramClient(f"sessions/temp_{current_user.id}", int(api_id), api_hash)
             await client.connect()
-            await client.send_code_request(phone)
+            result = await client.send_code_request(phone)
             await client.disconnect()
+            return result
 
         loop.run_until_complete(send_code())
         loop.close()
         return render_template('verify_code.html', phone=phone)
-        except Exception as e:
-           return f"<h1>ОШИБКА: {str(e)}</h1>", 500
-
+    except Exception as e:
+        return f"<h1>ОШИБКА: {str(e)}</h1>", 500
+        
 @app.route('/verify_code', methods=['POST'])
 @login_required
 def verify_code():
