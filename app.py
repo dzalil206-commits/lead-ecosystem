@@ -301,31 +301,34 @@ def miner_collect():
     link = request.form['link'].strip()
     db = get_db()
     
-    # Проверяем, есть ли у пользователя аккаунт для сбора
     account = db.execute("SELECT * FROM sender_accounts WHERE user_id = ? AND is_active = 1 LIMIT 1", (current_user.id,)).fetchone()
     if not account:
         flash('Сначала добавьте аккаунт в разделе «Аккаунты» кабинета. Нужны: номер телефона, API ID, API Hash.', 'error')
         return redirect(url_for('miner'))
     
-    # Запускаем сбор через Telethon
     try:
-        client = TelegramClient(f"sessions/{current_user.id}_{account['phone']}", int(account['api_id']), account['api_hash'])
-        await client.start()
+        async def collect():
+            client = TelegramClient(f"sessions/{current_user.id}_{account['phone']}", int(account['api_id']), account['api_hash'])
+            await client.start()
+            entity = await client.get_entity(link)
+            participants = await client.get_participants(entity, aggressive=True)
+            os.makedirs('results', exist_ok=True)
+            filename = f"results/{current_user.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+            count = 0
+            with open(filename, 'w', encoding='utf-8') as f:
+                for user in participants:
+                    if not user.bot:
+                        f.write(f"ID: {user.id} | @{user.username or 'нет'} | {user.first_name or ''}\n")
+                        count += 1
+            await client.disconnect()
+            return filename, count
         
-        entity = await client.get_entity(link)
-        participants = await client.get_participants(entity, aggressive=True)
-        
-        os.makedirs('results', exist_ok=True)
-        filename = f"results/{current_user.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-        
-        count = 0
-        with open(filename, 'w', encoding='utf-8') as f:
-            for user in participants:
-                if not user.bot:
-                    f.write(f"ID: {user.id} | @{user.username or 'нет'} | {user.first_name or ''}\n")
-                    count += 1
-        
-        await client.disconnect()
+        filename, count = asyncio.run(collect())
+        return send_file(filename, as_attachment=True, download_name=f"users_{count}.txt")
+    
+    except Exception as e:
+        flash(f'Ошибка сбора: {str(e)[:100]}', 'error')
+        return redirect(url_for('miner'))
         
         # Обновляем задачу в базе
         db.execute("UPDATE miner_jobs SET status = ?, leads_count = ? WHERE id = ?",
