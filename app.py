@@ -264,7 +264,7 @@ def sender_add_proxy():
                 request.form.get('password', '')))
     db.commit()
     flash('Прокси добавлен.', 'success')
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('dashboard', _anchor='sender'))
 
 # ---------- ПОКУПКА ----------
 @app.route('/buy/<product>', methods=['GET', 'POST'])
