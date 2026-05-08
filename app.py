@@ -251,27 +251,20 @@ def sender_add_account():
     session['temp_api_hash'] = api_hash
     
     try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
         async def send_code():
             client = TelegramClient(f"sessions/temp_{current_user.id}", int(api_id), api_hash)
             await client.connect()
             await client.send_code_request(phone)
             await client.disconnect()
-        asyncio.run(send_code())
+        
+        loop.run_until_complete(send_code())
+        loop.close()
         return render_template('verify_code.html', phone=phone)
     except Exception as e:
         flash(f'Ошибка отправки кода: {str(e)[:100]}', 'error')
-        return redirect(url_for('dashboard'))
-
-@app.route('/verify_code', methods=['POST'])
-@login_required
-def verify_code():
-    code = request.form['code'].strip()
-    phone = session.get('temp_phone')
-    api_id = session.get('temp_api_id')
-    api_hash = session.get('temp_api_hash')
-    
-    if not all([phone, api_id, api_hash]):
-        flash('Сессия истекла. Попробуйте снова.', 'error')
         return redirect(url_for('dashboard'))
     
     try:
