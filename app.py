@@ -417,16 +417,17 @@ def api_check_account():
 @app.route('/api/activate_account', methods=['POST'])
 def api_activate_account():
     data = request.get_json()
-    phone = data.get('phone', '').strip()
-    api_id = data.get('api_id', '').strip()
-    api_hash = data.get('api_hash', '').strip()
+    phone = data.get('phone', '').strip().replace(' ', '').replace('+', '')
     code = data.get('code', '').strip()
     
     db = get_db()
-    account = db.execute(
-        "SELECT * FROM sender_accounts WHERE phone = ? AND is_active = 0 LIMIT 1",
-        (phone,)
-    ).fetchone()
+    all_accounts = db.execute("SELECT * FROM sender_accounts WHERE is_active = 0").fetchall()
+    account = None
+    for acc in all_accounts:
+        db_phone = acc['phone'].replace(' ', '').replace('+', '')
+        if db_phone == phone:
+            account = acc
+            break
     
     if not account:
         return jsonify({'error': 'Аккаунт не найден'}), 404
@@ -434,7 +435,7 @@ def api_activate_account():
     db.execute("UPDATE sender_accounts SET is_active = 1 WHERE id = ?", (account['id'],))
     db.commit()
     
-    return jsonify({'success': True, 'message': f'Аккаунт {phone} активирован!'})
+    return jsonify({'success': True, 'message': f'Аккаунт {acc["phone"]} активирован!'})
     
 # ---------- ЗАПУСК ----------
 if __name__ == '__main__':
