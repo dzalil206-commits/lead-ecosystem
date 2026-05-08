@@ -244,12 +244,59 @@ def sender_add_account():
     phone = request.form['phone'].strip()
     api_id = request.form['api_id'].strip()
     api_hash = request.form['api_hash'].strip()
-    db = get_db()
-    db.execute("INSERT INTO sender_accounts (user_id, phone, api_id, api_hash) VALUES (?, ?, ?, ?)",
-               (current_user.id, phone, api_id, api_hash))
-    db.commit()
-    flash(f'Аккаунт {phone} добавлен.', 'info')
-    return redirect(url_for('dashboard'))
+    
+    # Сохраняем во временную сессию
+    session['temp_phone'] = phone
+    session['temp_api_id'] = api_id
+    session['temp_api_hash'] = api_hash
+    
+    try:
+        async def send_code():
+            client = TelegramClient(f"sessions/temp_{current_user.id}", int(api_id), api_hash)
+            await client.connect()
+            await client.send_code_request(phone)
+            await client.disconnect()
+        asyncio.run(send_code())
+        return render_template('verify_code.html', phone=phone)
+    except Exception as e:
+        flash(f'Ошибка отправки кода: {str(e)[:100]}', 'error')
+        return redirect(url_for('dashboard'))
+
+@app.route('/verify_code', methods=['POST'])
+@login_required
+def verify_code():
+    code = request.form['code'].strip()
+    phone = session.get('temp_phone')
+    api_id = session.get('temp_api_id')
+    api_hash = session.get('temp_api_hash')
+    
+    if not all([phone, api_id, api_hash]):
+        flash('Сессия истекла. Попробуйте снова.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        async def sign_in():
+            client = TelegramClient(f"sessions/{current_user.id}_{phone}", int(api_id), api_hash)
+            await client.connect()
+            await client.sign_in(phone, code)
+            await client.disconnect()
+        
+        asyncio.run(sign_in())
+        
+        db = get_db()
+        db.execute("INSERT INTO sender_accounts (user_id, phone, api_id, api_hash, session_file, is_active) VALUES (?, ?, ?, ?, ?, 1)",
+                   (current_user.id, phone, api_id, api_hash, f"sessions/{current_user.id}_{phone}"))
+        db.commit()
+        
+        session.pop('temp_phone', None)
+        session.pop('temp_api_id', None)
+        session.pop('temp_api_hash', None)
+        
+        flash(f'Аккаунт {phone} успешно добавлен!', 'success')
+        return redirect(url_for('dashboard'))
+    except Exception as e:
+        flash(f'Ошибка подтверждения: {str(e)[:100]}', 'error')
+        return redirect(url_for('dashboard'))
 
 @app.route('/sender_add_proxy', methods=['POST'])
 @login_required
