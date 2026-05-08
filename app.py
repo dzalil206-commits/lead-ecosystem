@@ -1,6 +1,6 @@
 import os, sqlite3, random, string, io, asyncio, threading
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, url_for, flash, session, g, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, session, g, send_file, jsonify
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from telethon import TelegramClient
@@ -445,6 +445,52 @@ def admin_revoke_license(license_id):
 def admin_logout():
     session.pop('is_admin', None)
     return redirect(url_for('index'))
+
+# ---------- API ДЛЯ БОТА ВЕРИФИКАЦИИ ----------
+@app.route('/api/check_account')
+def api_check_account():
+    phone = request.args.get('phone', '').strip()
+    telegram_id = request.args.get('telegram_id', '').strip()
+    
+    db = get_db()
+    account = db.execute(
+        "SELECT * FROM sender_accounts WHERE phone = ? AND is_active = 0 LIMIT 1",
+        (phone,)
+    ).fetchone()
+    
+    if not account:
+        return jsonify({'error': 'Аккаунт не найден'}), 404
+    
+    return jsonify({
+        'api_id': account['api_id'],
+        'api_hash': account['api_hash']
+    })
+
+@app.route('/api/activate_account', methods=['POST'])
+def api_activate_account():
+    data = request.get_json()
+    phone = data.get('phone', '').strip()
+    api_id = data.get('api_id', '').strip()
+    api_hash = data.get('api_hash', '').strip()
+    code = data.get('code', '').strip()
+    
+    db = get_db()
+    account = db.execute(
+        "SELECT * FROM sender_accounts WHERE phone = ? AND is_active = 0 LIMIT 1",
+        (phone,)
+    ).fetchone()
+    
+    if not account:
+        return jsonify({'error': 'Аккаунт не найден'}), 404
+    
+    # Активируем аккаунт без Telethon — просто ставим флаг
+    db.execute("UPDATE sender_accounts SET is_active = 1 WHERE id = ?", (account['id'],))
+    db.commit()
+    
+    return jsonify({'success': True, 'message': f'Аккаунт {phone} активирован!'})
+
+# Импорт jsonify нужно добавить в начало файла:
+# from flask import Flask, render_template, request, redirect, url_for, flash, session, g, send_file, jsonify
 
 # ---------- ЗАПУСК ----------
 if __name__ == '__main__':
