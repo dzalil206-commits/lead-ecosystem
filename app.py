@@ -247,70 +247,14 @@ def sender_add_account():
     phone = request.form['phone'].strip()
     api_id = request.form['api_id'].strip()
     api_hash = request.form['api_hash'].strip()
-    user_id = current_user.id
-
-    session['temp_phone'] = phone
-    session['temp_api_id'] = api_id
-    session['temp_api_hash'] = api_hash
-
-    def send_code_in_thread():
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        async def send():
-            client = TelegramClient(f"sessions/temp_{user_id}", int(api_id), api_hash)
-            await client.connect()
-            await client.send_code_request(phone)
-            await client.disconnect()
-        loop.run_until_complete(send())
-        loop.close()
-
-    try:
-        thread = threading.Thread(target=send_code_in_thread)
-        thread.start()
-        thread.join(timeout=15)
-        return render_template('verify_code.html', phone=phone)
-    except Exception as e:
-        return f"<h1>ОШИБКА: {str(e)}</h1>", 500
-
-@app.route('/verify_code', methods=['POST'])
-@login_required
-def verify_code():
-    code = request.form['code'].strip()
-    phone = session.get('temp_phone')
-    api_id = session.get('temp_api_id')
-    api_hash = session.get('temp_api_hash')
-
-    if not all([phone, api_id, api_hash]):
-        flash('Сессия истекла. Попробуйте снова.', 'error')
-        return redirect(url_for('dashboard'))
-
-    try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-        async def sign_in():
-            client = TelegramClient(f"sessions/{current_user.id}_{phone}", int(api_id), api_hash)
-            await client.connect()
-            await client.sign_in(phone, code)
-            await client.disconnect()
-
-        loop.run_until_complete(sign_in())
-        loop.close()
-
-        db = get_db()
-        db.execute("INSERT INTO sender_accounts (user_id, phone, api_id, api_hash, session_file, is_active) VALUES (?, ?, ?, ?, ?, 1)",
-                   (current_user.id, phone, api_id, api_hash, f"sessions/{current_user.id}_{phone}"))
-        db.commit()
-
-        session.pop('temp_phone', None)
-        session.pop('temp_api_id', None)
-        session.pop('temp_api_hash', None)
-
-        flash(f'Аккаунт {phone} успешно активирован!', 'success')
-        return redirect(url_for('dashboard'))
-    except Exception as e:
-        flash(f'Ошибка подтверждения: {str(e)[:100]}', 'error')
-        return redirect(url_for('dashboard'))
+    
+    db = get_db()
+    db.execute("INSERT INTO sender_accounts (user_id, phone, api_id, api_hash, is_active) VALUES (?, ?, ?, ?, 0)",
+               (current_user.id, phone, api_id, api_hash))
+    db.commit()
+    
+    flash(f'Аккаунт {phone} добавлен. Для активации откройте бота @TGLeadWareonVerifBot и отправьте /verify', 'info')
+    return redirect(url_for('dashboard'))
 
 @app.route('/sender_add_proxy', methods=['POST'])
 @login_required
