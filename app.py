@@ -287,7 +287,7 @@ def buy(product='miner'):
                            amount_usdt=15 if product == 'sender' else 8,
                            usdt_wallet=USDT_WALLET)
 
-# ---------- MINER (реальный сбор) ----------
+# ---------- MINER (реальный сбор через Telethon) ----------
 @app.route('/miner')
 @login_required
 def miner():
@@ -304,16 +304,39 @@ def miner_collect():
     # Проверяем, есть ли у пользователя аккаунт для сбора
     account = db.execute("SELECT * FROM sender_accounts WHERE user_id = ? AND is_active = 1 LIMIT 1", (current_user.id,)).fetchone()
     if not account:
-        flash('Сначала добавьте аккаунт в разделе «Аккаунты» кабинета.', 'error')
+        flash('Сначала добавьте аккаунт в разделе «Аккаунты» кабинета. Нужны: номер телефона, API ID, API Hash.', 'error')
         return redirect(url_for('miner'))
     
-    # Запускаем сбор в фоне
-    job_id = db.execute("INSERT INTO miner_jobs (user_id, source_link, status, leads_count) VALUES (?, ?, ?, ?)",
-               (current_user.id, link, 'Выполняется', 0)).lastrowid
-    db.commit()
+    # Запускаем сбор через Telethon
+    try:
+        client = TelegramClient(f"sessions/{current_user.id}_{account['phone']}", int(account['api_id']), account['api_hash'])
+        await client.start()
+        
+        entity = await client.get_entity(link)
+        participants = await client.get_participants(entity, aggressive=True)
+        
+        os.makedirs('results', exist_ok=True)
+        filename = f"results/{current_user.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        
+        count = 0
+        with open(filename, 'w', encoding='utf-8') as f:
+            for user in participants:
+                if not user.bot:
+                    f.write(f"ID: {user.id} | @{user.username or 'нет'} | {user.first_name or ''}\n")
+                    count += 1
+        
+        await client.disconnect()
+        
+        # Обновляем задачу в базе
+        db.execute("UPDATE miner_jobs SET status = ?, leads_count = ? WHERE id = ?",
+                   ('Завершено', count, db.execute("SELECT id FROM miner_jobs WHERE user_id = ? AND source_link = ? AND status = 'Выполняется' ORDER BY created_at DESC LIMIT 1", (current_user.id, link)).fetchone()['id']))
+        db.commit()
+        
+        return send_file(filename, as_attachment=True, download_name=f"users_{count}.txt")
     
-    flash(f'Сбор из {link} запущен. Результат появится в списке задач.', 'success')
-    return redirect(url_for('miner'))
+    except Exception as e:
+        flash(f'Ошибка сбора: {str(e)[:100]}', 'error')
+        return redirect(url_for('miner'))
 
 # ---------- МАГАЗИН ПРОКСИ ----------
 @app.route('/buy_proxy')
