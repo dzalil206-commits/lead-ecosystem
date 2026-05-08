@@ -5,7 +5,6 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from werkzeug.security import generate_password_hash, check_password_hash
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
-import qrcode
 import requests
 
 # ---------- НАСТРОЙКИ ----------
@@ -178,6 +177,10 @@ def checklist_download():
     email = request.form.get('email', '')
     return send_file('static/checklist.pdf', as_attachment=True)
 
+@app.route('/generator')
+def generator():
+    return render_template('generator.html')
+
 # ---------- РЕГИСТРАЦИЯ / ВХОД ----------
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -238,44 +241,82 @@ def dashboard():
                            sender_accounts=sender_accounts,
                            proxies=proxies)
 
+# ---------- ДОБАВЛЕНИЕ АККАУНТА (с кодом подтверждения) ----------
 @app.route('/sender_add_account', methods=['POST'])
 @login_required
 def sender_add_account():
     phone = request.form['phone'].strip()
     api_id = request.form['api_id'].strip()
     api_hash = request.form['api_hash'].strip()
-    
+
     session['temp_phone'] = phone
     session['temp_api_id'] = api_id
     session['temp_api_hash'] = api_hash
-    
+
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        
+
         async def send_code():
             client = TelegramClient(f"sessions/temp_{current_user.id}", int(api_id), api_hash)
             await client.connect()
             await client.send_code_request(phone)
             await client.disconnect()
-        
+
         loop.run_until_complete(send_code())
         loop.close()
         return render_template('verify_code.html', phone=phone)
-            except Exception as e:
-        return f"<h1>ОШИБКА: {str(e)}</h1>", 500
-        
+    except Exception as e:
+        flash(f'Ошибка отправки кода: {str(e)[:100]}', 'error')
+        return redirect(url_for('dashboard'))
+
+@app.route('/verify_code', methods=['POST'])
+@login_required
+def verify_code():
+    code = request.form['code'].strip()
+    phone = session.get('temp_phone')
+    api_id = session.get('temp_api_id')
+    api_hash = session.get('temp_api_hash')
+
+    if not all([phone, api_id, api_hash]):
+        flash('Сессия истекла. Попробуйте снова.', 'error')
+        return redirect(url_for('dashboard'))
+
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        async def sign_in():
+            client = TelegramClient(f"sessions/{current_user.id}_{phone}", int(api_id), api_hash)
+            await client.connect()
+            await client.sign_in(phone, code)
+            await client.disconnect()
+
+        loop.run_until_complete(sign_in())
+        loop.close()
+
+        db = get_db()
+        db.execute("INSERT INTO sender_accounts (user_id, phone, api_id, api_hash, session_file, is_active) VALUES (?, ?, ?, ?, ?, 1)",
+                   (current_user.id, phone, api_id, api_hash, f"sessions/{current_user.id}_{phone}"))
+        db.commit()
+
+        session.pop('temp_phone', None)
+        session.pop('temp_api_id', None)
+        session.pop('temp_api_hash', None)
+
+        flash(f'Аккаунт {phone} успешно добавлен!', 'success')
+        return redirect(url_for('dashboard'))
+    except Exception as e:
+        flash(f'Ошибка подтверждения: {str(e)[:100]}', 'error')
+        return redirect(url_for('dashboard'))
+
 @app.route('/sender_add_proxy', methods=['POST'])
 @login_required
 def sender_add_proxy():
     db = get_db()
     db.execute("INSERT INTO proxies (user_id, type, host, port, username, password) VALUES (?, ?, ?, ?, ?, ?)",
-               (current_user.id,
-                request.form['type'],
-                request.form['host'],
-                int(request.form['port']),
-                request.form.get('username', ''),
-                request.form.get('password', '')))
+               (current_user.id, request.form['type'], request.form['host'],
+                int(request.form['port']), request.form.get('username', ''), request.form.get('password', '')))
     db.commit()
     flash('Прокси добавлен.', 'success')
     return redirect(url_for('dashboard', _anchor='sender'))
@@ -294,14 +335,14 @@ def buy(product='miner'):
         db.execute("INSERT INTO payments (user_id, product, amount) VALUES (?, ?, ?)",
                    (current_user.id, product, amount_rub))
         db.commit()
-        flash('Платёж зафиксирован. Ожидайте активацию лицензии.', 'success')
+        flash('Платёж зафиксирован.', 'success')
         return redirect(url_for('dashboard'))
     return render_template('buy.html', product=product, selected_plan='Pro', billing_period='1 месяц',
                            amount_rub=990 if product == 'sender' else 490,
                            amount_usdt=15 if product == 'sender' else 8,
                            usdt_wallet=USDT_WALLET)
 
-# ---------- MINER (реальный сбор через Telethon) ----------
+# ---------- MINER ----------
 @app.route('/miner')
 @login_required
 def miner():
@@ -314,16 +355,13 @@ def miner():
 def miner_collect():
     link = request.form['link'].strip()
     db = get_db()
-    
     account = db.execute("SELECT * FROM sender_accounts WHERE user_id = ? AND is_active = 1 LIMIT 1", (current_user.id,)).fetchone()
     if not account:
-        flash('Сначала добавьте аккаунт в разделе «Аккаунты» кабинета.', 'error')
+        flash('Сначала добавьте аккаунт.', 'error')
         return redirect(url_for('miner'))
-    
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        
         async def collect():
             client = TelegramClient(f"sessions/{current_user.id}_{account['phone']}", int(account['api_id']), account['api_hash'])
             await client.start()
@@ -339,21 +377,18 @@ def miner_collect():
                         count += 1
             await client.disconnect()
             return filename, count
-        
         filename, count = loop.run_until_complete(collect())
         loop.close()
         return send_file(filename, as_attachment=True, download_name=f"users_{count}.txt")
-    
     except Exception as e:
         flash(f'Ошибка сбора: {str(e)[:100]}', 'error')
         return redirect(url_for('miner'))
-        
+
 # ---------- МАГАЗИН ПРОКСИ ----------
 @app.route('/buy_proxy')
 @login_required
 def buy_proxy():
     db = get_db()
-    # Показываем прокси пул
     available = db.execute("SELECT COUNT(*) FROM proxy_pool WHERE is_sold = 0").fetchone()[0]
     return render_template('buy_proxy.html', available_count=available, price_per_proxy=150)
 
@@ -362,23 +397,17 @@ def buy_proxy():
 def buy_proxy_checkout():
     db = get_db()
     quantity = int(request.form.get('quantity', 1))
-    # Находим свободные прокси
     proxies = db.execute("SELECT id, host, port, type, username, password FROM proxy_pool WHERE is_sold = 0 LIMIT ?", (quantity,)).fetchall()
-    
     if len(proxies) < quantity:
-        flash('Недостаточно прокси в наличии. Обратитесь в поддержку.', 'error')
+        flash('Недостаточно прокси.', 'error')
         return redirect(url_for('buy_proxy'))
-    
-    # Продаём прокси
     for proxy in proxies:
         db.execute("UPDATE proxy_pool SET is_sold = 1, sold_to = ?, sold_at = ? WHERE id = ?",
                    (current_user.id, datetime.now(), proxy['id']))
-        # Добавляем прокси в аккаунт пользователя
         db.execute("INSERT INTO proxies (user_id, type, host, port, username, password, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)",
                    (current_user.id, proxy['type'], proxy['host'], proxy['port'], proxy['username'], proxy['password']))
-    
     db.commit()
-    flash(f'Куплено {len(proxies)} прокси! Они уже добавлены в ваш аккаунт.', 'success')
+    flash(f'Куплено {len(proxies)} прокси!', 'success')
     return redirect(url_for('dashboard'))
 
 # ---------- АДМИН-ПАНЕЛЬ ----------
@@ -411,7 +440,7 @@ def admin_give_license():
     db = get_db()
     user_row = db.execute("SELECT id FROM users WHERE email = ?", (user_email,)).fetchone()
     if not user_row:
-        flash('Пользователь с таким email не найден.', 'error')
+        flash('Пользователь не найден.', 'error')
         return redirect(url_for('admin_dashboard'))
     user_id = user_row['id']
     license_key = generate_license_key()
