@@ -271,6 +271,46 @@ def sender_add_account():
     except Exception as e:
         return f"<h1>ОШИБКА: {str(e)}</h1>", 500
 
+@app.route('/verify_code', methods=['POST'])
+@login_required
+def verify_code():
+    code = request.form['code'].strip()
+    phone = session.get('temp_phone')
+    api_id = session.get('temp_api_id')
+    api_hash = session.get('temp_api_hash')
+
+    if not all([phone, api_id, api_hash]):
+        flash('Сессия истекла. Попробуйте снова.', 'error')
+        return redirect(url_for('dashboard'))
+
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        async def sign_in():
+            client = TelegramClient(f"sessions/{current_user.id}_{phone}", int(api_id), api_hash)
+            await client.connect()
+            await client.sign_in(phone, code)
+            await client.disconnect()
+
+        loop.run_until_complete(sign_in())
+        loop.close()
+
+        db = get_db()
+        db.execute("INSERT INTO sender_accounts (user_id, phone, api_id, api_hash, session_file, is_active) VALUES (?, ?, ?, ?, ?, 1)",
+                   (current_user.id, phone, api_id, api_hash, f"sessions/{current_user.id}_{phone}"))
+        db.commit()
+
+        session.pop('temp_phone', None)
+        session.pop('temp_api_id', None)
+        session.pop('temp_api_hash', None)
+
+        flash(f'Аккаунт {phone} успешно активирован!', 'success')
+        return redirect(url_for('dashboard'))
+    except Exception as e:
+        flash(f'Ошибка подтверждения: {str(e)[:100]}', 'error')
+        return redirect(url_for('dashboard'))
+
 @app.route('/sender_add_proxy', methods=['POST'])
 @login_required
 def sender_add_proxy():
