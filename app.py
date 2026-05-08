@@ -262,8 +262,8 @@ def sender_add_account():
         loop.run_until_complete(send_code())
         loop.close()
         return render_template('verify_code.html', phone=phone)
-    except Exception as e:
-        flash(f'Ошибка отправки кода: {str(e)[:100]}', 'error')
+        except Exception as e:
+        return f"ОШИБКА: {str(e)}", 500
         return redirect(url_for('dashboard'))
         
 @app.route('/sender_add_proxy', methods=['POST'])
