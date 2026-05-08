@@ -1549,3 +1549,7 @@ body {
         display: flex;
     }
 }
+
+.favicon-rounded {
+    border-radius: 12px;
+}
