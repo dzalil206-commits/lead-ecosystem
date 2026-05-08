@@ -1,4 +1,4 @@
-import os, sqlite3, random, string, io, asyncio
+import os, sqlite3, random, string, io, asyncio, threading
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, session, g, send_file
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -247,12 +247,29 @@ def sender_add_account():
     phone = request.form['phone'].strip()
     api_id = request.form['api_id'].strip()
     api_hash = request.form['api_hash'].strip()
-    db = get_db()
-    db.execute("INSERT INTO sender_accounts (user_id, phone, api_id, api_hash) VALUES (?, ?, ?, ?)",
-               (current_user.id, phone, api_id, api_hash))
-    db.commit()
-    flash(f'Аккаунт {phone} добавлен. Для активации введите код из Telegram.', 'info')
-    return redirect(url_for('dashboard'))
+
+    session['temp_phone'] = phone
+    session['temp_api_id'] = api_id
+    session['temp_api_hash'] = api_hash
+
+    def send_code_in_thread():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        async def send():
+            client = TelegramClient(f"sessions/temp_{current_user.id}", int(api_id), api_hash)
+            await client.connect()
+            await client.send_code_request(phone)
+            await client.disconnect()
+        loop.run_until_complete(send())
+        loop.close()
+
+    try:
+        thread = threading.Thread(target=send_code_in_thread)
+        thread.start()
+        thread.join(timeout=15)
+        return render_template('verify_code.html', phone=phone)
+    except Exception as e:
+        return f"<h1>ОШИБКА: {str(e)}</h1>", 500
 
 @app.route('/sender_add_proxy', methods=['POST'])
 @login_required
