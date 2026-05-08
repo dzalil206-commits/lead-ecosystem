@@ -267,9 +267,8 @@ def sender_add_account():
         loop.close()
         return render_template('verify_code.html', phone=phone)
     except Exception as e:
-        flash(f'Ошибка отправки кода: {str(e)[:100]}', 'error')
-        return redirect(url_for('dashboard'))
-
+        return f"<h1>ОШИБКА: {str(e)}</h1>", 500
+        
 @app.route('/verify_code', methods=['POST'])
 @login_required
 def verify_code():
