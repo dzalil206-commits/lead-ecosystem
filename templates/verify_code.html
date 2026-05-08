@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Подтверждение кода — TG Lead Wareon</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body class="page-dark">
+<div class="auth-wrapper">
+    <div class="auth-card glass">
+        <h1>📩 Код отправлен</h1>
+        <p class="auth-subtitle">На номер <strong>{{ phone }}</strong> отправлен код подтверждения. Введите его ниже.</p>
+        <form method="POST" action="{{ url_for('verify_code') }}" class="auth-form">
+            <div class="field">
+                <label>Код из Telegram</label>
+                <input name="code" type="text" required placeholder="12345">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Подтвердить</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>
