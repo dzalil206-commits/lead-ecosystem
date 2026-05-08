@@ -266,8 +266,8 @@ def sender_add_account():
         loop.run_until_complete(send_code())
         loop.close()
         return render_template('verify_code.html', phone=phone)
-         except Exception as e:
-        return f"<h1>ОШИБКА: {str(e)}</h1>", 500
+        except Exception as e:
+           return f"<h1>ОШИБКА: {str(e)}</h1>", 500
 
 @app.route('/verify_code', methods=['POST'])
 @login_required
