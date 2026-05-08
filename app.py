@@ -247,6 +247,7 @@ def sender_add_account():
     phone = request.form['phone'].strip()
     api_id = request.form['api_id'].strip()
     api_hash = request.form['api_hash'].strip()
+    user_id = current_user.id
 
     session['temp_phone'] = phone
     session['temp_api_id'] = api_id
@@ -256,7 +257,7 @@ def sender_add_account():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         async def send():
-            client = TelegramClient(f"sessions/temp_{current_user.id}", int(api_id), api_hash)
+            client = TelegramClient(f"sessions/temp_{user_id}", int(api_id), api_hash)
             await client.connect()
             await client.send_code_request(phone)
             await client.disconnect()
