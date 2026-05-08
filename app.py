@@ -245,7 +245,6 @@ def sender_add_account():
     api_id = request.form['api_id'].strip()
     api_hash = request.form['api_hash'].strip()
     
-    # Сохраняем во временную сессию
     session['temp_phone'] = phone
     session['temp_api_id'] = api_id
     session['temp_api_hash'] = api_hash
@@ -266,31 +265,6 @@ def sender_add_account():
     except Exception as e:
         flash(f'Ошибка отправки кода: {str(e)[:100]}', 'error')
         return redirect(url_for('dashboard'))
-    
-    try:
-        async def sign_in():
-            client = TelegramClient(f"sessions/{current_user.id}_{phone}", int(api_id), api_hash)
-            await client.connect()
-            await client.sign_in(phone, code)
-            await client.disconnect()
-        
-        asyncio.run(sign_in())
-        
-        db = get_db()
-        db.execute("INSERT INTO sender_accounts (user_id, phone, api_id, api_hash, session_file, is_active) VALUES (?, ?, ?, ?, ?, 1)",
-                   (current_user.id, phone, api_id, api_hash, f"sessions/{current_user.id}_{phone}"))
-        db.commit()
-        
-        session.pop('temp_phone', None)
-        session.pop('temp_api_id', None)
-        session.pop('temp_api_hash', None)
-        
-        flash(f'Аккаунт {phone} успешно добавлен!', 'success')
-        return redirect(url_for('dashboard'))
-    except Exception as e:
-        flash(f'Ошибка подтверждения: {str(e)[:100]}', 'error')
-        return redirect(url_for('dashboard'))
-
 @app.route('/sender_add_proxy', methods=['POST'])
 @login_required
 def sender_add_proxy():
