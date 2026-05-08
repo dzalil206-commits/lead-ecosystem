@@ -427,15 +427,11 @@ def api_activate_account():
     if not account:
         return jsonify({'error': 'Аккаунт не найден'}), 404
     
-    # Активируем аккаунт без Telethon — просто ставим флаг
     db.execute("UPDATE sender_accounts SET is_active = 1 WHERE id = ?", (account['id'],))
     db.commit()
     
     return jsonify({'success': True, 'message': f'Аккаунт {phone} активирован!'})
-
-# Импорт jsonify нужно добавить в начало файла:
-# from flask import Flask, render_template, request, redirect, url_for, flash, session, g, send_file, jsonify
-
+    
 # ---------- ЗАПУСК ----------
 if __name__ == '__main__':
     with app.app_context():
