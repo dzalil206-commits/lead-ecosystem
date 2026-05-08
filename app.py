@@ -265,6 +265,7 @@ def sender_add_account():
     except Exception as e:
         flash(f'Ошибка отправки кода: {str(e)[:100]}', 'error')
         return redirect(url_for('dashboard'))
+        
 @app.route('/sender_add_proxy', methods=['POST'])
 @login_required
 def sender_add_proxy():
@@ -317,10 +318,13 @@ def miner_collect():
     
     account = db.execute("SELECT * FROM sender_accounts WHERE user_id = ? AND is_active = 1 LIMIT 1", (current_user.id,)).fetchone()
     if not account:
-        flash('Сначала добавьте аккаунт в разделе «Аккаунты» кабинета. Нужны: номер телефона, API ID, API Hash.', 'error')
+        flash('Сначала добавьте аккаунт в разделе «Аккаунты» кабинета.', 'error')
         return redirect(url_for('miner'))
     
     try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
         async def collect():
             client = TelegramClient(f"sessions/{current_user.id}_{account['phone']}", int(account['api_id']), account['api_hash'])
             await client.start()
@@ -337,24 +341,14 @@ def miner_collect():
             await client.disconnect()
             return filename, count
         
-        filename, count = asyncio.run(collect())
+        filename, count = loop.run_until_complete(collect())
+        loop.close()
         return send_file(filename, as_attachment=True, download_name=f"users_{count}.txt")
     
     except Exception as e:
         flash(f'Ошибка сбора: {str(e)[:100]}', 'error')
         return redirect(url_for('miner'))
         
-        # Обновляем задачу в базе
-        db.execute("UPDATE miner_jobs SET status = ?, leads_count = ? WHERE id = ?",
-                   ('Завершено', count, db.execute("SELECT id FROM miner_jobs WHERE user_id = ? AND source_link = ? AND status = 'Выполняется' ORDER BY created_at DESC LIMIT 1", (current_user.id, link)).fetchone()['id']))
-        db.commit()
-        
-        return send_file(filename, as_attachment=True, download_name=f"users_{count}.txt")
-    
-    except Exception as e:
-        flash(f'Ошибка сбора: {str(e)[:100]}', 'error')
-        return redirect(url_for('miner'))
-
 # ---------- МАГАЗИН ПРОКСИ ----------
 @app.route('/buy_proxy')
 @login_required
