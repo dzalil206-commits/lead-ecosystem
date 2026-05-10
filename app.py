@@ -219,6 +219,16 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+@app.route('/admin/activate_user/<int:user_id>')
+def admin_activate_user(user_id):
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
+    db = get_db()
+    db.execute("UPDATE sender_accounts SET is_active = 1 WHERE user_id = ?", (user_id,))
+    db.commit()
+    flash('Все аккаунты пользователя активированы.', 'success')
+    return redirect(url_for('admin_dashboard'))
+
 # ---------- ЛИЧНЫЙ КАБИНЕТ ----------
 @app.route('/dashboard')
 @login_required
