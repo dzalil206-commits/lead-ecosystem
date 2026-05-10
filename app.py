@@ -446,6 +446,32 @@ def api_activate_account():
     db.commit()
     
     return jsonify({'success': True, 'message': f'Аккаунт {acc["phone"]} активирован!'})
+
+# ---------- API ДЛЯ ЗАГРУЗКИ СЕССИЙ ----------
+@app.route('/api/download_db')
+def api_download_db():
+    if not session.get('is_admin'):
+        return jsonify({'error': 'Доступ запрещён'}), 403
+    return send_file('lead_ecosystem.db', as_attachment=True)
+
+@app.route('/api/upload_session', methods=['POST'])
+def api_upload_session():
+    phone = request.form.get('phone', '').strip()
+    account_id = request.form.get('account_id', '').strip()
+    
+    if 'session_file' not in request.files:
+        return jsonify({'error': 'Файл сессии не найден'}), 400
+    
+    file = request.files['session_file']
+    os.makedirs('sessions', exist_ok=True)
+    file.save(f'sessions/{phone}.session')
+    
+    db = get_db()
+    db.execute("UPDATE sender_accounts SET is_active = 1, session_file = ? WHERE id = ?",
+               (f'sessions/{phone}.session', account_id))
+    db.commit()
+    
+    return jsonify({'success': True, 'message': f'Сессия {phone} загружена и аккаунт активирован!'})
     
 # ---------- ЗАПУСК ----------
 if __name__ == '__main__':
