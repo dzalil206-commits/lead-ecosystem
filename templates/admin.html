@@ -49,33 +49,33 @@
     <!-- Активные лицензии -->
     <div class="glass" style="padding:20px;border-radius:18px;margin-bottom:20px;">
         <h2 style="font-size:18px;margin-bottom:16px;">📋 Лицензии (последние 20)</h2>
-        <table class="data-table" style="width:100%;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Ключ</th>
-                    <th>Продукт</th>
-                    <th>Истекает</th>
-                    <th>Статус</th>
+                    <th style="text-align:left;padding:8px;color:var(--text-muted);">ID</th>
+                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Ключ</th>
+                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Продукт</th>
+                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Истекает</th>
+                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Статус</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
                 {% for lic in licenses %}
                 <tr>
-                    <td>{{ lic.id }}</td>
-                    <td><code style="font-size:11px;">{{ lic.license_key[:16] }}...</code></td>
-                    <td>{{ lic.product }}</td>
-                    <td>{{ lic.expires_at[:10] }}</td>
-                    <td>
-                        {% if lic.is_active and lic.expires_at > datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S') %}
+                    <td style="padding:8px;">{{ lic.id }}</td>
+                    <td style="padding:8px;"><code style="font-size:11px;">{{ lic.license_key[:16] }}...</code></td>
+                    <td style="padding:8px;">{{ lic.product }}</td>
+                    <td style="padding:8px;">{{ lic.expires_at[:10] }}</td>
+                    <td style="padding:8px;">
+                        {% if lic.is_active %}
                             <span style="color:#3be88c;">Активна</span>
                         {% else %}
                             <span style="color:#ff6b6b;">Неактивна</span>
                         {% endif %}
                     </td>
-                    <td>
-                        <a href="{{ url_for('admin_revoke_license', license_id=lic.id) }}" class="btn btn-ghost btn-sm" style="color:#ff6b6b;font-size:11px;">Отозвать</a>
+                    <td style="padding:8px;">
+                        <a href="{{ url_for('admin_revoke_license', license_id=lic.id) }}" style="color:#ff6b6b;font-size:11px;">Отозвать</a>
                     </td>
                 </tr>
                 {% else %}
@@ -87,21 +87,30 @@
 
     <!-- Пользователи -->
     <div class="glass" style="padding:20px;border-radius:18px;">
-        <h2 style="font-size:18px;margin-bottom:16px;">👥 Пользователи (последние 20)</h2>
-        <table class="data-table" style="width:100%;">
+        <h2 style="font-size:18px;margin-bottom:16px;">👥 Пользователи</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
-                <tr><th>ID</th><th>Email</th><th>Имя</th><th>Дата регистрации</th></tr>
+                <tr>
+                    <th style="text-align:left;padding:8px;color:var(--text-muted);">ID</th>
+                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Email</th>
+                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Имя</th>
+                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Дата</th>
+                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Действия</th>
+                </tr>
             </thead>
             <tbody>
                 {% for user in users %}
                 <tr>
-                    <td>{{ user.id }}</td>
-                    <td>{{ user.email }}</td>
-                    <td>{{ user.full_name or '—' }}</td>
-                    <td>{{ user.created_at[:10] }}</td>
+                    <td style="padding:8px;">{{ user.id }}</td>
+                    <td style="padding:8px;">{{ user.email }}</td>
+                    <td style="padding:8px;">{{ user.full_name or '—' }}</td>
+                    <td style="padding:8px;">{{ user.created_at[:10] }}</td>
+                    <td style="padding:8px;">
+                        <a href="{{ url_for('admin_activate_user', user_id=user.id) }}" style="color:var(--accent-light);font-size:12px;">Активировать</a>
+                    </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Нет пользователей</td></tr>
+                <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Нет пользователей</td></tr>
                 {% endfor %}
             </tbody>
         </table>
