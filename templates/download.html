@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Скачать — TG Lead Wareon</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body class="page-dark">
+<header class="site-header">
+    <div class="container header-inner">
+        <a href="{{ url_for('index') }}" class="logo">
+            <span class="logo-mark">TG</span>
+            <span class="logo-text">Lead Wareon</span>
+        </a>
+        <nav class="nav-main">
+            <a href="{{ url_for('index') }}">Главная</a>
+            <a href="{{ url_for('pricing') }}">Тарифы</a>
+            <a href="{{ url_for('support') }}">Поддержка</a>
+        </nav>
+        <div class="header-actions">
+            <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">Войти</a>
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Регистрация</a>
+        </div>
+    </div>
+</header>
+
+<main class="section">
+    <div class="container" style="max-width:600px;margin:0 auto;">
+        <h1 style="text-align:center;margin-bottom:8px;">📥 Скачать TG Lead Miner</h1>
+        <p style="text-align:center;color:var(--text-muted);margin-bottom:32px;">Десктопное приложение для сбора аудитории Telegram. Работает на Windows 10/11.</p>
+
+        <div class="glass" style="padding:32px;border-radius:18px;text-align:center;margin-bottom:20px;">
+            <div style="font-size:48px;margin-bottom:16px;">💻</div>
+            <h2 style="margin-bottom:8px;">TG Lead Miner Desktop</h2>
+            <p style="color:var(--text-muted);font-size:14px;margin-bottom:20px;">Версия 1.0 | Windows 10/11 | 15 МБ</p>
+            
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-muted);margin-bottom:20px;text-align:left;">
+                <div>✅ Сбор участников из чатов и каналов</div>
+                <div>✅ Фильтрация ботов</div>
+                <div>✅ Экспорт в TXT</div>
+                <div>✅ Проверка лицензии через сайт</div>
+                <div>✅ Современный интерфейс</div>
+            </div>
+
+            <a href="#" class="btn btn-primary btn-lg" style="opacity:0.6;pointer-events:none;">Скачать .exe (скоро)</a>
+            <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">Файл появится после загрузки на сервер</p>
+        </div>
+
+        <div class="glass" style="padding:24px;border-radius:18px;">
+            <h3 style="margin-bottom:12px;">📋 Как начать</h3>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-muted);">
+                <div><strong>1.</strong> Купите лицензию Miner на сайте</div>
+                <div><strong>2.</strong> Скачайте приложение</div>
+                <div><strong>3.</strong> Введите лицензионный ключ</div>
+                <div><strong>4.</strong> Введите API ID, API Hash, номер телефона</div>
+                <div><strong>5.</strong> Укажите ссылку на чат и нажмите «Собрать»</div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <div class="footer-left"><span class="logo-text">TG Lead Wareon</span></div>
+        <div class="footer-links">
+            <a href="{{ url_for('privacy') }}">Политика</a>
+            <a href="{{ url_for('terms') }}">Соглашение</a>
+            <a href="{{ url_for('support') }}">Поддержка</a>
+        </div>
+    </div>
+</footer>
+</body>
+</html>
