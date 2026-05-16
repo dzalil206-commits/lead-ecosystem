@@ -1,0 +1,16 @@
+{
+  "name": "TG Lead Wareon",
+  "short_name": "TG Lead",
+  "description": "Telegram-комбайн для автосбора аудитории, авторассылок и нейрочаттинга",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#d4a574",
+  "icons": [
+    {
+      "src": "/static/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
