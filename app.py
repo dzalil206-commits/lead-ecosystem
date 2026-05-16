@@ -253,14 +253,14 @@ def dashboard():
     if miner_license:
         days_left = (datetime.strptime(miner_license['expires_at'], '%Y-%m-%d %H:%M:%S.%f') - datetime.now()).days
     return render_template('dashboard.html',
-                           active_licenses_count=active_licenses_count,
-                           total_leads_collected=total_leads_collected,
-                           total_messages_sent=total_messages_sent,
-                           miner_license=miner_license,
-                           sender_license=sender_license,
-                           sender_accounts=sender_accounts,
-                           proxies=proxies,
-                           user_licenses=user_licenses)
+                       active_licenses_count=active_licenses_count,
+                       total_leads_collected=total_leads_collected,
+                       total_messages_sent=total_messages_sent,
+                       miner_license=miner_license,
+                       sender_license=sender_license,
+                       sender_accounts=sender_accounts,
+                       proxies=proxies,
+                       user_licenses=user_licenses)
 
 # ---------- ДОБАВЛЕНИЕ АККАУНТА ----------
 @app.route('/sender_add_account', methods=['POST'])
