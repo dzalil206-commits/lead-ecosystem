@@ -250,12 +250,12 @@ def dashboard():
             'is_expired': days_left <= 0
         })
     days_left = None
-   if miner_license:
+    if miner_license:
         try:
             days_left = (datetime.strptime(miner_license['expires_at'], '%Y-%m-%d %H:%M:%S.%f') - datetime.now()).days
         except:
             days_left = None
-            
+
     return render_template('dashboard.html',
                            active_licenses_count=active_licenses_count,
                            total_leads_collected=total_leads_collected,
