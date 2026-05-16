@@ -452,6 +452,36 @@ def admin_logout():
     session.pop('is_admin', None)
     return redirect(url_for('index'))
 
+# ---------- API ДЛЯ ДЕСКТОПНОГО MINER ----------
+@app.route('/api/verify_license', methods=['POST'])
+def api_verify_license():
+    data = request.get_json()
+    license_key = data.get('license_key', '').strip()
+    
+    if not license_key:
+        return jsonify({'error': 'Ключ не указан'}), 400
+    
+    db = get_db()
+    license = db.execute(
+        "SELECT * FROM licenses WHERE license_key = ? AND is_active = 1",
+        (license_key,)
+    ).fetchone()
+    
+    if not license:
+        return jsonify({'error': 'Лицензия не найдена или неактивна'}), 404
+    
+    # Проверяем срок действия
+    expires_at = datetime.strptime(license['expires_at'], '%Y-%m-%d %H:%M:%S.%f')
+    if datetime.now() > expires_at:
+        return jsonify({'error': 'Срок лицензии истёк'}), 410
+    
+    return jsonify({
+        'success': True,
+        'product': license['product'],
+        'expires_at': license['expires_at'],
+        'user_id': license['user_id']
+    })
+
 # ---------- ЗАПУСК ----------
 if __name__ == '__main__':
     with app.app_context():
