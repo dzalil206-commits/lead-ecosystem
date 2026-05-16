@@ -185,6 +185,10 @@ def generator():
 def register():
     if request.method == 'POST':
         email = request.form['email'].strip()
+        ref_id = request.args.get('ref')
+if ref_id:
+    # Даём бонус рефереру
+    db.execute("UPDATE licenses SET expires_at = datetime(expires_at, '+1 day') WHERE user_id = ? AND is_active = 1", (ref_id,))
         password = request.form['password'].strip()
         full_name = request.form.get('full_name', '').strip()
         db = get_db()
