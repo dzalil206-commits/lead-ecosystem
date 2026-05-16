@@ -360,3 +360,21 @@ document.addEventListener('keydown', e => {
 </script>
 </body>
 </html>
+
+<div class="glass" style="padding:16px;border-radius:18px;margin-top:20px;text-align:center;">
+    <h3 style="margin-bottom:8px;">🎁 Поделитесь с другом — получите +1 день!</h3>
+    <div style="display:flex;gap:8px;justify-content:center;">
+        <input id="shareLink" type="text" value="https://tgleadwareon.ru/?ref={{ current_user.id }}" readonly style="background:rgba(10,10,10,0.96);border-radius:8px;border:1px solid rgba(255,255,255,0.16);padding:8px;color:var(--text);width:250px;">
+        <button onclick="copyShareLink()" class="btn btn-outline btn-sm">📋 Копировать</button>
+    </div>
+    <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">Когда друг зарегистрируется по вашей ссылке, вы получите +1 день к лицензии.</p>
+</div>
+
+<script>
+function copyShareLink() {
+    var input = document.getElementById('shareLink');
+    input.select();
+    document.execCommand('copy');
+    alert('Ссылка скопирована!');
+}
+</script>
