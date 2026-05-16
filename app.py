@@ -249,10 +249,6 @@ def dashboard():
             'days_left': max(0, days_left),
             'is_expired': days_left <= 0
         })
-            days_left = 999
-    if miner_license:
-        days_left = (datetime.strptime(miner_license['expires_at'], '%Y-%m-%d %H:%M:%S.%f') - datetime.now()).days
-            # Дней до истечения ближайшей лицензии
     days_left = None
     if miner_license:
         try:
