@@ -249,6 +249,17 @@ def dashboard():
                            sender_license=sender_license,
                            sender_accounts=sender_accounts,
                            proxies=proxies)
+    licenses = db.execute("SELECT * FROM licenses WHERE user_id = ? AND is_active = 1", (current_user.id,)).fetchall()
+user_licenses = []
+for lic in licenses:
+    days_left = (datetime.strptime(lic['expires_at'], '%Y-%m-%d %H:%M:%S.%f') - datetime.now()).days
+    user_licenses.append({
+        'product': lic['product'],
+        'created_at': lic['created_at'],
+        'expires_at': lic['expires_at'],
+        'days_left': max(0, days_left),
+        'is_expired': days_left <= 0
+    })
 
 # ---------- ДОБАВЛЕНИЕ АККАУНТА ----------
 @app.route('/sender_add_account', methods=['POST'])
