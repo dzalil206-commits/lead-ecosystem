@@ -185,30 +185,36 @@ def generator():
 def register():
     if request.method == 'POST':
         email = request.form['email'].strip()
-        ref_id = request.args.get('ref')
-if ref_id:
-    # Даём бонус рефереру
-    db.execute("UPDATE licenses SET expires_at = datetime(expires_at, '+1 day') WHERE user_id = ? AND is_active = 1", (ref_id,))
         password = request.form['password'].strip()
         full_name = request.form.get('full_name', '').strip()
+        ref_id = request.args.get('ref')
+        
         db = get_db()
         if db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone():
             flash('Этот email уже зарегистрирован.', 'error')
             return render_template('register.html')
+        
         hashed_pw = generate_password_hash(password)
-        db.execute("INSERT INTO users (email, password, full_name) VALUES (?, ?, ?)",
+        cursor = db.execute("INSERT INTO users (email, password, full_name) VALUES (?, ?, ?)",
                    (email, hashed_pw, full_name))
+        user_id = cursor.lastrowid
         db.commit()
+        
+        # Выдаём пробную лицензию Miner на 3 дня
+        license_key = generate_license_key()
+        expires_at = datetime.now() + timedelta(days=3)
+        db.execute("INSERT INTO licenses (user_id, license_key, product, price, expires_at, is_active) VALUES (?, ?, ?, ?, ?, 1)",
+                   (user_id, license_key, 'Miner', 0, expires_at))
+        db.commit()
+        
+        # Бонус рефереру
+        if ref_id:
+            db.execute("UPDATE licenses SET expires_at = datetime(expires_at, '+1 day') WHERE user_id = ? AND is_active = 1", (ref_id,))
+            db.commit()
+        
         flash('Регистрация успешна! Войдите.', 'success')
         return redirect(url_for('login'))
     return render_template('register.html')
-# Выдаём пробную лицензию Miner на 3 дня
-license_key = generate_license_key()
-expires_at = datetime.now() + timedelta(days=3)
-db.execute("INSERT INTO licenses (user_id, license_key, product, price, expires_at, is_active) VALUES (?, ?, ?, ?, ?, 1)",
-           (user_id, license_key, 'Miner', 0, expires_at))
-db.commit()
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
