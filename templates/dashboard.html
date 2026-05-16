@@ -211,6 +211,34 @@
                 📊 Графики появятся в ближайшем обновлении
             </div>
         </div>
+      <div class="content-section" id="section-licenses">
+    <h1 style="font-size:22px;margin-bottom:4px;">Мои лицензии</h1>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Ваши активные продукты и сроки действия.</p>
+    
+    <div class="module-grid">
+        {% for lic in user_licenses or [] %}
+        <div class="module-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <h3 style="margin:0;">
+                    {% if lic.product == 'Miner' %}⛏️{% else %}✉️{% endif %}
+                    {{ lic.product }}
+                </h3>
+                <span class="pill {% if lic.is_expired %}pill-gray{% else %}pill-gold{% endif %}">
+                    {{ lic.days_left }} дн.
+                </span>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">
+                Выдана: {{ lic.created_at[:10] }} · Истекает: {{ lic.expires_at[:10] }}
+            </p>
+            {% if lic.is_expired %}
+                <a href="/buy/{{ lic.product | lower }}" class="btn btn-primary btn-sm">Продлить</a>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="table-empty">У вас пока нет активных лицензий.</div>
+        {% endfor %}
+    </div>
+</div>
 
         <!-- Секция: Miner -->
         <div class="content-section" id="section-miner-module">
