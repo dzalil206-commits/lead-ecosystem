@@ -11,7 +11,7 @@ SECRET_KEY = 'ваш-секретный-ключ-сюда'
 DATABASE = 'lead_ecosystem.db'
 ADMIN_ID = 5062414502
 SUPPORT_USERNAME = '@TGLeadSupportBot'
-USDT_WALLET = "TXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+USDT_WALLET = "5599002124687536"
 ADMIN_SECRET_KEY = "мой_секретный_ключ_2026"
 
 app = Flask(__name__)
