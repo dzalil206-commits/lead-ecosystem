@@ -179,6 +179,10 @@ def checklist_download():
 def generator():
     return render_template('generator.html')
 
+@app.route('/download')
+def download():
+    return render_template('download.html')
+
 # ---------- РЕГИСТРАЦИЯ / ВХОД ----------
 @app.route('/register', methods=['GET', 'POST'])
 def register():
