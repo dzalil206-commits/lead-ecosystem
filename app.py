@@ -198,6 +198,13 @@ def register():
         flash('Регистрация успешна! Войдите.', 'success')
         return redirect(url_for('login'))
     return render_template('register.html')
+# Выдаём пробную лицензию Miner на 3 дня
+license_key = generate_license_key()
+expires_at = datetime.now() + timedelta(days=3)
+db.execute("INSERT INTO licenses (user_id, license_key, product, price, expires_at, is_active) VALUES (?, ?, ?, ?, ?, 1)",
+           (user_id, license_key, 'Miner', 0, expires_at))
+db.commit()
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
