@@ -337,19 +337,21 @@ def miner():
 @app.route('/miner/collect', methods=['POST'])
 @login_required
 def miner_collect():
-    # Проверка лимита для пробного периода
-license = db.execute("SELECT * FROM licenses WHERE user_id = ? AND is_active = 1 AND product = 'Miner'", (current_user.id,)).fetchone()
-if license and license['price'] == 0:  # Бесплатная лицензия
-    count_today = db.execute("SELECT COUNT(*) FROM miner_jobs WHERE user_id = ? AND date(created_at) = date('now')", (current_user.id,)).fetchone()[0]
-    if count_today >= 2:  # Лимит 2 сбора в день
-        flash('Лимит пробного тарифа: 2 сбора в день. Приобретите полную версию.', 'error')
-        return redirect(url_for('miner'))
     link = request.form['link'].strip()
     db = get_db()
     account = db.execute("SELECT * FROM sender_accounts WHERE user_id = ? AND is_active = 1 LIMIT 1", (current_user.id,)).fetchone()
     if not account:
         flash('Сначала добавьте аккаунт.', 'error')
         return redirect(url_for('miner'))
+    
+    # Проверка лимита для пробного периода
+    license = db.execute("SELECT * FROM licenses WHERE user_id = ? AND is_active = 1 AND product = 'Miner'", (current_user.id,)).fetchone()
+    if license and license['price'] == 0:
+        count_today = db.execute("SELECT COUNT(*) FROM miner_jobs WHERE user_id = ? AND date(created_at) = date('now')", (current_user.id,)).fetchone()[0]
+        if count_today >= 2:
+            flash('Лимит пробного тарифа: 2 сбора в день. Приобретите полную версию.', 'error')
+            return redirect(url_for('miner'))
+    
     flash(f'Сбор из {link} запущен. Результат появится в списке задач.', 'success')
     return redirect(url_for('miner'))
 
