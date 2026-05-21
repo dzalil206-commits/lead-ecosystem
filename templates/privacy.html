@@ -6,61 +6,213 @@
   <title>Политика конфиденциальности — TG Lead Wareon</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    .legal-wrap { max-width: 800px; margin: 0 auto; padding: 0 16px; }
+    .legal-section { background: rgba(20,20,20,0.96); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 24px; margin-bottom: 14px; }
+    .legal-section h3 { font-size: 15px; font-weight: 600; margin: 0 0 12px; color: var(--accent-light); }
+    .legal-section p, .legal-section li { font-size: 13.5px; color: var(--text-muted); line-height: 1.75; margin: 0 0 8px; }
+    .legal-section ul, .legal-section ol { padding-left: 20px; margin: 8px 0; }
+    .legal-section li { margin-bottom: 4px; }
+    .legal-section table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+    .legal-section th { text-align: left; padding: 8px 12px; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.08); font-weight: 500; }
+    .legal-section td { padding: 8px 12px; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: top; }
+    .highlight-box { background: rgba(59,232,140,0.06); border: 1px solid rgba(59,232,140,0.15); border-radius: 10px; padding: 14px 16px; margin: 12px 0; }
+    .highlight-box p { color: #a8f0c8; margin: 0; }
+    .toc { background: rgba(212,165,116,0.06); border: 1px solid rgba(212,165,116,0.15); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+    .toc a { display: block; font-size: 13px; color: var(--text-muted); text-decoration: none; padding: 3px 0; }
+    .toc a:hover { color: var(--accent-light); }
+  </style>
 </head>
 <body class="page-dark">
-<header class="site-header">
-    <div class="container header-inner">
-        <a href="{{ url_for('index') }}" class="logo">
-            <span class="logo-mark">TG</span>
-            <span class="logo-text">Lead Wareon</span>
-        </a>
-        <nav class="nav-main">
-            <a href="{{ url_for('index') }}">Главная</a>
-        </nav>
-    </div>
+<header class="site-header slim">
+  <div class="container header-inner">
+    <a href="{{ url_for('index') }}" class="logo">
+      <span class="logo-mark">TG</span>
+      <span class="logo-text">Lead Wareon</span>
+    </a>
+    <nav class="nav-main">
+      <a href="{{ url_for('index') }}">Главная</a>
+      <a href="{{ url_for('terms') }}">Соглашение</a>
+    </nav>
+  </div>
 </header>
 
 <main class="section">
-    <div class="container" style="max-width:800px;">
-        <h1 style="font-size:28px;margin-bottom:20px;">Политика конфиденциальности</h1>
-        <p style="color:var(--text-muted);margin-bottom:8px;">Последнее обновление: 07.05.2026</p>
+  <div class="legal-wrap">
+    <h1 style="font-size:26px;margin-bottom:6px;">Политика конфиденциальности</h1>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:28px;">
+      Последнее обновление: {{ datetime.now().strftime('%d.%m.%Y') }} &nbsp;·&nbsp;
+      Редакция 2.0 &nbsp;·&nbsp;
+      <a href="{{ url_for('terms') }}" style="color:var(--accent-light);">Пользовательское соглашение</a>
+    </p>
 
-        <div class="glass" style="padding:24px;border-radius:18px;margin-bottom:16px;">
-            <h3>1. Какие данные мы собираем</h3>
-            <p style="color:var(--text-muted);font-size:14px;">При регистрации мы запрашиваем email и имя. Это минимальная информация, необходимая для работы сервиса. Мы не собираем номера телефонов, паспортные данные, платёжную информацию (она обрабатывается платёжными системами).</p>
-        </div>
-
-        <div class="glass" style="padding:24px;border-radius:18px;margin-bottom:16px;">
-            <h3>2. Как мы используем данные</h3>
-            <p style="color:var(--text-muted);font-size:14px;">Email используется для входа в аккаунт и отправки уведомлений о статусе лицензий. Имя отображается в личном кабинете. Данные не используются для рекламных рассылок без вашего согласия.</p>
-        </div>
-
-        <div class="glass" style="padding:24px;border-radius:18px;margin-bottom:16px;">
-            <h3>3. Хранение данных</h3>
-            <p style="color:var(--text-muted);font-size:14px;">Данные хранятся на защищённом сервере. Пароли хешируются. Доступ к базе данных имеет только администратор сервиса.</p>
-        </div>
-
-        <div class="glass" style="padding:24px;border-radius:18px;margin-bottom:16px;">
-            <h3>4. Передача третьим лицам</h3>
-            <p style="color:var(--text-muted);font-size:14px;">Мы не передаём ваши данные третьим лицам, за исключением случаев, предусмотренных законодательством РФ.</p>
-        </div>
-
-        <div class="glass" style="padding:24px;border-radius:18px;">
-            <h3>5. Удаление данных</h3>
-            <p style="color:var(--text-muted);font-size:14px;">Вы можете запросить удаление аккаунта и всех связанных данных, написав в поддержку. Данные будут удалены в течение 7 рабочих дней.</p>
-        </div>
+    <div class="toc">
+      <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Содержание</div>
+      <a href="#p1">1. Оператор персональных данных</a>
+      <a href="#p2">2. Какие данные мы собираем и зачем</a>
+      <a href="#p3">3. Данные, которые мы НЕ собираем</a>
+      <a href="#p4">4. Правовые основания обработки</a>
+      <a href="#p5">5. Передача данных третьим лицам</a>
+      <a href="#p6">6. Хранение и защита данных</a>
+      <a href="#p7">7. Файлы cookie</a>
+      <a href="#p8">8. Права пользователей (152-ФЗ)</a>
+      <a href="#p9">9. Изменение политики</a>
+      <a href="#p10">10. Контакты</a>
     </div>
+
+    <div class="legal-section" id="p1">
+      <h3>1. Оператор персональных данных</h3>
+      <p>Настоящая Политика конфиденциальности разработана в соответствии с требованиями Федерального закона от 27.07.2006 № 152-ФЗ «О персональных данных» и описывает порядок обработки персональных данных Пользователей сервиса TG Lead Wareon (далее — «Сервис»).</p>
+      <p>Оператор персональных данных: администрация Сервиса TG Lead Wareon.</p>
+      <p>Контакт для запросов по персональным данным: <a href="https://t.me/TGLeadSupportBot" style="color:var(--accent-light);">{{ SUPPORT_USERNAME }}</a></p>
+    </div>
+
+    <div class="legal-section" id="p2">
+      <h3>2. Какие данные мы собираем и зачем</h3>
+      <p>Мы собираем только данные, необходимые для работы Сервиса:</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Категория данных</th>
+            <th>Что именно</th>
+            <th>Цель</th>
+            <th>Срок хранения</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Учётные данные</td>
+            <td>Email-адрес, имя (необязательно)</td>
+            <td>Идентификация, вход в аккаунт</td>
+            <td>До удаления аккаунта + 30 дней</td>
+          </tr>
+          <tr>
+            <td>Учётные данные Telegram</td>
+            <td>Номер телефона, API ID, API Hash</td>
+            <td>Подключение Telegram-аккаунта Пользователя</td>
+            <td>До удаления аккаунта</td>
+          </tr>
+          <tr>
+            <td>Платёжные данные</td>
+            <td>Факт оплаты, сумма, дата (без данных карт)</td>
+            <td>Учёт лицензий и истории оплат</td>
+            <td>5 лет (налоговое законодательство)</td>
+          </tr>
+          <tr>
+            <td>Технические данные</td>
+            <td>IP-адрес, User-Agent, дата/время входа</td>
+            <td>Безопасность, защита от мошенничества</td>
+            <td>90 дней</td>
+          </tr>
+          <tr>
+            <td>Данные использования</td>
+            <td>Статистика запусков Miner, количество задач</td>
+            <td>Отображение аналитики в кабинете</td>
+            <td>До удаления аккаунта</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="legal-section" id="p3">
+      <h3>3. Данные, которые мы НЕ собираем</h3>
+      <div class="highlight-box">
+        <p>Сервис <strong>не собирает, не хранит и не обрабатывает</strong> на своих серверах персональные данные третьих лиц — участников Telegram-чатов и каналов, которые Пользователь анализирует с помощью инструментов Сервиса.</p>
+      </div>
+      <p>Мы также не собираем:</p>
+      <ul>
+        <li>Данные платёжных карт (они обрабатываются напрямую платёжными системами — ЮKassa и др.);</li>
+        <li>Паспортные данные и ИНН;</li>
+        <li>Биометрические данные;</li>
+        <li>Содержимое переписки в Telegram-аккаунтах Пользователей;</li>
+        <li>Данные о местоположении.</li>
+      </ul>
+    </div>
+
+    <div class="legal-section" id="p4">
+      <h3>4. Правовые основания обработки</h3>
+      <p>Обработка персональных данных Пользователей осуществляется на следующих правовых основаниях (ст. 6 152-ФЗ):</p>
+      <ul>
+        <li><strong style="color:var(--text);">Согласие субъекта</strong> — Пользователь, регистрируясь на Сервисе, даёт согласие на обработку своих персональных данных;</li>
+        <li><strong style="color:var(--text);">Исполнение договора</strong> — обработка необходима для исполнения пользовательского соглашения (предоставление доступа к Сервису, выставление счетов);</li>
+        <li><strong style="color:var(--text);">Законный интерес</strong> — обеспечение безопасности Сервиса и защита от мошенничества.</li>
+      </ul>
+    </div>
+
+    <div class="legal-section" id="p5">
+      <h3>5. Передача данных третьим лицам</h3>
+      <p>Мы не продаём и не передаём персональные данные Пользователей третьим лицам, за исключением следующих случаев:</p>
+      <ul>
+        <li><strong style="color:var(--text);">Платёжные системы</strong> — передача данных, необходимых для обработки платежей (ЮKassa и др.);</li>
+        <li><strong style="color:var(--text);">Хостинг-провайдер</strong> — данные хранятся на серверах провайдера в рамках договора на обработку данных;</li>
+        <li><strong style="color:var(--text);">Требования закона</strong> — по запросу уполномоченных органов государственной власти в установленном законом порядке.</li>
+      </ul>
+      <p>При передаче данных субподрядчикам мы заключаем с ними соглашения, обязывающие их соблюдать настоящую Политику.</p>
+    </div>
+
+    <div class="legal-section" id="p6">
+      <h3>6. Хранение и защита данных</h3>
+      <p>Для защиты персональных данных Пользователей Сервис применяет следующие меры:</p>
+      <ul>
+        <li>Хеширование паролей (bcrypt/werkzeug) — пароли никогда не хранятся в открытом виде;</li>
+        <li>Шифрование соединения (HTTPS/TLS) для всех страниц Сервиса;</li>
+        <li>Ограниченный доступ к базе данных — только для администратора Сервиса;</li>
+        <li>Хранение секретных ключей в переменных окружения, а не в коде;</li>
+        <li>Регулярное резервное копирование данных.</li>
+      </ul>
+      <p>Данные Пользователей хранятся на серверах, расположенных в Российской Федерации, в соответствии с требованиями ст. 18.1 152-ФЗ.</p>
+    </div>
+
+    <div class="legal-section" id="p7">
+      <h3>7. Файлы cookie</h3>
+      <p>Сервис использует технические файлы cookie, необходимые для работы:</p>
+      <ul>
+        <li><strong style="color:var(--text);">session</strong> — хранит данные авторизованной сессии (удаляется при закрытии браузера или выходе из аккаунта);</li>
+        <li><strong style="color:var(--text);">is_admin</strong> — флаг сессии администратора.</li>
+      </ul>
+      <p>Мы не используем аналитические или рекламные cookie. Вы можете запретить сохранение cookie в настройках браузера, однако это сделает вход в аккаунт невозможным.</p>
+    </div>
+
+    <div class="legal-section" id="p8">
+      <h3>8. Права пользователей (152-ФЗ)</h3>
+      <p>В соответствии с Федеральным законом № 152-ФЗ Пользователь вправе:</p>
+      <ul>
+        <li><strong style="color:var(--text);">Получить информацию</strong> об обработке своих персональных данных;</li>
+        <li><strong style="color:var(--text);">Исправить</strong> неточные или устаревшие данные (через настройки профиля или обращение в поддержку);</li>
+        <li><strong style="color:var(--text);">Удалить</strong> свои данные — по запросу в поддержку, данные удаляются в течение 30 дней;</li>
+        <li><strong style="color:var(--text);">Отозвать согласие</strong> на обработку данных (влечёт прекращение доступа к Сервису);</li>
+        <li><strong style="color:var(--text);">Подать жалобу</strong> в Роскомнадзор, если Пользователь считает, что его права нарушены.</li>
+      </ul>
+      <p>Для реализации прав обратитесь в поддержку: <a href="https://t.me/TGLeadSupportBot" style="color:var(--accent-light);">{{ SUPPORT_USERNAME }}</a>. Мы рассмотрим обращение в течение 30 дней.</p>
+    </div>
+
+    <div class="legal-section" id="p9">
+      <h3>9. Изменение политики</h3>
+      <p>Администрация вправе вносить изменения в настоящую Политику конфиденциальности. Актуальная версия всегда доступна по адресу tgleadwareon.ru/privacy. О существенных изменениях Пользователи уведомляются по email или через интерфейс Сервиса.</p>
+      <p>Продолжение использования Сервиса после вступления изменений в силу означает согласие с новой редакцией Политики.</p>
+    </div>
+
+    <div class="legal-section" id="p10">
+      <h3>10. Контакты</h3>
+      <p>По всем вопросам, связанным с обработкой персональных данных:</p>
+      <ul>
+        <li>Telegram: <a href="https://t.me/TGLeadSupportBot" style="color:var(--accent-light);">{{ SUPPORT_USERNAME }}</a></li>
+        <li>Сайт: <a href="https://tgleadwareon.ru" style="color:var(--accent-light);">tgleadwareon.ru</a></li>
+      </ul>
+    </div>
+
+  </div>
 </main>
 
 <footer class="site-footer">
-    <div class="container footer-inner">
-        <div class="footer-left"><span class="logo-text">TG Lead Wareon</span></div>
-        <div class="footer-links">
-            <a href="{{ url_for('privacy') }}">Политика конфиденциальности</a>
-            <a href="{{ url_for('terms') }}">Пользовательское соглашение</a>
-            <a href="{{ url_for('support') }}">Поддержка</a>
-        </div>
+  <div class="container footer-inner">
+    <div class="footer-left"><span class="logo-text">TG Lead Wareon</span></div>
+    <div class="footer-links">
+      <a href="{{ url_for('privacy') }}">Конфиденциальность</a>
+      <a href="{{ url_for('terms') }}">Соглашение</a>
+      <a href="{{ url_for('support') }}">Поддержка</a>
     </div>
+  </div>
 </footer>
 </body>
 </html>
