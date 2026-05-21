@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Отзывы — Админ-панель</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body class="page-dark">
+<div class="container" style="padding:40px 20px;max-width:900px;margin:0 auto;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+    <h1 style="font-size:24px;">⭐ Модерация отзывов</h1>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">← Назад</a>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div style="padding:12px;border-radius:8px;margin-bottom:16px;background:{% if category == 'error' %}rgba(255,107,107,0.1){% else %}rgba(59,232,140,0.1){% endif %};color:{% if category == 'error' %}#ff6b6b{% else %}#3be88c{% endif %};font-size:13px;">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- На модерации -->
+  <div class="glass" style="padding:20px;border-radius:18px;margin-bottom:24px;">
+    <h2 style="font-size:18px;margin-bottom:16px;">⏳ На модерации ({{ pending|length }})</h2>
+    {% for r in pending %}
+    <div style="border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div>
+          <span style="font-weight:600;">@{{ r.telegram_username or 'аноним' }}</span>
+          <span style="color:var(--text-muted);font-size:12px;margin-left:8px;">{{ r.created_at[:16] }}</span>
+          {% if r.user_id %}
+          <span style="color:var(--accent-light);font-size:12px;margin-left:8px;">user_id: {{ r.user_id }}</span>
+          {% endif %}
+        </div>
+        <div style="display:flex;gap:4px;">
+          {% for i in range(r.rating) %}<span style="color:var(--accent);">★</span>{% endfor %}
+          {% for i in range(5 - r.rating) %}<span style="color:rgba(255,255,255,0.15);">★</span>{% endfor %}
+        </div>
+      </div>
+      <p style="color:var(--text);font-size:14px;margin:0 0 12px;line-height:1.5;">{{ r.text }}</p>
+      <div style="display:flex;gap:8px;">
+        <form method="POST" action="{{ url_for('admin_approve_review', review_id=r.id) }}">
+          <button type="submit" class="btn btn-primary btn-sm">✓ Опубликовать</button>
+        </form>
+        <form method="POST" action="{{ url_for('admin_reject_review', review_id=r.id) }}">
+          <button type="submit" class="btn btn-ghost btn-sm" style="color:#ff6b6b;">✕ Удалить</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <p style="color:var(--text-muted);text-align:center;padding:20px 0;">Нет отзывов на модерации</p>
+    {% endfor %}
+  </div>
+
+  <!-- Опубликованные -->
+  <div class="glass" style="padding:20px;border-radius:18px;">
+    <h2 style="font-size:18px;margin-bottom:16px;">✅ Опубликованные ({{ approved|length }})</h2>
+    {% for r in approved %}
+    <div style="border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <span style="font-size:13px;font-weight:500;">@{{ r.telegram_username or 'аноним' }}</span>
+        <span style="color:var(--text-muted);font-size:12px;margin-left:8px;">{{ r.created_at[:10] }}</span>
+        <span style="margin-left:8px;">{% for i in range(r.rating) %}<span style="color:var(--accent);font-size:12px;">★</span>{% endfor %}</span>
+        <p style="margin:4px 0 0;font-size:13px;color:var(--text-muted);">{{ r.text[:80] }}{% if r.text|length > 80 %}…{% endif %}</p>
+      </div>
+      <form method="POST" action="{{ url_for('admin_reject_review', review_id=r.id) }}" style="flex-shrink:0;margin-left:12px;">
+        <button type="submit" class="btn btn-ghost btn-sm" style="color:#ff6b6b;font-size:11px;">Удалить</button>
+      </form>
+    </div>
+    {% else %}
+    <p style="color:var(--text-muted);text-align:center;padding:20px 0;">Нет опубликованных отзывов</p>
+    {% endfor %}
+  </div>
+</div>
+</body>
+</html>

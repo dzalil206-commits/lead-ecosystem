@@ -77,6 +77,10 @@
             <a class="sidebar-link" data-section="stats">
                 <span class="icon">📈</span> Статистика
             </a>
+            <a class="sidebar-link" href="{{ url_for('referral') }}">
+                <span class="icon">🎁</span> Рефералы
+                {% if referral_count %}<span style="background:var(--accent);color:#111;border-radius:999px;padding:1px 6px;font-size:10px;margin-left:auto;">{{ referral_count }}</span>{% endif %}
+            </a>
             <a class="sidebar-link" href="{{ url_for('support') }}">
                 <span class="icon">💬</span> Поддержка
             </a>
@@ -198,11 +202,11 @@
         </div>
       
 <div style="margin-top:12px;padding:12px;background:rgba(212,165,116,0.1);border-radius:8px;font-size:13px;color:var(--accent-light);">
-    💡 <strong>Как активировать аккаунт:</strong><br>
-    1. Откройте бота <a href="https://t.me/TGLeadWareonVerifBot" style="color:var(--accent-light);">@TGLeadWareonVerifBot</a><br>
-    2. Отправьте команду /verify<br>
-    3. Введите номер телефона<br>
-    4. Введите код из Telegram
+    💡 <strong>Как подключить аккаунт:</strong><br>
+    1. Нажмите «+ Добавить» и введите телефон, API ID и API Hash<br>
+    2. Получите код из Telegram и введите его на сайте<br>
+    3. Если включена 2FA — введите пароль<br>
+    Получить API ID и Hash: <a href="https://my.telegram.org/apps" target="_blank" style="color:var(--accent-light);">my.telegram.org/apps</a>
 </div>
       
         <!-- Секция: Статистика -->
@@ -211,10 +215,23 @@
             <div class="summary-cards">
                 <div class="summary-card"><div class="label">Аккаунтов</div><div class="value">{{ sender_accounts|length }}</div></div>
                 <div class="summary-card"><div class="label">Лидов собрано</div><div class="value">{{ total_leads_collected or 0 }}</div></div>
-                <div class="summary-card"><div class="label">Сообщений отправлено</div><div class="value">{{ total_messages_sent or 0 }}</div></div>
+                <div class="summary-card"><div class="label">Рефералов</div><div class="value">{{ referral_count or 0 }}</div></div>
             </div>
-            <div class="glass" style="padding:24px;border-radius:18px;text-align:center;color:var(--text-muted);">
-                📊 Графики появятся в ближайшем обновлении
+
+            <div class="glass" style="padding:24px;border-radius:18px;margin-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <h3 style="margin:0;font-size:15px;">Лиды за последние 7 дней</h3>
+                    <span style="font-size:12px;color:var(--text-muted);">через Miner</span>
+                </div>
+                <canvas id="leadsChart" height="80"></canvas>
+            </div>
+
+            <div class="glass" style="padding:20px;border-radius:18px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+                <div>
+                    <div style="font-size:14px;font-weight:600;margin-bottom:4px;">🎁 Реферальная программа</div>
+                    <div style="font-size:13px;color:var(--text-muted);">Приглашено: <strong style="color:var(--text);">{{ referral_count }}</strong> чел. · Бонус: <strong style="color:var(--accent-light);">+{{ referral_count }} дн.</strong></div>
+                </div>
+                <a href="{{ url_for('referral') }}" class="btn btn-outline btn-sm" style="flex-shrink:0;">Подробнее</a>
             </div>
         </div>
       <div class="content-section" id="section-licenses">
@@ -311,8 +328,39 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 <script>
+    // График лидов
+    (function() {
+        const ctx = document.getElementById('leadsChart');
+        if (!ctx) return;
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ chart_labels | tojson }},
+                datasets: [{
+                    data: {{ chart_leads | tojson }},
+                    borderColor: '#d4a574',
+                    backgroundColor: 'rgba(212,165,116,0.08)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#d4a574',
+                    pointRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#b3b3b3', precision: 0 } },
+                    x: { grid: { display: false }, ticks: { color: '#b3b3b3' } }
+                }
+            }
+        });
+    })();
+
     // Переключение секций
     document.querySelectorAll('.sidebar-link[data-section]').forEach(link => {
         link.addEventListener('click', () => {

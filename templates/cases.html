@@ -85,6 +85,29 @@
     <section class="section" id="reviews">
         <div class="container">
             <h2>Что говорят клиенты</h2>
+
+            {% if db_reviews %}
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;margin-bottom:40px;">
+                {% for r in db_reviews %}
+                <div style="background:rgba(20,20,20,0.96);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:24px;">
+                    <div style="display:flex;gap:4px;margin-bottom:12px;">
+                        {% for i in range(r.rating) %}<span style="color:var(--accent);font-size:16px;">★</span>{% endfor %}
+                        {% for i in range(5 - r.rating) %}<span style="color:rgba(255,255,255,0.15);font-size:16px;">★</span>{% endfor %}
+                    </div>
+                    <p style="color:var(--text);font-size:14px;line-height:1.6;margin:0 0 16px;">{{ r.text }}</p>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-soft));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#111;">
+                            {{ (r.telegram_username or '?')[0].upper() }}
+                        </div>
+                        <div>
+                            <div style="font-size:13px;font-weight:500;">@{{ r.telegram_username or 'аноним' }}</div>
+                            <div style="font-size:11px;color:var(--text-muted);">{{ r.created_at[:10] }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
             <div class="reviews-carousel" data-carousel>
                 <button class="carousel-arrow prev" data-carousel-prev>&larr;</button>
                 <div class="carousel-track">
@@ -102,6 +125,13 @@
                     </article>
                 </div>
                 <button class="carousel-arrow next" data-carousel-next>&rarr;</button>
+            </div>
+            {% endif %}
+
+            <div style="text-align:center;margin-top:24px;">
+                <a href="https://t.me/TGLeadReviewsBot" target="_blank" class="btn btn-outline">
+                    Оставить отзыв и получить +2 дня к лицензии
+                </a>
             </div>
         </div>
     </section>

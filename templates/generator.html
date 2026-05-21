@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Генератор каналов — TG Lead Wareon</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    .gen-wrap { max-width: 720px; margin: 60px auto; padding: 0 16px; }
+    .gen-card { background: rgba(20,20,20,0.96); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 32px; }
+    .gen-card h1 { font-size: 26px; margin: 0 0 6px; }
+    .gen-card p { color: var(--text-muted); font-size: 14px; margin: 0 0 28px; }
+    .niche-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 24px; }
+    .niche-btn { padding: 10px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; background: rgba(255,255,255,0.03); color: var(--text); font-size: 13px; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .niche-btn:hover, .niche-btn.active { border-color: var(--accent); background: rgba(212,165,116,0.1); color: var(--accent-light); }
+    .result-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; min-height: 120px; font-family: monospace; font-size: 13px; white-space: pre-wrap; color: var(--text-muted); line-height: 1.8; }
+    .result-box.has-data { color: var(--text); }
+    .actions { display: flex; gap: 10px; margin-top: 14px; }
+    .count-badge { background: rgba(212,165,116,0.15); color: var(--accent-light); border-radius: 6px; padding: 2px 8px; font-size: 12px; }
+  </style>
+</head>
+<body class="page-dark">
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="{{ url_for('index') }}" class="logo">
+      <span class="logo-mark">TG</span>
+      <span class="logo-text">Lead Wareon</span>
+    </a>
+    <nav class="nav-main">
+      <a href="{{ url_for('pricing') }}">Тарифы</a>
+      <a href="{{ url_for('cases') }}">Кейсы</a>
+      <a href="{{ url_for('blog') }}">Блог</a>
+      <a href="{{ url_for('faq') }}">FAQ</a>
+    </nav>
+    <div class="header-actions">
+      {% if current_user.is_authenticated %}
+      <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-sm">Кабинет</a>
+      {% else %}
+      <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">Войти</a>
+      <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Регистрация</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<div class="gen-wrap">
+  <div class="gen-card">
+    <h1>⚙️ Генератор каналов для парсинга</h1>
+    <p>Выберите нишу — получите список Telegram-каналов и чатов с активной аудиторией, готовых для сбора через TG Lead Miner.</p>
+
+    <div class="niche-grid" id="niches">
+      <div class="niche-btn" data-niche="arbitrage">🎯 Арбитраж</div>
+      <div class="niche-btn" data-niche="crypto">₿ Крипта</div>
+      <div class="niche-btn" data-niche="forex">📈 Форекс</div>
+      <div class="niche-btn" data-niche="infobiz">🎓 Инфобизнес</div>
+      <div class="niche-btn" data-niche="smm">📱 SMM</div>
+      <div class="niche-btn" data-niche="ecom">🛒 E-commerce</div>
+      <div class="niche-btn" data-niche="realty">🏠 Недвижимость</div>
+      <div class="niche-btn" data-niche="auto">🚗 Авто</div>
+      <div class="niche-btn" data-niche="gambling">🎰 Гэмблинг</div>
+      <div class="niche-btn" data-niche="health">💊 Здоровье</div>
+      <div class="niche-btn" data-niche="finance">💰 Финансы</div>
+      <div class="niche-btn" data-niche="hr">👔 HR / Работа</div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span style="font-size:13px;color:var(--text-muted);">Результат <span class="count-badge" id="countBadge">0 каналов</span></span>
+    </div>
+    <div class="result-box" id="resultBox">Выберите нишу выше, чтобы получить список каналов...</div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="copyBtn" onclick="copyResult()" style="display:none;">📋 Скопировать список</button>
+      <button class="btn btn-outline" id="addBtn" onclick="copyResult()" style="display:none;">⛏️ Использовать в Miner</button>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:20px;font-size:13px;color:var(--text-muted);">
+    Список обновляется. Хотите больше каналов и фильтрацию по активности?
+    <a href="{{ url_for('register') }}" style="color:var(--accent-light);">Попробуйте Miner бесплатно →</a>
+  </div>
+</div>
+
+<script>
+const CHANNELS = {
+  arbitrage: [
+    "https://t.me/traffic_arbitrage_pro",
+    "https://t.me/arbitrage_talks",
+    "https://t.me/cpa_mastery",
+    "https://t.me/affiliate_insider",
+    "https://t.me/arbitrage_community",
+    "https://t.me/cpa_network_chat",
+    "https://t.me/affiliate_marketing_ru",
+    "https://t.me/traffic_kings",
+    "https://t.me/offer_hunt",
+    "https://t.me/conversion_lab",
+  ],
+  crypto: [
+    "https://t.me/crypto_signals_pro",
+    "https://t.me/bitcoin_analysis",
+    "https://t.me/defi_community",
+    "https://t.me/altcoins_talk",
+    "https://t.me/crypto_trading_rus",
+    "https://t.me/nft_hunters",
+    "https://t.me/web3_builders",
+    "https://t.me/crypto_news_ru",
+    "https://t.me/blockchain_insights",
+    "https://t.me/hodl_community",
+  ],
+  forex: [
+    "https://t.me/forex_signals_daily",
+    "https://t.me/trading_setups",
+    "https://t.me/forex_chat_ru",
+    "https://t.me/fx_analytics",
+    "https://t.me/scalping_masters",
+    "https://t.me/prop_trading_ru",
+    "https://t.me/forex_education",
+    "https://t.me/currency_analysis",
+    "https://t.me/trading_psychology",
+    "https://t.me/market_movers",
+  ],
+  infobiz: [
+    "https://t.me/online_business_ru",
+    "https://t.me/infomarketing_pro",
+    "https://t.me/course_creators",
+    "https://t.me/coaching_community",
+    "https://t.me/launch_secrets",
+    "https://t.me/webinar_talks",
+    "https://t.me/expertise_monetize",
+    "https://t.me/funnel_builders",
+    "https://t.me/infoproduct_chat",
+    "https://t.me/edtech_ru",
+  ],
+  smm: [
+    "https://t.me/smm_pro_ru",
+    "https://t.me/content_marketing",
+    "https://t.me/instagram_growth",
+    "https://t.me/tiktok_strategy",
+    "https://t.me/social_media_lab",
+    "https://t.me/reels_masters",
+    "https://t.me/telegram_channels",
+    "https://t.me/vk_marketing",
+    "https://t.me/shorts_creators",
+    "https://t.me/brand_building",
+  ],
+  ecom: [
+    "https://t.me/ecommerce_ru",
+    "https://t.me/wildberries_sellers",
+    "https://t.me/ozon_business",
+    "https://t.me/dropshipping_talks",
+    "https://t.me/marketplace_pro",
+    "https://t.me/shopify_masters",
+    "https://t.me/product_hunting",
+    "https://t.me/amazon_sellers_ru",
+    "https://t.me/wb_analytics",
+    "https://t.me/unit_economics",
+  ],
+  realty: [
+    "https://t.me/realty_invest",
+    "https://t.me/novostrojki_msk",
+    "https://t.me/arenda_business",
+    "https://t.me/property_flipping",
+    "https://t.me/realty_analytics",
+    "https://t.me/zagranzhekilyo",
+    "https://t.me/ipoteka_talk",
+    "https://t.me/realty_agents",
+    "https://t.me/komnata_ru",
+    "https://t.me/invest_kvartira",
+  ],
+  auto: [
+    "https://t.me/auto_business_ru",
+    "https://t.me/car_dealers_talk",
+    "https://t.me/auto_resale",
+    "https://t.me/car_auctions_ru",
+    "https://t.me/detailing_pro",
+    "https://t.me/tuning_community",
+    "https://t.me/electric_cars_ru",
+    "https://t.me/auto_parts_market",
+    "https://t.me/car_leasing_ru",
+    "https://t.me/taxi_business",
+  ],
+  gambling: [
+    "https://t.me/casino_insiders",
+    "https://t.me/betting_signals",
+    "https://t.me/sports_bets_pro",
+    "https://t.me/poker_strategy",
+    "https://t.me/bonus_hunters",
+    "https://t.me/slots_community",
+    "https://t.me/bet_analytics",
+    "https://t.me/arbitrage_bets",
+    "https://t.me/gambling_affiliate",
+    "https://t.me/casino_review",
+  ],
+  health: [
+    "https://t.me/health_business",
+    "https://t.me/fitness_marketing",
+    "https://t.me/nutrition_pro",
+    "https://t.me/beauty_business",
+    "https://t.me/med_clinic_ru",
+    "https://t.me/bady_market",
+    "https://t.me/wellness_community",
+    "https://t.me/online_fitness",
+    "https://t.me/biohacking_ru",
+    "https://t.me/detox_masters",
+  ],
+  finance: [
+    "https://t.me/personal_finance_ru",
+    "https://t.me/invest_community",
+    "https://t.me/stocks_analysis",
+    "https://t.me/bonds_and_etf",
+    "https://t.me/financial_freedom",
+    "https://t.me/money_management",
+    "https://t.me/credit_advisor",
+    "https://t.me/tax_optimization",
+    "https://t.me/banking_insider",
+    "https://t.me/fintech_ru",
+  ],
+  hr: [
+    "https://t.me/hr_community",
+    "https://t.me/recruiting_pro",
+    "https://t.me/vakansii_it",
+    "https://t.me/remote_work_ru",
+    "https://t.me/freelance_union",
+    "https://t.me/career_growth",
+    "https://t.me/headhunters",
+    "https://t.me/hr_analytics",
+    "https://t.me/employer_brand",
+    "https://t.me/startup_jobs",
+  ],
+};
+
+let activeNiche = null;
+
+document.querySelectorAll('.niche-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.niche-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeNiche = btn.dataset.niche;
+    const list = CHANNELS[activeNiche] || [];
+    document.getElementById('resultBox').textContent = list.join('\n');
+    document.getElementById('resultBox').classList.add('has-data');
+    document.getElementById('countBadge').textContent = list.length + ' каналов';
+    document.getElementById('copyBtn').style.display = 'inline-flex';
+    document.getElementById('addBtn').style.display = 'inline-flex';
+  });
+});
+
+function copyResult() {
+  const text = document.getElementById('resultBox').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Скопировано!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+}
+</script>
+</body>
+</html>

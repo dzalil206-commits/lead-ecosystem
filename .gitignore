@@ -1,0 +1,28 @@
+# Секреты — никогда не коммитить
+.env
+
+# База данных
+*.db
+*.sqlite3
+
+# Сессии Telegram
+sessions/*.session
+sessions/*.session-journal
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Логи
+*.log
+nohup.out
