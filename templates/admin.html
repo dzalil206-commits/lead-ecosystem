@@ -10,7 +10,12 @@
 <div class="container" style="padding:40px 20px;max-width:900px;margin:0 auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
         <h1 style="font-size:24px;">👑 Админ-панель</h1>
-        <a href="{{ url_for('admin_logout') }}" class="btn btn-ghost btn-sm">Выйти</a>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <a href="{{ url_for('admin_reviews') }}" class="btn btn-outline btn-sm">
+                Отзывы{% if pending_reviews %} <span style="background:#ff6b6b;color:#fff;border-radius:999px;padding:1px 7px;font-size:11px;margin-left:4px;">{{ pending_reviews }}</span>{% endif %}
+            </a>
+            <a href="{{ url_for('admin_logout') }}" class="btn btn-ghost btn-sm">Выйти</a>
+        </div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -80,6 +85,44 @@
                 </tr>
                 {% else %}
                 <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">Нет лицензий</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Ожидающие оплаты -->
+    <div class="glass" style="padding:20px;border-radius:18px;margin-bottom:20px;">
+        <h2 style="font-size:18px;margin-bottom:16px;">⏳ Ожидают подтверждения оплаты</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead>
+                <tr>
+                    <th style="text-align:left;padding:8px;color:var(--text-muted);">ID</th>
+                    <th style="text-align:left;padding:8px;color:var(--text-muted);">User ID</th>
+                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Продукт</th>
+                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Сумма</th>
+                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Дата</th>
+                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Выдать лицензию</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pending_payments %}
+                <tr>
+                    <td style="padding:8px;">{{ p.id }}</td>
+                    <td style="padding:8px;">{{ p.user_id }}</td>
+                    <td style="padding:8px;">{{ p.product }}</td>
+                    <td style="padding:8px;">{{ p.amount }} ₽</td>
+                    <td style="padding:8px;">{{ p.created_at[:16] }}</td>
+                    <td style="padding:8px;">
+                        <form method="POST" action="{{ url_for('admin_give_license') }}" style="display:inline;">
+                            <input type="hidden" name="user_id" value="{{ p.user_id }}">
+                            <input type="hidden" name="product" value="{{ p.product }}">
+                            <input type="hidden" name="days" value="30">
+                            <button type="submit" style="background:none;border:none;color:var(--accent-light);cursor:pointer;font-size:12px;padding:0;">✓ Выдать</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">Нет ожидающих оплат</td></tr>
                 {% endfor %}
             </tbody>
         </table>
