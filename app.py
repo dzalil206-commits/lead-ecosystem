@@ -127,6 +127,7 @@ def init_db():
             email TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
             full_name TEXT,
+            referral_id INTEGER,
             balance INTEGER DEFAULT 0,
             total_spent INTEGER DEFAULT 0,
             trial_used INTEGER DEFAULT 0,
@@ -179,6 +180,17 @@ def init_db():
             source_link TEXT,
             status TEXT DEFAULT 'pending',
             leads_count INTEGER DEFAULT 0,
+            error_msg TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS leads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            job_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            tg_id TEXT,
+            username TEXT,
+            first_name TEXT,
+            last_name TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS reviews (
@@ -205,6 +217,17 @@ def init_db():
         );
     ''')
     db.commit()
+    # Миграции для существующих таблиц (безопасны — падают если колонка уже есть)
+    for sql in [
+        "ALTER TABLE users ADD COLUMN referral_id INTEGER",
+        "ALTER TABLE miner_jobs ADD COLUMN error_msg TEXT",
+    ]:
+        try:
+            db.execute(sql)
+        except Exception:
+            pass
+    db.commit()
+
 
 class User(UserMixin):
     def __init__(self, id, email, full_name):
@@ -305,14 +328,17 @@ def register():
             flash('Этот email уже зарегистрирован.', 'error')
             return render_template('register.html')
         hashed_pw = generate_password_hash(password)
-        cursor = db.execute("INSERT INTO users (email, password, full_name) VALUES (?, ?, ?)", (email, hashed_pw, full_name))
+        cursor = db.execute(
+            "INSERT INTO users (email, password, full_name, referral_id) VALUES (?, ?, ?, ?)",
+            (email, hashed_pw, full_name, int(ref_id) if ref_id and ref_id.isdigit() else None)
+        )
         user_id = cursor.lastrowid
         db.commit()
         license_key = generate_license_key()
         expires_at = datetime.now() + timedelta(days=3)
         db.execute("INSERT INTO licenses (user_id, license_key, product, price, expires_at, is_active) VALUES (?, ?, ?, ?, ?, 1)", (user_id, license_key, 'Miner', 0, expires_at))
         db.commit()
-        if ref_id:
+        if ref_id and ref_id.isdigit():
             db.execute("UPDATE licenses SET expires_at = datetime(expires_at, '+1 day') WHERE user_id = ? AND is_active = 1", (ref_id,))
             db.commit()
         flash('Регистрация успешна! Войдите.', 'success')
@@ -366,8 +392,27 @@ def dashboard():
     if miner_license:
         try:
             days_left = (parse_dt(miner_license['expires_at']) - datetime.now()).days
-        except:
+        except Exception:
             days_left = None
+
+    # Данные для графиков — последние 7 дней
+    today = datetime.now().date()
+    chart_days  = [(today - timedelta(days=i)) for i in range(6, -1, -1)]
+    chart_labels = [d.strftime('%d.%m') for d in chart_days]
+    from_date    = chart_days[0].strftime('%Y-%m-%d')
+
+    raw = db.execute("""
+        SELECT date(created_at) as day, COALESCE(SUM(leads_count), 0) as cnt
+        FROM miner_jobs WHERE user_id=? AND status='done' AND date(created_at) >= ?
+        GROUP BY day
+    """, (current_user.id, from_date)).fetchall()
+    leads_map   = {r['day']: r['cnt'] for r in raw}
+    chart_leads = [leads_map.get(d.strftime('%Y-%m-%d'), 0) for d in chart_days]
+
+    # Реферальная программа
+    referral_count = db.execute(
+        "SELECT COUNT(*) FROM users WHERE referral_id=?", (current_user.id,)
+    ).fetchone()[0]
 
     return render_template('dashboard.html',
                            active_licenses_count=active_licenses_count,
@@ -378,7 +423,10 @@ def dashboard():
                            sender_accounts=sender_accounts,
                            proxies=proxies,
                            user_licenses=user_licenses,
-                           days_left=days_left)
+                           days_left=days_left,
+                           chart_labels=chart_labels,
+                           chart_leads=chart_leads,
+                           referral_count=referral_count)
 
 # ---------- ПОДКЛЮЧЕНИЕ АККАУНТА (реальный Telegram auth) ----------
 
@@ -727,23 +775,144 @@ def miner():
     miner_jobs = db.execute("SELECT * FROM miner_jobs WHERE user_id = ? ORDER BY created_at DESC LIMIT 10", (current_user.id,)).fetchall()
     return render_template('miner.html', miner_jobs=miner_jobs)
 
+# ---------- MINER: ФОНОВЫЙ СБОР ----------
+
+def run_miner_job(job_id, session_path, api_id, api_hash, link, user_id, proxy, limit):
+    """Запускается в отдельном потоке. Создаёт собственное соединение с БД."""
+    async def _collect():
+        conn = sqlite3.connect(DATABASE)
+        try:
+            conn.execute("UPDATE miner_jobs SET status='running' WHERE id=?", (job_id,))
+            conn.commit()
+            client = TelegramClient(session_path, api_id, api_hash, proxy=proxy)
+            await client.connect()
+            try:
+                entity = await client.get_entity(link)
+                participants = await client.get_participants(entity, limit=limit)
+                batch = [
+                    (job_id, user_id, str(m.id), m.username, m.first_name or '', m.last_name or '')
+                    for m in participants if not m.bot
+                ]
+                conn.executemany(
+                    "INSERT INTO leads (job_id, user_id, tg_id, username, first_name, last_name) VALUES (?,?,?,?,?,?)",
+                    batch,
+                )
+                conn.execute(
+                    "UPDATE miner_jobs SET status='done', leads_count=? WHERE id=?",
+                    (len(batch), job_id),
+                )
+            except Exception as e:
+                conn.execute(
+                    "UPDATE miner_jobs SET status='error', error_msg=? WHERE id=?",
+                    (str(e)[:255], job_id),
+                )
+            finally:
+                await client.disconnect()
+            conn.commit()
+        except Exception as e:
+            try:
+                conn.execute(
+                    "UPDATE miner_jobs SET status='error', error_msg=? WHERE id=?",
+                    (str(e)[:255], job_id),
+                )
+                conn.commit()
+            except Exception:
+                pass
+        finally:
+            conn.close()
+
+    asyncio.run(_collect())
+
+
 @app.route('/miner/collect', methods=['POST'])
 @login_required
 def miner_collect():
-    link = request.form['link'].strip()
-    db = get_db()
-    account = db.execute("SELECT * FROM sender_accounts WHERE user_id = ? AND is_active = 1 LIMIT 1", (current_user.id,)).fetchone()
-    if not account:
-        flash('Сначала добавьте аккаунт.', 'error')
+    link = request.form.get('link', '').strip()
+    if not link:
+        flash('Введите ссылку на чат или канал.', 'error')
         return redirect(url_for('miner'))
-    license = db.execute("SELECT * FROM licenses WHERE user_id = ? AND is_active = 1 AND product = 'Miner'", (current_user.id,)).fetchone()
-    if license and license['price'] == 0:
-        count_today = db.execute("SELECT COUNT(*) FROM miner_jobs WHERE user_id = ? AND date(created_at) = date('now')", (current_user.id,)).fetchone()[0]
+
+    db = get_db()
+
+    # Проверка лицензии
+    lic = db.execute(
+        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND product='Miner'",
+        (current_user.id,),
+    ).fetchone()
+    if not lic:
+        flash('Нужна активная лицензия Miner.', 'error')
+        return redirect(url_for('miner'))
+
+    is_trial = (lic['price'] == 0)
+    collect_limit = 200 if is_trial else 5000
+
+    if is_trial:
+        count_today = db.execute(
+            "SELECT COUNT(*) FROM miner_jobs WHERE user_id=? AND date(created_at)=date('now')",
+            (current_user.id,),
+        ).fetchone()[0]
         if count_today >= 2:
-            flash('Лимит пробного тарифа: 2 сбора в день.', 'error')
+            flash('Лимит пробного тарифа — 2 сбора в день. Купите лицензию для снятия ограничений.', 'error')
             return redirect(url_for('miner'))
-    flash(f'Сбор из {link} запущен.', 'success')
+
+    # Активный аккаунт
+    account = db.execute(
+        "SELECT * FROM sender_accounts WHERE user_id=? AND is_active=1 LIMIT 1",
+        (current_user.id,),
+    ).fetchone()
+    if not account:
+        flash('Сначала подключите аккаунт Telegram в разделе «Аккаунты».', 'error')
+        return redirect(url_for('miner'))
+
+    session_path = os.path.join('sessions', account['session_file'])
+    proxy = _get_user_proxy(db, current_user.id)
+
+    cursor = db.execute(
+        "INSERT INTO miner_jobs (user_id, source_link, status) VALUES (?,?,'pending')",
+        (current_user.id, link),
+    )
+    job_id = cursor.lastrowid
+    db.commit()
+
+    threading.Thread(
+        target=run_miner_job,
+        args=(job_id, session_path, account['api_id'], account['api_hash'],
+              link, current_user.id, proxy, collect_limit),
+        daemon=True,
+    ).start()
+
+    flash('Сбор запущен! Статус обновляется автоматически.', 'success')
     return redirect(url_for('miner'))
+
+
+@app.route('/miner/job/<int:job_id>/export')
+@login_required
+def miner_export(job_id):
+    db = get_db()
+    job = db.execute(
+        "SELECT * FROM miner_jobs WHERE id=? AND user_id=?",
+        (job_id, current_user.id),
+    ).fetchone()
+    if not job or job['status'] != 'done':
+        flash('Экспорт недоступен.', 'error')
+        return redirect(url_for('miner'))
+
+    rows = db.execute(
+        "SELECT tg_id, username, first_name, last_name FROM leads WHERE job_id=?",
+        (job_id,),
+    ).fetchall()
+
+    buf = io.StringIO()
+    buf.write("tg_id,username,first_name,last_name\n")
+    for r in rows:
+        buf.write(f"{r['tg_id']},{r['username'] or ''},{r['first_name'] or ''},{r['last_name'] or ''}\n")
+
+    return send_file(
+        io.BytesIO(buf.getvalue().encode('utf-8')),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f'leads_job{job_id}.csv',
+    )
 
 # ---------- МАГАЗИН ПРОКСИ ----------
 @app.route('/buy_proxy')
@@ -910,6 +1079,23 @@ def api_verify_license():
         'expires_at': license['expires_at'],
         'user_id': license['user_id']
     })
+
+# ---------- РЕФЕРАЛЬНАЯ ПРОГРАММА ----------
+@app.route('/referral')
+@login_required
+def referral():
+    db = get_db()
+    referred = db.execute(
+        "SELECT id, full_name, email, created_at FROM users WHERE referral_id=? ORDER BY created_at DESC",
+        (current_user.id,),
+    ).fetchall()
+    bonus_days = len(referred)
+    ref_link = f"{BASE_URL}/?ref={current_user.id}"
+    return render_template('referral.html',
+                           referred=referred,
+                           bonus_days=bonus_days,
+                           ref_link=ref_link)
+
 
 # ---------- API ОТЗЫВОВ ----------
 @app.route('/api/review_bonus', methods=['POST'])

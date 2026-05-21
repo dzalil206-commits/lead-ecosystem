@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Реферальная программа — TG Lead Wareon</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    .ref-wrap { max-width: 760px; margin: 60px auto; padding: 0 16px; }
+    .ref-card { background: rgba(20,20,20,0.96); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 28px; margin-bottom: 20px; }
+    .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .stat-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; text-align: center; }
+    .stat-box .val { font-size: 32px; font-weight: 700; color: var(--accent-light); }
+    .stat-box .lbl { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .link-row { display: flex; gap: 8px; }
+    .link-row input { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 14px; color: var(--text); font-size: 13px; }
+    .ref-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .ref-table th { text-align: left; padding: 8px 12px; color: var(--text-muted); font-weight: 500; font-size: 12px; border-bottom: 1px solid var(--border-subtle); }
+    .ref-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .how-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .how-step { display: flex; gap: 12px; align-items: flex-start; }
+    .how-num { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #111; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+  </style>
+</head>
+<body class="page-dark">
+<header class="site-header slim">
+  <div class="container header-inner">
+    <a href="{{ url_for('index') }}" class="logo">
+      <span class="logo-mark">TG</span>
+      <span class="logo-text">Lead Wareon</span>
+    </a>
+    <div style="display:flex;gap:8px;margin-left:auto;">
+      <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">← Кабинет</a>
+    </div>
+  </div>
+</header>
+
+<div class="ref-wrap">
+
+  <h1 style="font-size:26px;margin-bottom:6px;">🎁 Реферальная программа</h1>
+  <p style="color:var(--text-muted);font-size:14px;margin-bottom:28px;">
+    Приглашайте друзей — получайте +1 день к лицензии за каждого.
+  </p>
+
+  <!-- Статистика -->
+  <div class="stat-row">
+    <div class="stat-box">
+      <div class="val">{{ referred|length }}</div>
+      <div class="lbl">Приглашено</div>
+    </div>
+    <div class="stat-box">
+      <div class="val" style="color:#3be88c;">+{{ bonus_days }}</div>
+      <div class="lbl">Бонусных дней</div>
+    </div>
+    <div class="stat-box">
+      <div class="val" style="color:var(--accent);">1 день</div>
+      <div class="lbl">За каждого друга</div>
+    </div>
+  </div>
+
+  <!-- Реферальная ссылка -->
+  <div class="ref-card">
+    <h3 style="font-size:16px;margin:0 0 14px;">Ваша реферальная ссылка</h3>
+    <div class="link-row">
+      <input id="refLink" type="text" value="{{ ref_link }}" readonly>
+      <button class="btn btn-primary" onclick="copyLink()">📋 Копировать</button>
+    </div>
+    <p style="font-size:12px;color:var(--text-muted);margin:10px 0 0;">
+      Когда человек зарегистрируется по вашей ссылке — вы получите +1 день к активной лицензии автоматически.
+    </p>
+  </div>
+
+  <!-- Как это работает -->
+  <div class="ref-card">
+    <h3 style="font-size:16px;margin:0 0 20px;">Как это работает</h3>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="how-num">1</div>
+        <div>
+          <div style="font-size:14px;font-weight:500;margin-bottom:4px;">Поделитесь ссылкой</div>
+          <div style="font-size:13px;color:var(--text-muted);">Отправьте её в чат, канал или лично другу</div>
+        </div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">2</div>
+        <div>
+          <div style="font-size:14px;font-weight:500;margin-bottom:4px;">Друг регистрируется</div>
+          <div style="font-size:13px;color:var(--text-muted);">По вашей ссылке — система фиксирует реферала</div>
+        </div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">3</div>
+        <div>
+          <div style="font-size:14px;font-weight:500;margin-bottom:4px;">Вы получаете +1 день</div>
+          <div style="font-size:13px;color:var(--text-muted);">Автоматически добавляется к вашей лицензии</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Список рефералов -->
+  <div class="ref-card">
+    <h3 style="font-size:16px;margin:0 0 16px;">Приглашённые пользователи</h3>
+    {% if referred %}
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Имя / Email</th>
+          <th>Дата регистрации</th>
+          <th>Бонус</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in referred %}
+        <tr>
+          <td>{{ u.full_name or u.email }}</td>
+          <td>{{ u.created_at[:10] }}</td>
+          <td style="color:#3be88c;">+1 день</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:14px;">
+      Вы ещё никого не пригласили. Поделитесь ссылкой выше!
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+function copyLink() {
+  const inp = document.getElementById('refLink');
+  inp.select();
+  navigator.clipboard.writeText(inp.value).then(() => {
+    const btn = event.target;
+    btn.textContent = '✓ Скопировано!';
+    setTimeout(() => btn.textContent = '📋 Копировать', 2000);
+  });
+}
+</script>
+</body>
+</html>
