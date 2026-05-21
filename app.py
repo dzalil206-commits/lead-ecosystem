@@ -1,9 +1,14 @@
-import os, sqlite3, random, string, io, asyncio, threading
+import os, sqlite3, random, string, io, asyncio, threading, concurrent.futures
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, session, g, send_file, jsonify
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from telethon import TelegramClient
+from telethon.errors import (
+    SessionPasswordNeededError, PhoneCodeInvalidError,
+    PhoneCodeExpiredError, PasswordHashInvalidError,
+    FloodWaitError, PhoneNumberInvalidError,
+)
 import requests
 
 # ---------- НАСТРОЙКИ ----------
@@ -18,6 +23,15 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+def run_async(coro):
+    """Run an async coroutine from a synchronous Flask route."""
+    try:
+        asyncio.get_running_loop()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            return pool.submit(asyncio.run, coro).result()
+    except RuntimeError:
+        return asyncio.run(coro)
 
 @app.context_processor
 def utility_processor():
@@ -97,6 +111,17 @@ def init_db():
             status TEXT DEFAULT 'pending',
             leads_count INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS proxy_pool (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type TEXT,
+            host TEXT,
+            port INTEGER,
+            username TEXT,
+            password TEXT,
+            is_sold INTEGER DEFAULT 0,
+            sold_to INTEGER,
+            sold_at TIMESTAMP
         );
     ''')
     db.commit()
@@ -271,18 +296,233 @@ def dashboard():
                            user_licenses=user_licenses,
                            days_left=days_left)
 
-# ---------- ДОБАВЛЕНИЕ АККАУНТА ----------
+# ---------- ПОДКЛЮЧЕНИЕ АККАУНТА (реальный Telegram auth) ----------
+
+def _make_session_path(user_id, phone):
+    safe_phone = phone.replace('+', '').replace(' ', '').replace('-', '')
+    return os.path.join('sessions', f'u{user_id}_{safe_phone}')
+
+def _get_user_proxy(db, user_id):
+    """Вернуть первый SOCKS5-прокси пользователя для Telethon, или None."""
+    row = db.execute(
+        "SELECT * FROM proxies WHERE user_id=? AND type='socks5' AND is_active=1 LIMIT 1",
+        (user_id,)
+    ).fetchone()
+    if not row:
+        return None
+    return {
+        'proxy_type': 'socks5',
+        'addr': row['host'],
+        'port': row['port'],
+        'username': row['username'] or None,
+        'password': row['password'] or None,
+        'rdns': True,
+    }
+
 @app.route('/sender_add_account', methods=['POST'])
 @login_required
 def sender_add_account():
-    phone = request.form['phone'].strip()
-    api_id = request.form['api_id'].strip()
-    api_hash = request.form['api_hash'].strip()
+    phone    = request.form.get('phone', '').strip()
+    api_id   = request.form.get('api_id', '').strip()
+    api_hash = request.form.get('api_hash', '').strip()
+
+    if not phone or not api_id or not api_hash:
+        flash('Заполните все поля.', 'error')
+        return redirect(url_for('dashboard'))
+    try:
+        api_id_int = int(api_id)
+    except ValueError:
+        flash('API ID должен быть числом.', 'error')
+        return redirect(url_for('dashboard'))
+
+    session_path = _make_session_path(current_user.id, phone)
     db = get_db()
-    db.execute("INSERT INTO sender_accounts (user_id, phone, api_id, api_hash, is_active) VALUES (?, ?, ?, ?, 0)", (current_user.id, phone, api_id, api_hash))
+    proxy = _get_user_proxy(db, current_user.id)
+
+    async def send_code():
+        client = TelegramClient(session_path, api_id_int, api_hash, proxy=proxy)
+        await client.connect()
+        try:
+            if await client.is_user_authorized():
+                return 'already_authed', None
+            result = await client.send_code_request(phone)
+            return 'code_sent', result.phone_code_hash
+        except PhoneNumberInvalidError:
+            return 'invalid_phone', None
+        except FloodWaitError as e:
+            return 'flood', e.seconds
+        finally:
+            await client.disconnect()
+
+    try:
+        status, payload = run_async(send_code())
+    except Exception as e:
+        flash(f'Ошибка подключения к Telegram: {e}', 'error')
+        return redirect(url_for('dashboard'))
+
+    if status == 'invalid_phone':
+        flash('Неверный формат номера телефона.', 'error')
+        return redirect(url_for('dashboard'))
+    if status == 'flood':
+        flash(f'Слишком много попыток. Подождите {payload} секунд.', 'error')
+        return redirect(url_for('dashboard'))
+
+    # Сохраняем/обновляем аккаунт в БД (is_active=0 до подтверждения)
+    existing = db.execute(
+        "SELECT id FROM sender_accounts WHERE user_id=? AND phone=?",
+        (current_user.id, phone)
+    ).fetchone()
+    session_name = os.path.basename(session_path)
+    if existing:
+        db.execute(
+            "UPDATE sender_accounts SET api_id=?, api_hash=?, session_file=?, is_active=0 WHERE id=?",
+            (api_id_int, api_hash, session_name, existing['id'])
+        )
+    else:
+        db.execute(
+            "INSERT INTO sender_accounts (user_id, phone, api_id, api_hash, session_file, is_active) VALUES (?,?,?,?,?,0)",
+            (current_user.id, phone, api_id_int, api_hash, session_name)
+        )
     db.commit()
-    flash(f'Аккаунт {phone} добавлен. Для активации откройте бота @TGLeadWareonVerifBot и отправьте /verify', 'info')
-    return redirect(url_for('dashboard'))
+
+    if status == 'already_authed':
+        db.execute(
+            "UPDATE sender_accounts SET is_active=1 WHERE user_id=? AND phone=?",
+            (current_user.id, phone)
+        )
+        db.commit()
+        flash(f'Аккаунт {phone} уже авторизован и подключён!', 'success')
+        return redirect(url_for('dashboard'))
+
+    # Сохраняем состояние авторизации в cookie-сессии
+    session['tg_auth'] = {
+        'phone': phone,
+        'api_id': api_id_int,
+        'api_hash': api_hash,
+        'phone_code_hash': payload,
+        'session_path': session_path,
+    }
+    return redirect(url_for('verify_code'))
+
+
+@app.route('/verify_code', methods=['GET', 'POST'])
+@login_required
+def verify_code():
+    auth = session.get('tg_auth')
+    if not auth:
+        flash('Сессия истекла. Добавьте аккаунт заново.', 'error')
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'GET':
+        return render_template('verify_code.html', phone=auth['phone'])
+
+    code = request.form.get('code', '').strip()
+
+    async def do_sign_in():
+        client = TelegramClient(auth['session_path'], auth['api_id'], auth['api_hash'])
+        await client.connect()
+        try:
+            await client.sign_in(
+                phone=auth['phone'],
+                code=code,
+                phone_code_hash=auth['phone_code_hash'],
+            )
+            return 'success', None
+        except SessionPasswordNeededError:
+            return 'need_2fa', None
+        except PhoneCodeInvalidError:
+            return 'invalid_code', None
+        except PhoneCodeExpiredError:
+            return 'expired_code', None
+        except FloodWaitError as e:
+            return 'flood', e.seconds
+        finally:
+            await client.disconnect()
+
+    try:
+        status, payload = run_async(do_sign_in())
+    except Exception as e:
+        flash(f'Ошибка: {e}', 'error')
+        return render_template('verify_code.html', phone=auth['phone'])
+
+    if status == 'success':
+        db = get_db()
+        db.execute(
+            "UPDATE sender_accounts SET is_active=1 WHERE user_id=? AND phone=?",
+            (current_user.id, auth['phone'])
+        )
+        db.commit()
+        session.pop('tg_auth', None)
+        flash(f'Аккаунт {auth["phone"]} успешно подключён!', 'success')
+        return redirect(url_for('dashboard'))
+
+    if status == 'need_2fa':
+        return redirect(url_for('verify_2fa'))
+
+    if status == 'flood':
+        flash(f'Слишком много попыток. Подождите {payload} секунд.', 'error')
+        session.pop('tg_auth', None)
+        return redirect(url_for('dashboard'))
+
+    msg = 'Неверный код.' if status == 'invalid_code' else 'Код устарел. Добавьте аккаунт заново.'
+    flash(msg, 'error')
+    if status == 'expired_code':
+        session.pop('tg_auth', None)
+        return redirect(url_for('dashboard'))
+    return render_template('verify_code.html', phone=auth['phone'])
+
+
+@app.route('/verify_2fa', methods=['GET', 'POST'])
+@login_required
+def verify_2fa():
+    auth = session.get('tg_auth')
+    if not auth:
+        flash('Сессия истекла. Добавьте аккаунт заново.', 'error')
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'GET':
+        return render_template('verify_2fa.html', phone=auth['phone'])
+
+    password = request.form.get('password', '').strip()
+
+    async def do_sign_in_2fa():
+        client = TelegramClient(auth['session_path'], auth['api_id'], auth['api_hash'])
+        await client.connect()
+        try:
+            await client.sign_in(password=password)
+            return 'success'
+        except PasswordHashInvalidError:
+            return 'invalid_password'
+        except FloodWaitError as e:
+            return f'flood:{e.seconds}'
+        finally:
+            await client.disconnect()
+
+    try:
+        status = run_async(do_sign_in_2fa())
+    except Exception as e:
+        flash(f'Ошибка: {e}', 'error')
+        return render_template('verify_2fa.html', phone=auth['phone'])
+
+    if status == 'success':
+        db = get_db()
+        db.execute(
+            "UPDATE sender_accounts SET is_active=1 WHERE user_id=? AND phone=?",
+            (current_user.id, auth['phone'])
+        )
+        db.commit()
+        session.pop('tg_auth', None)
+        flash(f'Аккаунт {auth["phone"]} успешно подключён!', 'success')
+        return redirect(url_for('dashboard'))
+
+    if status.startswith('flood:'):
+        secs = status.split(':')[1]
+        flash(f'Слишком много попыток. Подождите {secs} секунд.', 'error')
+        session.pop('tg_auth', None)
+        return redirect(url_for('dashboard'))
+
+    flash('Неверный пароль. Попробуйте ещё раз.', 'error')
+    return render_template('verify_2fa.html', phone=auth['phone'])
 
 @app.route('/sender_add_proxy', methods=['POST'])
 @login_required

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Подтверждение кода — TG Lead Wareon</title>
+  <title>Двухфакторная аутентификация — TG Lead Wareon</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -15,20 +15,21 @@
     .auth-subtitle strong { color: var(--accent-light); }
     .auth-form .field { margin-bottom: 16px; }
     .auth-form label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
-    .auth-form input[type="text"] {
+    .auth-form input[type="password"] {
       width: 100%; padding: 12px 14px; background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-md);
-      color: var(--text); font-size: 20px; letter-spacing: 6px; text-align: center;
-      font-family: monospace; transition: border-color var(--transition);
+      color: var(--text); font-size: 15px;
+      transition: border-color var(--transition);
     }
-    .auth-form input[type="text"]:focus { outline: none; border-color: var(--accent); }
+    .auth-form input[type="password"]:focus { outline: none; border-color: var(--accent); }
     .btn-primary { width: 100%; padding: 13px; border: none; border-radius: var(--radius-md); background: var(--accent); color: #111; font-size: 15px; font-weight: 600; cursor: pointer; transition: background var(--transition); }
     .btn-primary:hover { background: var(--accent-light); }
     .flash-list { list-style: none; padding: 0; margin: 0 0 20px; }
     .flash-list li { padding: 10px 14px; border-radius: 8px; font-size: 13px; }
     .flash-list li.error { background: rgba(255,107,107,0.12); border: 1px solid rgba(255,107,107,0.3); color: #ff6b6b; }
     .flash-list li.success { background: rgba(59,232,140,0.10); border: 1px solid rgba(59,232,140,0.3); color: #3be88c; }
-    .hint { margin-top: 20px; font-size: 12px; color: var(--text-muted); text-align: center; }
+    .lock-icon { display: inline-block; font-size: 48px; margin-bottom: 16px; }
+    .hint { margin-top: 20px; font-size: 12px; color: var(--text-muted); text-align: center; line-height: 1.5; }
     .back-link { display: block; text-align: center; margin-top: 16px; font-size: 13px; color: var(--text-muted); text-decoration: none; }
     .back-link:hover { color: var(--accent-light); }
   </style>
@@ -36,11 +37,11 @@
 <body class="page-dark">
 <div class="auth-wrapper">
   <div class="auth-card">
-    <div class="auth-icon">📩</div>
-    <h1>Код подтверждения</h1>
+    <div class="lock-icon">🔐</div>
+    <h1>Двухфакторная защита</h1>
     <p class="auth-subtitle">
-      На номер <strong>{{ phone }}</strong> отправлен код через Telegram.
-      Найдите его в приложении и введите ниже.
+      Аккаунт <strong>{{ phone }}</strong> защищён облачным паролем (2FA).
+      Введите его для завершения подключения.
     </p>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -53,16 +54,18 @@
       {% endif %}
     {% endwith %}
 
-    <form method="POST" action="{{ url_for('verify_code') }}" class="auth-form">
+    <form method="POST" action="{{ url_for('verify_2fa') }}" class="auth-form">
       <div class="field">
-        <label>Код из Telegram</label>
-        <input name="code" type="text" required placeholder="12345"
-               maxlength="10" autocomplete="one-time-code" autofocus>
+        <label>Облачный пароль Telegram</label>
+        <input name="password" type="password" required placeholder="••••••••" autofocus>
       </div>
       <button type="submit" class="btn-primary">Подтвердить</button>
     </form>
 
-    <p class="hint">Код действует несколько минут. Не получили? Проверьте аккаунт Telegram.</p>
+    <p class="hint">
+      Это пароль, который вы установили в настройках Telegram<br>
+      (Настройки → Конфиденциальность → Двухэтапная аутентификация).
+    </p>
     <a class="back-link" href="{{ url_for('dashboard') }}">← Вернуться в кабинет</a>
   </div>
 </div>
