@@ -319,10 +319,19 @@ def download():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        email = request.form['email'].strip()
-        password = request.form['password'].strip()
+        email     = request.form['email'].strip()
+        password  = request.form['password'].strip()
         full_name = request.form.get('full_name', '').strip()
-        ref_id = request.args.get('ref')
+        ref_id    = request.args.get('ref')
+
+        if not request.form.get('agree'):
+            flash('Необходимо принять Пользовательское соглашение и Политику конфиденциальности.', 'error')
+            return render_template('register.html')
+
+        if len(password) < 8:
+            flash('Пароль должен содержать не менее 8 символов.', 'error')
+            return render_template('register.html')
+
         db = get_db()
         if db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone():
             flash('Этот email уже зарегистрирован.', 'error')

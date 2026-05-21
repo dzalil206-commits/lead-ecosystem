@@ -17,6 +17,10 @@
     .auth-form .field { margin-bottom: 16px; }
     .auth-form .field input { width: 100%; }
     .auth-form .btn { margin-top: 8px; }
+    .agree-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; margin-top: 4px; }
+    .agree-row input[type="checkbox"] { width: 16px; height: 16px; min-width: 16px; margin-top: 2px; accent-color: var(--accent); cursor: pointer; }
+    .agree-row label { font-size: 13px; color: var(--text-muted); line-height: 1.5; cursor: pointer; }
+    .agree-row label a { color: var(--accent-light); text-decoration: underline; text-decoration-color: rgba(232,201,160,0.4); }
     .auth-meta { margin-top: 16px; text-align: center; font-size: 13px; color: var(--text-muted); }
     .auth-meta a { color: var(--accent-light); text-decoration: none; }
     .auth-info-content { max-width: 380px; }
@@ -58,10 +62,28 @@
                 </div>
                 <div class="field">
                     <label for="password">Пароль</label>
-                    <input id="password" name="password" type="password" required placeholder="Минимум 8 символов">
+                    <input id="password" name="password" type="password" required placeholder="Минимум 8 символов" minlength="8">
+                </div>
+                <div class="agree-row">
+                    <input type="checkbox" id="agree" name="agree" required>
+                    <label for="agree">
+                        Я принимаю
+                        <a href="{{ url_for('terms') }}" target="_blank">Пользовательское соглашение</a>
+                        и
+                        <a href="{{ url_for('privacy') }}" target="_blank">Политику конфиденциальности</a>,
+                        а также даю согласие на обработку персональных данных
+                    </label>
                 </div>
                 <button type="submit" class="btn btn-primary btn-full">Зарегистрироваться</button>
             </form>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div style="margin-top:12px;padding:10px 14px;border-radius:8px;font-size:13px;background:{% if category == 'error' %}rgba(255,107,107,0.1){% else %}rgba(59,232,140,0.1){% endif %};color:{% if category == 'error' %}#ff6b6b{% else %}#3be88c{% endif %};">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
 
             <p class="auth-meta">
                 Уже есть аккаунт?
@@ -77,10 +99,10 @@
     <div class="auth-info-side">
         <div class="auth-info-content">
             <h2>Начните бесплатно прямо сейчас</h2>
-            <p>7 дней полного доступа ко всем функциям. Без привязки карты. Отмените в любой момент.</p>
+            <p>3 дня бесплатного доступа к Miner. Без привязки карты. Отмените в любой момент.</p>
             <div class="auth-stats">
                 <div class="auth-stat">
-                    <div class="auth-stat-value">7 дней</div>
+                    <div class="auth-stat-value">3 дня</div>
                     <div class="auth-stat-label">бесплатного теста</div>
                 </div>
                 <div class="auth-stat">
