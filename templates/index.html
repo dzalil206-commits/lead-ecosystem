@@ -9,160 +9,344 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}"/>
-  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}"/>
-  <meta name="theme-color" content="#05050a"/>
+  <meta name="theme-color" content="#000005"/>
   <style>
-    /* ── Index-only styles ── */
-    .hero-card-mini {
-      background: rgba(5,5,10,0.9);
-      border: 1px solid var(--border-mid);
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-size: 12px;
+    /* ── Page-level z-stack ── */
+    header, main, footer, .fixed-support { position: relative; z-index: 10; }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 92vh;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 8px;
+      padding: 80px 0 60px;
+      position: relative;
     }
-    .progress-bar {
-      height: 4px;
-      background: rgba(255,255,255,0.07);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      border-radius: 2px;
-      animation: fillBar 2.5s ease forwards;
-    }
-    @keyframes fillBar {
-      from { width: 0%; }
-    }
-    .logo-ticker {
-      display: flex;
+    .hero-inner {
+      display: grid;
+      grid-template-columns: minmax(0,1fr);
+      gap: 52px;
       align-items: center;
-      gap: 24px;
-      overflow: hidden;
-      -webkit-mask: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
-      mask: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
     }
-    .ticker-track {
-      display: flex;
-      gap: 24px;
-      animation: ticker 30s linear infinite;
-      flex-shrink: 0;
-    }
-    @keyframes ticker {
-      from { transform: translateX(0); }
-      to { transform: translateX(-50%); }
-    }
-    .ticker-item {
-      display: flex;
+    .hero-eyebrow {
+      display: inline-flex;
       align-items: center;
       gap: 8px;
-      font-size: 13px;
-      color: var(--text-2);
-      white-space: nowrap;
-      padding: 8px 16px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-pill);
-      background: var(--bg-card);
+      padding: 5px 14px 5px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,106,0,0.3);
+      background: rgba(255,106,0,0.06);
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,170,68,0.9);
+      margin-bottom: 22px;
+      width: fit-content;
+      letter-spacing: 0.02em;
     }
-    .ticker-icon { font-size: 16px; }
-    .feature-icon {
-      width: 44px; height: 44px;
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px;
-      margin-bottom: 14px;
-      flex-shrink: 0;
+    .hero h1 {
+      font-size: clamp(36px, 5.5vw, 70px);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      margin-bottom: 22px;
     }
-    .fi-gold { background: var(--gold-dim); }
-    .fi-cyan { background: var(--cyan-dim); }
-    .fi-green { background: rgba(61,232,160,0.1); }
-    .fi-white { background: rgba(255,255,255,0.06); }
-    .section-number {
-      font-size: 11px; font-weight: 800;
-      text-transform: uppercase; letter-spacing: 0.15em;
-      color: var(--text-3);
-      margin-bottom: 40px;
+    .hero-subtitle {
+      font-size: 17px;
+      color: rgba(255,255,255,0.58);
+      max-width: 530px;
+      margin-bottom: 38px;
+      line-height: 1.7;
+      font-weight: 400;
     }
-    .vs-divider {
-      display: flex; align-items: center;
-      justify-content: center;
-      height: 100%;
-    }
-    .vs-badge {
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-mid);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 800;
-      color: var(--text-2);
-    }
-    .row-item {
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 40px; }
+    .hero-trust { display: flex; flex-wrap: wrap; gap: 8px; }
+    .trust-pill {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 14px;
+      gap: 6px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.45);
+      padding: 5px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.07);
     }
-    .row-item:last-child { border-bottom: none; }
-    .row-bad { color: var(--red); font-weight: 600; }
-    .row-good { color: var(--green); font-weight: 600; }
-    .row-accent { color: var(--gold-light); font-weight: 600; }
-    .cta-section {
+
+    /* ── Orbital chart panel ── */
+    .orbit-panel {
       position: relative;
-      overflow: hidden;
-      background: linear-gradient(135deg, rgba(201,147,63,0.08) 0%, transparent 50%),
-                  radial-gradient(ellipse 80% 100% at 0% 50%, rgba(79,209,197,0.05), transparent 60%),
-                  var(--bg-card);
-      border: 1px solid var(--border-gold);
-      border-radius: var(--radius-xl);
-      padding: 56px 32px;
-      text-align: center;
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
     }
-    .cta-section::before {
+    .orbit-panel-card {
+      background: rgba(6,3,16,0.88);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 22px;
+      overflow: hidden;
+      backdrop-filter: blur(30px);
+      box-shadow: 0 0 0 1px rgba(255,106,0,0.1),
+                  0 40px 100px rgba(0,0,0,0.9),
+                  0 0 80px rgba(255,80,0,0.06);
+    }
+    .orbit-panel-card::before {
       content: '';
       position: absolute;
       top: 0; left: 0; right: 0;
       height: 1px;
-      background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
+      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.6), transparent);
     }
-    .live-bar {
-      display: inline-flex;
+    .opc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .opc-dots { display: flex; gap: 6px; }
+    .opc-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .opc-dot-r { background: #ff5f57; }
+    .opc-dot-y { background: #febc2e; }
+    .opc-dot-g { background: #28c840; }
+    .opc-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      font-family: monospace;
+    }
+    .status-dot-live {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: blink 2s infinite;
+    }
+    .opc-body { padding: 18px; }
+
+    /* Chart area */
+    .chart-area {
+      background: rgba(0,0,8,0.7);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .chart-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+    .chart-label { font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.1em; }
+    .chart-value { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
+    .chart-delta {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--green);
+      margin-top: 4px;
+    }
+    .chart-svg-wrap { height: 90px; position: relative; }
+    .chart-svg-wrap svg { width: 100%; height: 100%; overflow: visible; }
+
+    /* Grid lines */
+    .chart-grid { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+    .chart-grid-line { border-top: 1px solid rgba(255,255,255,0.04); }
+
+    /* Live dot at chart end */
+    .chart-live {
+      position: absolute;
+      right: 0;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      transform: translateY(-50%);
+      box-shadow: 0 0 10px var(--green), 0 0 20px rgba(0,229,160,0.4);
+    }
+    .chart-live::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,229,160,0.4);
+      animation: ringPulse 2s infinite;
+    }
+    @keyframes ringPulse {
+      0% { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+
+    /* Orbit mini-stats row */
+    .mini-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .mini-stat {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+    .mini-stat-val { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+    .mini-stat-lbl { font-size: 10px; color: rgba(255,255,255,0.4); }
+
+    /* Activity feed */
+    .activity-feed { display: flex; flex-direction: column; gap: 6px; }
+    .activity-item {
+      display: flex;
       align-items: center;
       gap: 10px;
-      background: rgba(61,232,160,0.07);
-      border: 1px solid rgba(61,232,160,0.2);
-      border-radius: var(--radius-pill);
-      padding: 6px 16px;
-      font-size: 13px;
-      color: var(--green);
-      font-weight: 500;
-      margin-bottom: 32px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      padding: 7px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.04);
     }
-    .stat-row {
+    .activity-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .ad-orange { background: var(--orange-3); box-shadow: 0 0 6px rgba(255,170,68,0.6); }
+    .ad-green  { background: var(--green);    box-shadow: 0 0 6px rgba(0,229,160,0.6); }
+    .ad-white  { background: rgba(255,255,255,0.5); }
+
+    /* Floating badges */
+    .float-badge {
+      position: absolute;
+      background: rgba(6,3,16,0.92);
+      border: 1px solid rgba(255,106,0,0.4);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--orange-3);
+      white-space: nowrap;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.7), 0 0 20px rgba(255,106,0,0.1);
+      backdrop-filter: blur(12px);
+      z-index: 2;
+      animation: floatUpDown 4s ease-in-out infinite;
+    }
+    .float-badge-2 {
+      border-color: rgba(0,229,160,0.4);
+      color: var(--green);
+      animation-delay: 2s;
+    }
+    .float-badge-top  { top: -16px;  right: 20px; }
+    .float-badge-left { bottom: 60px; left: -20px; }
+    @keyframes floatUpDown {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    /* ── Stats bar ── */
+    .stats-bar {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin: 32px 0;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin: 60px 0;
     }
-    @media (min-width: 640px) { .stat-row { grid-template-columns: repeat(4, 1fr); } }
-    .stat-block { text-align: center; }
-    .stat-block-num {
-      font-size: 28px; font-weight: 800;
-      letter-spacing: -0.03em;
-      background: linear-gradient(135deg, var(--text), var(--gold-bright));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+    .stats-bar-item {
+      background: rgba(0,0,8,0.7);
+      backdrop-filter: blur(16px);
+      padding: 28px 24px;
+      position: relative;
     }
-    .stat-block-label { font-size: 12px; color: var(--text-2); margin-top: 4px; }
-    .product-tag {
+    .stats-bar-item::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 24px;
+      width: 40px; height: 2px;
+      background: linear-gradient(90deg, var(--orange), transparent);
+    }
+    .stats-bar-num {
+      font-size: 38px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stats-bar-label { font-size: 13px; color: rgba(255,255,255,0.45); }
+    @media (min-width: 640px) { .stats-bar { grid-template-columns: repeat(4, 1fr); } }
+
+    /* ── How section ── */
+    .how-step-card {
+      background: rgba(6,3,16,0.75);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(20px);
+      transition: border-color 0.22s, transform 0.22s;
+    }
+    .how-step-card::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.2), transparent);
+    }
+    .how-step-card:hover {
+      border-color: rgba(255,106,0,0.35);
+      transform: translateY(-3px);
+    }
+    .how-num {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--orange-2), var(--orange));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 900;
+      color: #fff;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 16px rgba(255,106,0,0.35);
+    }
+
+    /* ── Growth chart section ── */
+    .growth-card {
+      background: rgba(4,2,12,0.85);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 24px;
+      padding: 32px;
+      backdrop-filter: blur(24px);
+      position: relative;
+      overflow: hidden;
+    }
+    .growth-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.4), transparent);
+    }
+
+    /* ── Product cards ── */
+    .prod-card {
+      background: rgba(6,3,16,0.80);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 22px;
+      padding: 32px 28px;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(20px);
+      transition: border-color 0.22s, box-shadow 0.22s, transform 0.22s;
+    }
+    .prod-card:hover {
+      border-color: rgba(255,106,0,0.4);
+      box-shadow: 0 0 40px rgba(255,106,0,0.07), 0 24px 70px rgba(0,0,0,0.7);
+      transform: translateY(-3px);
+    }
+    .prod-card-hot {
+      border-color: rgba(255,106,0,0.3);
+    }
+    .prod-chip {
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -171,21 +355,184 @@
       text-transform: uppercase;
       letter-spacing: 0.1em;
       padding: 4px 10px;
-      border-radius: var(--radius-pill);
-      margin-bottom: 12px;
+      border-radius: 999px;
+      margin-bottom: 16px;
     }
-    .tag-miner { background: rgba(201,147,63,0.1); color: var(--gold-light); border: 1px solid rgba(201,147,63,0.3); }
-    .tag-sender { background: rgba(79,209,197,0.1); color: var(--cyan); border: 1px solid rgba(79,209,197,0.3); }
+    .chip-orange { background: rgba(255,106,0,0.1); color: var(--orange-3); border: 1px solid rgba(255,106,0,0.3); }
+    .chip-green  { background: rgba(0,229,160,0.1); color: var(--green);    border: 1px solid rgba(0,229,160,0.3); }
+    .prod-price {
+      font-size: 34px; font-weight: 900; letter-spacing: -0.04em;
+      margin: 12px 0 4px;
+    }
+    .prod-period { font-size: 13px; color: rgba(255,255,255,0.4); }
+    .prod-list { list-style: none; margin: 18px 0; display: flex; flex-direction: column; gap: 9px; }
+    .prod-list li {
+      font-size: 13px;
+      color: rgba(255,255,255,0.55);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .prod-list li::before {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--orange);
+      flex-shrink: 0;
+      box-shadow: 0 0 6px rgba(255,106,0,0.6);
+    }
+    .prod-stripe {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--orange), var(--orange-3), transparent);
+    }
+
+    /* ── CTA ── */
+    .cta-wrap {
+      position: relative;
+      overflow: hidden;
+      border-radius: 28px;
+      padding: 80px 32px;
+      text-align: center;
+      background: radial-gradient(ellipse 80% 120% at 50% 100%, rgba(255,80,0,0.22), transparent 60%),
+                  rgba(4,2,12,0.90);
+      border: 1px solid rgba(255,106,0,0.2);
+      backdrop-filter: blur(24px);
+    }
+    .cta-wrap::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.6), transparent);
+    }
+    .cta-orb {
+      position: absolute;
+      width: 400px; height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,80,0,0.25) 0%, transparent 70%);
+      bottom: -200px; left: 50%;
+      transform: translateX(-50%);
+      filter: blur(40px);
+      pointer-events: none;
+    }
+    .cta-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,229,160,0.3);
+      background: rgba(0,229,160,0.06);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--green);
+      margin-bottom: 24px;
+    }
+
+    /* ── Ticker ── */
+    .ticker-wrap {
+      overflow: hidden;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 0;
+      -webkit-mask: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+      mask: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+    }
+    .ticker-track {
+      display: flex;
+      gap: 32px;
+      animation: tickerMove 35s linear infinite;
+      width: max-content;
+    }
+    @keyframes tickerMove { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .ticker-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.45);
+      white-space: nowrap;
+    }
+    .ticker-item strong { color: var(--orange-3); font-weight: 600; }
+    .ticker-sep { color: rgba(255,106,0,0.3); font-size: 10px; }
+
+    /* ── Comparison ── */
+    .vs-grid { display: grid; gap: 2px; }
+    .vs-col {
+      background: rgba(4,2,12,0.82);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 18px;
+      padding: 28px 24px;
+      backdrop-filter: blur(20px);
+    }
+    .vs-col-hot { border-color: rgba(255,106,0,0.3); }
+    .vs-row-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 14px;
+    }
+    .vs-row-item:last-child { border-bottom: none; }
+    .val-bad  { color: #ff5555; font-weight: 600; }
+    .val-good { color: var(--green); font-weight: 600; }
+    .val-hot  { color: var(--orange-3); font-weight: 600; }
+    @media (min-width: 700px) { .vs-grid { grid-template-columns: 1fr auto 1fr; } }
+    .vs-center { display: flex; align-items: center; justify-content: center; padding: 0 16px; }
+    .vs-badge { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.4); }
   </style>
 </head>
 <body class="page-dark">
 
-<!-- Mesh background -->
-<div class="mesh-bg">
-  <div class="grid-pattern"></div>
+<!-- ══ Nebula background ══ -->
+<div class="nebula-bg">
+  <div class="nebula-orb nebula-orb-1"></div>
+  <div class="nebula-orb nebula-orb-2"></div>
 </div>
 
-<!-- ── Header ── -->
+<!-- ══ Orbital SVG layer ══ -->
+<div class="orbital-canvas">
+  <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+    <!-- Orbital paths — thin white ellipses in perspective, like the reference image -->
+    <g opacity="0.18" stroke="white" stroke-width="0.8" fill="none">
+      <ellipse cx="820" cy="520" rx="560" ry="180"  transform="rotate(-28 820 520)"/>
+      <ellipse cx="820" cy="520" rx="380" ry="120"  transform="rotate(-28 820 520)"/>
+      <ellipse cx="820" cy="520" rx="220" ry="68"   transform="rotate(-28 820 520)"/>
+      <ellipse cx="820" cy="520" rx="700" ry="230"  transform="rotate(-18 820 520)"/>
+      <ellipse cx="820" cy="520" rx="460" ry="90"   transform="rotate(-40 820 520)"/>
+    </g>
+    <!-- Orbital node dots -->
+    <g fill="white" filter="url(#glow)">
+      <circle cx="280"  cy="370" r="2.5" opacity="0.7"/>
+      <circle cx="1160" cy="210" r="3"   opacity="0.9"/>
+      <circle cx="390"  cy="490" r="2"   opacity="0.5"/>
+      <circle cx="970"  cy="320" r="2.5" opacity="0.7"/>
+      <circle cx="840"  cy="640" r="2"   opacity="0.5"/>
+      <circle cx="1240" cy="620" r="3.5" opacity="1.0"/>
+      <circle cx="620"  cy="250" r="2"   opacity="0.6"/>
+      <circle cx="1050" cy="490" r="1.8" opacity="0.5"/>
+    </g>
+    <!-- Small star field -->
+    <g fill="white">
+      <circle cx="120"  cy="80"  r="1" opacity="0.4"/>
+      <circle cx="340"  cy="150" r="0.8" opacity="0.3"/>
+      <circle cx="560"  cy="50"  r="1.2" opacity="0.5"/>
+      <circle cx="900"  cy="100" r="0.9" opacity="0.35"/>
+      <circle cx="1100" cy="60"  r="1" opacity="0.4"/>
+      <circle cx="1380" cy="200" r="0.8" opacity="0.3"/>
+      <circle cx="200"  cy="700" r="1" opacity="0.3"/>
+      <circle cx="1300" cy="800" r="1.2" opacity="0.4"/>
+    </g>
+  </svg>
+</div>
+
+<!-- ══ Header ══ -->
 <header class="site-header">
   <div class="container header-inner">
     <a href="{{ url_for('index') }}" class="logo">
@@ -209,378 +556,428 @@
   </div>
 </header>
 
-<!-- ── Hero ── -->
+<!-- ══ Hero ══ -->
 <section class="hero" id="top">
-  <div class="noise-bg"></div>
-  <div class="hero-orb-1"></div>
-  <div class="hero-orb-2"></div>
   <div class="container hero-inner">
 
-    <!-- Left: content -->
+    <!-- Left -->
     <div class="hero-content" data-reveal>
       <div class="hero-eyebrow">
         <span class="dot-live"></span>
-        Более 180 000 лидов собрано прямо сейчас
+        847 операторов онлайн прямо сейчас
       </div>
-      <h1>Telegram-комбайн для <span class="gradient-text">автопоиска</span><br>клиентов и лидов</h1>
+      <h1>
+        Находите клиентов<br>
+        в Telegram на<br>
+        <span class="gradient-text">автопилоте</span>
+      </h1>
       <p class="hero-subtitle">
-        TG Lead Wareon — единая платформа: сбор целевой аудитории из каналов и чатов,
-        умная авторассылка и нейрочаттинг без блокировок.
+        TG Lead Wareon — платформа для автоматического сбора лидов из
+        каналов и чатов, умной авторассылки и нейрочаттинга.
+        Без банов. Без ручного труда.
       </p>
       <div class="hero-actions">
-        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Попробовать 3 дня бесплатно</a>
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Начать бесплатно — 3 дня</a>
         <a href="{{ url_for('pricing') }}" class="btn btn-outline btn-lg">Посмотреть тарифы</a>
       </div>
       <div class="hero-trust">
-        <div class="trust-item"><span class="trust-icon">🛡️</span> Антибан защита</div>
-        <div class="trust-item"><span class="trust-icon">⚡</span> Запуск за 15 минут</div>
-        <div class="trust-item"><span class="trust-icon">💳</span> Без привязки карты</div>
-        <div class="trust-item"><span class="trust-icon">🔄</span> Отмена в любой момент</div>
+        <div class="trust-pill">🛡️ Антибан-защита</div>
+        <div class="trust-pill">⚡ Запуск 15 минут</div>
+        <div class="trust-pill">💳 Без привязки карты</div>
       </div>
     </div>
 
-    <!-- Right: visual card -->
-    <div class="hero-visual" data-parallax>
-      <div class="hero-float hero-float-1">+1 245 лидов сегодня</div>
-      <div class="hero-float hero-float-2">⚡ Нейро-ответ за 0.3с</div>
-      <div class="hero-card">
-        <div class="hero-card-header">
-          <div class="card-dots">
-            <span class="card-dot card-dot-r"></span>
-            <span class="card-dot card-dot-y"></span>
-            <span class="card-dot card-dot-g"></span>
+    <!-- Right: analytics panel -->
+    <div style="position:relative;" data-reveal style="transition-delay:0.15s">
+      <div class="float-badge float-badge-top">📈 +1 245 лидов сегодня</div>
+      <div class="float-badge float-badge-2 float-badge-left">⚡ Нейро-ответ 0.3 сек</div>
+
+      <div class="orbit-panel-card">
+        <div class="opc-header">
+          <div class="opc-dots">
+            <span class="opc-dot opc-dot-r"></span>
+            <span class="opc-dot opc-dot-y"></span>
+            <span class="opc-dot opc-dot-g"></span>
           </div>
-          <div class="card-status">
-            <span class="pulse-dot"></span>
-            TG Lead Miner · работает
+          <div class="opc-status">
+            <span class="status-dot-live"></span>
+            miner.wareon.live · работает
           </div>
         </div>
-        <div class="card-body">
-          <!-- Sparkline -->
-          <div class="sparkline-wrap">
-            <div class="sparkline-header">
-              <span>Лидов за 7 дней</span>
-              <span class="sparkline-delta">↑ +37%</span>
-            </div>
-            <div class="sparkline-value" id="heroCounter">182 430</div>
-            <svg class="sparkline-svg" viewBox="0 0 260 50" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#c9933f" stop-opacity="0.35"/>
-                  <stop offset="100%" stop-color="#c9933f" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-              <path d="M0,42 L40,35 L80,28 L120,32 L160,18 L200,22 L260,10 L260,50 L0,50 Z" fill="url(#sg)"/>
-              <path d="M0,42 L40,35 L80,28 L120,32 L160,18 L200,22 L260,10" fill="none" stroke="#c9933f" stroke-width="2" stroke-linecap="round"/>
-              <circle cx="260" cy="10" r="4" fill="#e8b96a"/>
-              <circle cx="260" cy="10" r="8" fill="none" stroke="#e8b96a" stroke-opacity="0.3" stroke-width="2">
-                <animate attributeName="r" values="4;10" dur="2s" repeatCount="indefinite"/>
-                <animate attributeName="stroke-opacity" values="0.4;0" dur="2s" repeatCount="indefinite"/>
-              </circle>
-            </svg>
-          </div>
+        <div class="opc-body">
 
-          <!-- Progress bars -->
-          <div class="hero-card-mini">
-            <span style="color:var(--text-2)">Онлайн-школы</span>
-            <span style="color:var(--gold-light);font-weight:600;">2 341</span>
-          </div>
-          <div class="progress-bar" style="margin-bottom:10px;">
-            <div class="progress-fill" style="width:78%;background:linear-gradient(90deg,var(--gold),var(--gold-light));"></div>
-          </div>
-          <div class="hero-card-mini">
-            <span style="color:var(--text-2)">Арбитраж трафика</span>
-            <span style="color:var(--cyan);font-weight:600;">1 872</span>
-          </div>
-          <div class="progress-bar" style="margin-bottom:14px;">
-            <div class="progress-fill" style="width:62%;background:linear-gradient(90deg,var(--cyan),rgba(79,209,197,0.6));animation-delay:0.3s;"></div>
-          </div>
-
-          <!-- Chat preview -->
-          <div class="chat-preview">
-            <div class="chat-msg chat-msg-in">Собрано 1 245 лидов по нише «Онлайн-школа».</div>
-            <div class="chat-msg chat-msg-out">Запусти авторассылку на всех активных.</div>
-            <div class="chat-typing">
-              <div class="typing-dots">
-                <span class="typing-dot"></span>
-                <span class="typing-dot"></span>
-                <span class="typing-dot"></span>
+          <!-- Main chart -->
+          <div class="chart-area">
+            <div class="chart-top">
+              <div>
+                <div class="chart-label">Лидов собрано</div>
+                <div class="chart-value" id="heroCount">182 430</div>
+                <div class="chart-delta">↑ +37% за 7 дней</div>
               </div>
-              Нейро-чаттинг пишет ответ…
+              <div style="text-align:right;">
+                <div class="chart-label">Сегодня</div>
+                <div style="font-size:18px;font-weight:700;color:var(--orange-3);" id="todayCount">1 245</div>
+              </div>
+            </div>
+            <div class="chart-grid">
+              <div class="chart-grid-line"></div>
+              <div class="chart-grid-line"></div>
+              <div class="chart-grid-line"></div>
+            </div>
+            <div class="chart-svg-wrap">
+              <svg viewBox="0 0 400 90" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#ff6a00" stop-opacity="0.3"/>
+                    <stop offset="100%" stop-color="#ff6a00" stop-opacity="0"/>
+                  </linearGradient>
+                  <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#ff6a00" stop-opacity="0.5"/>
+                    <stop offset="100%" stop-color="#ffaa44"/>
+                  </linearGradient>
+                </defs>
+                <!-- Area fill -->
+                <path d="M0,80 C40,78 60,65 100,58 C140,51 160,62 200,54 C240,46 270,35 310,28 C340,22 370,18 400,12 L400,90 L0,90 Z"
+                      fill="url(#chartGrad)"/>
+                <!-- Line -->
+                <path d="M0,80 C40,78 60,65 100,58 C140,51 160,62 200,54 C240,46 270,35 310,28 C340,22 370,18 400,12"
+                      fill="none"
+                      stroke="url(#lineGrad)"
+                      stroke-width="2.5"
+                      stroke-linecap="round"/>
+                <!-- Data points -->
+                <circle cx="100" cy="58" r="3" fill="#ff8c00" opacity="0.8"/>
+                <circle cx="200" cy="54" r="3" fill="#ff8c00" opacity="0.8"/>
+                <circle cx="310" cy="28" r="3" fill="#ffaa44" opacity="0.9"/>
+                <circle cx="400" cy="12" r="4" fill="#ffaa44"/>
+              </svg>
+              <div class="chart-live" style="top:12px;"></div>
+            </div>
+          </div>
+
+          <!-- Mini stats -->
+          <div class="mini-stats">
+            <div class="mini-stat">
+              <div class="mini-stat-val" style="color:var(--orange-3);">98%</div>
+              <div class="mini-stat-lbl">Uptime</div>
+            </div>
+            <div class="mini-stat">
+              <div class="mini-stat-val" style="color:var(--green);">0</div>
+              <div class="mini-stat-lbl">Банов</div>
+            </div>
+            <div class="mini-stat">
+              <div class="mini-stat-val">847</div>
+              <div class="mini-stat-lbl">Онлайн</div>
+            </div>
+          </div>
+
+          <!-- Activity feed -->
+          <div class="activity-feed">
+            <div class="activity-item">
+              <span class="activity-dot ad-orange"></span>
+              Miner собрал 341 лид из «Онлайн-школы»
+              <span style="margin-left:auto;font-size:10px;">1м</span>
+            </div>
+            <div class="activity-item">
+              <span class="activity-dot ad-green"></span>
+              Нейро-ответ → конверсия в оплату
+              <span style="margin-left:auto;font-size:10px;">4м</span>
+            </div>
+            <div class="activity-item">
+              <span class="activity-dot ad-white"></span>
+              Sender отправил 500 сообщений
+              <span style="margin-left:auto;font-size:10px;">8м</span>
             </div>
           </div>
         </div>
       </div>
     </div>
+
   </div>
 </section>
 
-<!-- ── Live counter bar ── -->
-<div style="padding:12px 0;border-bottom:1px solid var(--border);">
-  <div class="container">
-    <div class="logo-ticker">
-      <div class="ticker-track" id="tickerTrack">
-        <div class="ticker-item"><span class="ticker-icon">🔥</span> Лидов собрано сегодня: <strong style="color:var(--gold-light)" id="liveCount">0</strong></div>
-        <div class="ticker-item"><span class="ticker-icon">✅</span> Активных пользователей: <strong style="color:var(--green)">847</strong></div>
-        <div class="ticker-item"><span class="ticker-icon">⚡</span> Задач Miner запущено: <strong style="color:var(--cyan)">1 293</strong></div>
-        <div class="ticker-item"><span class="ticker-icon">💬</span> Сообщений отправлено: <strong style="color:var(--gold-light)">498 221</strong></div>
-        <div class="ticker-item"><span class="ticker-icon">🛡️</span> Блокировок: <strong style="color:var(--green)">0 за 30 дней</strong></div>
-        <div class="ticker-item"><span class="ticker-icon">🔥</span> Лидов собрано сегодня: <strong style="color:var(--gold-light)" id="liveCount2">0</strong></div>
-        <div class="ticker-item"><span class="ticker-icon">✅</span> Активных пользователей: <strong style="color:var(--green)">847</strong></div>
-        <div class="ticker-item"><span class="ticker-icon">⚡</span> Задач Miner запущено: <strong style="color:var(--cyan)">1 293</strong></div>
-        <div class="ticker-item"><span class="ticker-icon">💬</span> Сообщений отправлено: <strong style="color:var(--gold-light)">498 221</strong></div>
-        <div class="ticker-item"><span class="ticker-icon">🛡️</span> Блокировок: <strong style="color:var(--green)">0 за 30 дней</strong></div>
-      </div>
+<!-- ══ Ticker ══ -->
+<div class="ticker-wrap">
+  <div class="ticker-track">
+    <span class="ticker-item">🔥 Лидов сегодня: <strong id="tc1">0</strong></span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">✅ Активных пользователей: <strong>847</strong></span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">⚡ Задач Miner: <strong>1 293</strong></span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">💬 Сообщений отправлено: <strong>498 221</strong></span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">🛡️ Блокировок за 30 дней: <strong style="color:var(--green)">0</strong></span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">🔥 Лидов сегодня: <strong id="tc2">0</strong></span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">✅ Активных пользователей: <strong>847</strong></span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">⚡ Задач Miner: <strong>1 293</strong></span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">💬 Сообщений отправлено: <strong>498 221</strong></span>
+    <span class="ticker-sep">◆</span>
+    <span class="ticker-item">🛡️ Блокировок за 30 дней: <strong style="color:var(--green)">0</strong></span>
+  </div>
+</div>
+
+<!-- ══ Stats bar ══ -->
+<div class="container">
+  <div class="stats-bar" data-reveal>
+    <div class="stats-bar-item">
+      <div class="stats-bar-num" style="color:var(--orange-3);">180K+</div>
+      <div class="stats-bar-label">Лидов собрано</div>
+    </div>
+    <div class="stats-bar-item">
+      <div class="stats-bar-num">2 400+</div>
+      <div class="stats-bar-label">Пользователей</div>
+    </div>
+    <div class="stats-bar-item">
+      <div class="stats-bar-num" style="color:var(--green);">98%</div>
+      <div class="stats-bar-label">Uptime платформы</div>
+    </div>
+    <div class="stats-bar-item">
+      <div class="stats-bar-num">15 мин</div>
+      <div class="stats-bar-label">До первого лида</div>
     </div>
   </div>
 </div>
 
-<!-- ── Stats row ── -->
-<section style="padding:48px 0;">
-  <div class="container">
-    <div class="stat-row">
-      <div class="stat-block" data-reveal>
-        <div class="stat-block-num">180K+</div>
-        <div class="stat-block-label">Лидов собрано</div>
-      </div>
-      <div class="stat-block" data-reveal>
-        <div class="stat-block-num">2 400+</div>
-        <div class="stat-block-label">Пользователей</div>
-      </div>
-      <div class="stat-block" data-reveal>
-        <div class="stat-block-num">98%</div>
-        <div class="stat-block-label">Uptime сервиса</div>
-      </div>
-      <div class="stat-block" data-reveal>
-        <div class="stat-block-num">15 мин</div>
-        <div class="stat-block-label">До первого лида</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── How it works ── -->
+<!-- ══ How it works ══ -->
 <section class="section" id="how">
   <div class="container">
-    <div class="section-header">
+    <div class="section-header center">
       <div class="section-label">Как это работает</div>
-      <h2>Полный цикл от сбора<br>до первой продажи</h2>
-      <p>Настройте один раз — платформа работает за вас 24/7, соблюдая все лимиты Telegram.</p>
+      <h2>От старта до первой продажи<br>за один день</h2>
+      <p>Настройте один раз — платформа работает за вас 24/7.</p>
     </div>
-    <div class="steps-grid">
-      <article class="step-card" data-reveal>
-        <div class="feature-icon fi-gold">🔌</div>
-        <div class="step-number">01</div>
-        <h3>Подключите аккаунты</h3>
-        <p>Добавьте рабочие Telegram-аккаунты и прокси. Платформа сама заботится о лимитах и безопасной ротации.</p>
-      </article>
-      <article class="step-card" data-reveal style="transition-delay:0.1s">
-        <div class="feature-icon fi-cyan">⛏️</div>
-        <div class="step-number">02</div>
-        <h3>Запустите Miner</h3>
-        <p>Вставьте ссылку на канал, чат или пост — Miner аккуратно собирает аудиторию по поведенческим сигналам.</p>
-      </article>
-      <article class="step-card" data-reveal style="transition-delay:0.2s">
-        <div class="feature-icon fi-green">📨</div>
-        <div class="step-number">03</div>
-        <h3>Включите Sender</h3>
-        <p>Настройте умные сценарии авторассылки: прогрев, оффер, ретаргет по реакции и статусу диалога.</p>
-      </article>
-      <article class="step-card" data-reveal style="transition-delay:0.3s">
-        <div class="feature-icon fi-white">🤖</div>
-        <div class="step-number">04</div>
-        <h3>Нейрочаттинг 24/7</h3>
-        <p>Нейросеть отвечает за вас, уточняет потребности и доводит до оплаты без спама и выгорания команды.</p>
-      </article>
+    <div class="steps-grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr));">
+      <div class="how-step-card" data-reveal>
+        <div class="how-num">1</div>
+        <h3 style="margin-bottom:10px;">Подключите аккаунты</h3>
+        <p style="font-size:14px;color:rgba(255,255,255,0.5);line-height:1.65;">Добавьте Telegram-аккаунты и прокси. Система сама следит за лимитами и ротацией.</p>
+      </div>
+      <div class="how-step-card" data-reveal style="transition-delay:0.1s">
+        <div class="how-num">2</div>
+        <h3 style="margin-bottom:10px;">Запустите Miner</h3>
+        <p style="font-size:14px;color:rgba(255,255,255,0.5);line-height:1.65;">Вставьте ссылку на канал или чат — Miner собирает активную аудиторию по поведению.</p>
+      </div>
+      <div class="how-step-card" data-reveal style="transition-delay:0.2s">
+        <div class="how-num">3</div>
+        <h3 style="margin-bottom:10px;">Включите Sender</h3>
+        <p style="font-size:14px;color:rgba(255,255,255,0.5);line-height:1.65;">Настройте умные сценарии рассылки: прогрев, оффер, ретаргет по реакции.</p>
+      </div>
+      <div class="how-step-card" data-reveal style="transition-delay:0.3s">
+        <div class="how-num">4</div>
+        <h3 style="margin-bottom:10px;">Нейрочаттинг 24/7</h3>
+        <p style="font-size:14px;color:rgba(255,255,255,0.5);line-height:1.65;">AI отвечает за вас, уточняет потребности и доводит до оплаты без спама.</p>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ── Products ── -->
+<!-- ══ Growth chart ══ -->
+<section class="section" id="growth">
+  <div class="container">
+    <div class="growth-card" data-reveal>
+      <div style="display:grid;grid-template-columns:1fr auto;align-items:center;gap:24px;margin-bottom:28px;flex-wrap:wrap;">
+        <div>
+          <div class="section-label" style="margin-bottom:10px;">Рост платформы</div>
+          <h2 style="font-size:clamp(22px,3vw,36px);margin-bottom:8px;">Динамика за последние 12 месяцев</h2>
+          <p style="color:rgba(255,255,255,0.45);font-size:14px;">Реальные данные — количество собранных лидов через TG Lead Miner</p>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:42px;font-weight:900;letter-spacing:-0.04em;color:var(--orange-3);">+380%</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.4);">год к году</div>
+        </div>
+      </div>
+      <!-- SVG growth chart -->
+      <div style="position:relative;height:160px;margin-bottom:16px;">
+        <svg width="100%" height="160" viewBox="0 0 900 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="growGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ff6a00" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="#ff6a00" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <!-- Grid -->
+          <line x1="0" y1="40"  x2="900" y2="40"  stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <line x1="0" y1="80"  x2="900" y2="80"  stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <line x1="0" y1="120" x2="900" y2="120" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <!-- Area -->
+          <path d="M0,155 L75,150 L150,148 L225,142 L300,138 L375,130 L450,122 L525,108 L600,90 L675,68 L750,45 L825,22 L900,5 L900,160 L0,160 Z"
+                fill="url(#growGrad)"/>
+          <!-- Line -->
+          <path d="M0,155 L75,150 L150,148 L225,142 L300,138 L375,130 L450,122 L525,108 L600,90 L675,68 L750,45 L825,22 L900,5"
+                fill="none" stroke="var(--orange)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Points -->
+          <circle cx="300" cy="138" r="4" fill="#ff8c00" opacity="0.7"/>
+          <circle cx="600" cy="90"  r="4" fill="#ff8c00" opacity="0.8"/>
+          <circle cx="900" cy="5"   r="5" fill="var(--orange-3)">
+            <animate attributeName="r" values="5;8;5" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="1;0.7;1" dur="2s" repeatCount="indefinite"/>
+          </circle>
+        </svg>
+      </div>
+      <!-- Month labels -->
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,0.25);">
+        <span>Янв</span><span>Фев</span><span>Мар</span><span>Апр</span><span>Май</span>
+        <span>Июн</span><span>Июл</span><span>Авг</span><span>Сен</span><span>Окт</span>
+        <span>Ноя</span><span>Дек</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ Products ══ -->
 <section class="section" id="products">
   <div class="container">
     <div class="section-header">
       <div class="section-label">Продукты</div>
-      <h2>Два инструмента —<br>одна экосистема</h2>
-      <p>Запускайте отдельно или вместе, чтобы выжать максимум из Telegram-трафика.</p>
+      <h2>Два инструмента —<br>одна экосистема роста</h2>
+      <p>Запускайте отдельно или вместе для максимальной эффективности.</p>
     </div>
-    <div class="products-grid">
-      <article class="card card-hover product-card" data-reveal>
-        <div class="card-glow"></div>
-        <div class="product-tag tag-miner">⛏️ Miner</div>
-        <h3>TG Lead Miner</h3>
-        <p>Автоматический сбор целевой аудитории из каналов, чатов, комментариев и реакций. Без риска банов — антифлуд встроен.</p>
-        <div class="product-meta">
-          <span class="price">от 490₽/мес</span>
-          <span class="pill pill-gold">Сбор лидов</span>
+    <div style="display:grid;gap:16px;">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;">
+        <div class="prod-card prod-card-hot" data-reveal>
+          <div class="prod-stripe"></div>
+          <div class="prod-chip chip-orange">⛏️ Miner</div>
+          <h3 style="font-size:22px;font-weight:800;margin-bottom:6px;">TG Lead Miner</h3>
+          <p style="font-size:14px;color:rgba(255,255,255,0.5);margin-bottom:0;">Автоматический сбор целевой аудитории из каналов, чатов и комментариев.</p>
+          <div class="prod-price" style="color:var(--orange-3);">490 ₽</div>
+          <div class="prod-period">в месяц · 3 дня бесплатно</div>
+          <ul class="prod-list">
+            <li>Сбор по поведенческим сигналам</li>
+            <li>Фильтры по языку и активности</li>
+            <li>Экспорт CSV / JSON</li>
+            <li>Встроенная антибан защита</li>
+          </ul>
+          <a href="{{ url_for('register') }}" class="btn btn-primary">Попробовать бесплатно →</a>
         </div>
-        <ul class="product-list">
-          <li>Точный таргет по вовлечённости</li>
-          <li>Фильтры по языку, активности и дате</li>
-          <li>Экспорт в Sender в один клик</li>
-          <li>CSV / JSON / Telegram-контакты</li>
-        </ul>
-        <a href="{{ url_for('pricing') }}" class="btn btn-primary btn-sm">Подключить Miner →</a>
-      </article>
-      <article class="card card-hover product-card" data-reveal style="transition-delay:0.1s">
-        <div class="card-glow card-glow-cyan"></div>
-        <div class="product-tag tag-sender">📨 Sender</div>
-        <h3>TG Lead Sender</h3>
-        <p>Гибкий движок авторассылки и нейрочаттинга для прогрева аудитории без блокировок. Умные сценарии под любую воронку.</p>
-        <div class="product-meta">
-          <span class="price">от 990₽/мес</span>
-          <span class="pill" style="border-color:rgba(79,209,197,0.4);color:var(--cyan);background:var(--cyan-dim);">Монетизация</span>
+        <div class="prod-card" data-reveal style="transition-delay:0.1s">
+          <div class="prod-chip chip-green">📨 Sender</div>
+          <h3 style="font-size:22px;font-weight:800;margin-bottom:6px;">TG Lead Sender</h3>
+          <p style="font-size:14px;color:rgba(255,255,255,0.5);margin-bottom:0;">Гибкий движок авторассылки и нейрочаттинга для монетизации аудитории.</p>
+          <div class="prod-price" style="color:var(--green);">990 ₽</div>
+          <div class="prod-period" style="color:rgba(255,255,255,0.35);">в месяц</div>
+          <ul class="prod-list">
+            <li>Сценарии под арбитраж и инфобиз</li>
+            <li>Умное чередование аккаунтов</li>
+            <li>Нейро-ответы на основе AI</li>
+            <li>Ретаргет по статусу диалога</li>
+          </ul>
+          <a href="{{ url_for('pricing') }}" class="btn btn-outline">Смотреть тарифы →</a>
         </div>
-        <ul class="product-list">
-          <li>Сценарии под арбитраж и инфобизнес</li>
-          <li>Умное чередование аккаунтов</li>
-          <li>Нейро-ответы и автоворонки</li>
-          <li>Ретаргет по статусу диалога</li>
-        </ul>
-        <a href="{{ url_for('pricing') }}" class="btn btn-outline btn-sm">Смотреть Sender →</a>
-      </article>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ── Safety ── -->
-<section class="section" id="safety">
-  <div class="container">
-    <div class="section-header center">
-      <div class="section-label">Безопасность</div>
-      <h2>Антибан — это не маркетинг,<br>это архитектура</h2>
-      <p>Блокировка аккаунтов — главная боль. Мы решаем её на уровне системы.</p>
-    </div>
-    <div class="steps-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;">
-      <article class="step-card" data-reveal>
-        <div class="feature-icon fi-gold">🛡️</div>
-        <div class="step-number">AI-защита</div>
-        <h3>Автоматические паузы</h3>
-        <p>FloodWait обрабатывается автоматически. Система сама снижает темп при нагрузке и возобновляет работу.</p>
-      </article>
-      <article class="step-card" data-reveal style="transition-delay:0.1s">
-        <div class="feature-icon fi-cyan">🔄</div>
-        <div class="step-number">Прогрев</div>
-        <h3>Имитация человека</h3>
-        <p>Случайные паузы, разная скорость печати, эмуляция чтения — поведение неотличимо от живого пользователя.</p>
-      </article>
-      <article class="step-card" data-reveal style="transition-delay:0.2s">
-        <div class="feature-icon fi-green">📊</div>
-        <div class="step-number">Мониторинг</div>
-        <h3>Статус аккаунтов</h3>
-        <p>Уведомления о блокировках, авто-замена аккаунтов без остановки кампании, лог всех действий.</p>
-      </article>
-    </div>
-  </div>
-</section>
-
-<!-- ── Comparison ── -->
+<!-- ══ Comparison ══ -->
 <section class="section" id="comparison">
   <div class="container">
     <div class="section-header center">
       <div class="section-label">Сравнение</div>
-      <h2>Ручная работа vs TG Lead Wareon</h2>
-      <p>Посмотрите, сколько времени вы освобождаете с нашим комбайном.</p>
+      <h2>Ручная работа vs Wareon</h2>
     </div>
-    <div class="products-grid" style="grid-template-columns:1fr auto 1fr;align-items:start;gap:0;">
-      <div class="card" style="border-radius:var(--radius-lg) 0 0 var(--radius-lg);border-right:none;opacity:0.75;" data-reveal>
-        <h3 style="text-align:center;margin-bottom:20px;font-size:15px;color:var(--text-2);">😓 Вручную</h3>
-        <div class="row-item"><span>Поиск чатов</span><span class="row-bad">2–3 часа</span></div>
-        <div class="row-item"><span>Сбор аудитории</span><span class="row-bad">5–8 часов</span></div>
-        <div class="row-item"><span>Написание текстов</span><span class="row-bad">1–2 часа</span></div>
-        <div class="row-item"><span>Рассылка 100 чел.</span><span class="row-bad">3–4 часа</span></div>
-        <div class="row-item"><span>Риск бана</span><span class="row-bad">Высокий</span></div>
-        <div style="padding-top:12px;font-size:14px;font-weight:700;">Итого: <span class="row-bad">11–17 часов</span></div>
+    <div class="vs-grid" data-reveal>
+      <div class="vs-col" style="opacity:0.7;">
+        <h3 style="font-size:15px;margin-bottom:20px;color:rgba(255,255,255,0.5);">😓 Вручную</h3>
+        <div class="vs-row-item"><span>Поиск чатов</span>    <span class="val-bad">2–3 часа</span></div>
+        <div class="vs-row-item"><span>Сбор аудитории</span> <span class="val-bad">5–8 часов</span></div>
+        <div class="vs-row-item"><span>Написание текстов</span><span class="val-bad">1–2 часа</span></div>
+        <div class="vs-row-item"><span>Рассылка 100 чел.</span><span class="val-bad">3–4 часа</span></div>
+        <div class="vs-row-item"><span>Риск бана</span>       <span class="val-bad">Высокий</span></div>
+        <div style="padding-top:14px;font-weight:700;">Итого: <span class="val-bad">11–17 часов</span></div>
       </div>
-      <div class="vs-divider" style="padding:0 16px;">
-        <div class="vs-badge">VS</div>
-      </div>
-      <div class="card" style="border-radius:0 var(--radius-lg) var(--radius-lg) 0;border-color:var(--border-gold);" data-reveal>
-        <h3 style="text-align:center;margin-bottom:20px;font-size:15px;color:var(--gold-light);">🚀 С TG Lead Wareon</h3>
-        <div class="row-item"><span>Поиск чатов</span><span class="row-good">1 минута</span></div>
-        <div class="row-item"><span>Сбор аудитории</span><span class="row-good">5 минут</span></div>
-        <div class="row-item"><span>Написание текстов</span><span class="row-accent">AI генерирует</span></div>
-        <div class="row-item"><span>Рассылка 100 чел.</span><span class="row-good">10 минут</span></div>
-        <div class="row-item"><span>Риск бана</span><span class="row-good">Минимальный</span></div>
-        <div style="padding-top:12px;font-size:14px;font-weight:700;">Итого: <span class="row-accent">16 минут</span></div>
+      <div class="vs-center"><div class="vs-badge">VS</div></div>
+      <div class="vs-col vs-col-hot">
+        <h3 style="font-size:15px;margin-bottom:20px;color:var(--orange-3);">🚀 TG Lead Wareon</h3>
+        <div class="vs-row-item"><span>Поиск чатов</span>    <span class="val-good">1 минута</span></div>
+        <div class="vs-row-item"><span>Сбор аудитории</span> <span class="val-good">5 минут</span></div>
+        <div class="vs-row-item"><span>Написание текстов</span><span class="val-hot">AI генерирует</span></div>
+        <div class="vs-row-item"><span>Рассылка 100 чел.</span><span class="val-good">10 минут</span></div>
+        <div class="vs-row-item"><span>Риск бана</span>       <span class="val-good">Минимальный</span></div>
+        <div style="padding-top:14px;font-weight:700;">Итого: <span class="val-hot">16 минут</span></div>
       </div>
     </div>
-    <div style="text-align:center;margin-top:20px;font-size:15px;color:var(--text-2);">
-      Экономия: <strong style="color:var(--gold-light);">11–17 часов</strong> каждый цикл кампании
+    <div style="text-align:center;margin-top:20px;font-size:15px;color:rgba(255,255,255,0.4);">
+      Экономия: <strong style="color:var(--orange-3);">11–17 часов</strong> каждый цикл кампании
     </div>
   </div>
 </section>
 
-<!-- ── ROMI Calculator ── -->
-<section class="section" id="romi-calc">
+<!-- ══ ROMI calc ══ -->
+<section class="section" id="romi">
   <div class="container">
     <div class="section-header center">
       <div class="section-label">Калькулятор</div>
       <h2>Посчитайте окупаемость</h2>
-      <p>Узнайте, сколько заработаете с TG Lead Wareon за месяц.</p>
     </div>
-    <div class="glass" style="padding:32px;border-radius:var(--radius-xl);max-width:520px;margin:0 auto;">
+    <div style="max-width:500px;margin:0 auto;background:rgba(4,2,12,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:32px;backdrop-filter:blur(24px);position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,106,0,0.5),transparent);"></div>
       <div class="field" style="margin-bottom:16px;">
         <label>Лидов в месяц</label>
-        <input id="romi-leads" type="number" value="10000">
+        <input id="r-leads" type="number" value="10000">
       </div>
       <div class="field" style="margin-bottom:16px;">
         <label>Средний чек (₽)</label>
-        <input id="romi-check" type="number" value="5000">
+        <input id="r-check" type="number" value="5000">
       </div>
       <div class="field" style="margin-bottom:24px;">
-        <label>Конверсия из лида в клиента (%)</label>
-        <input id="romi-conv" type="number" value="5">
+        <label>Конверсия из лида (%)</label>
+        <input id="r-conv" type="number" value="5">
       </div>
-      <div style="background:rgba(0,0,0,0.4);border-radius:var(--radius);border:1px solid var(--border-gold);padding:20px 24px;text-align:center;">
-        <div style="font-size:13px;color:var(--text-2);margin-bottom:6px;">Потенциальная выручка</div>
-        <div id="romi-revenue" style="font-size:40px;font-weight:800;letter-spacing:-0.03em;background:linear-gradient(135deg,var(--text),var(--gold-bright));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">0₽</div>
-        <div style="font-size:13px;color:var(--text-2);margin-top:8px;">Затраты на TG Lead: <span style="color:var(--gold-light);">990₽</span></div>
-        <div style="font-size:22px;font-weight:700;color:var(--green);margin-top:6px;">ROMI: <span id="romi-result">0%</span></div>
+      <div style="background:rgba(0,0,8,0.7);border-radius:14px;padding:20px;text-align:center;border:1px solid rgba(255,106,0,0.2);">
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.1em;">Потенциальная выручка</div>
+        <div id="r-rev" style="font-size:44px;font-weight:900;letter-spacing:-0.04em;color:var(--orange-3);">0 ₽</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.35);margin-top:8px;">Затраты на TG Lead: 990 ₽</div>
+        <div style="font-size:22px;font-weight:700;color:var(--green);margin-top:6px;">ROMI: <span id="r-romi">0%</span></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── CTA ── -->
+<!-- ══ CTA ══ -->
 <section class="section" id="cta">
   <div class="container">
-    <div class="cta-section" data-reveal>
-      <div class="live-bar">
+    <div class="cta-wrap" data-reveal>
+      <div class="cta-orb"></div>
+      <div class="cta-label">
         <span class="dot-live"></span>
-        847 человек используют TG Lead Wareon прямо сейчас
+        847 операторов онлайн прямо сейчас
       </div>
-      <h2 style="font-size:clamp(28px,4vw,48px);margin-bottom:16px;">
-        Готовы масштабировать<br>
-        <span class="gradient-text">Telegram-трафик?</span>
+      <h2 style="font-size:clamp(28px,4.5vw,56px);font-weight:900;letter-spacing:-0.03em;margin-bottom:16px;position:relative;">
+        Начните расти<br>
+        <span class="gradient-text">вместе с нами</span>
       </h2>
-      <p style="color:var(--text-2);font-size:16px;max-width:480px;margin:0 auto 32px;">
-        Подключитесь за 15 минут и протестируйте все функции бесплатно.
-        Без карты, без обязательств.
+      <p style="font-size:16px;color:rgba(255,255,255,0.45);max-width:440px;margin:0 auto 36px;position:relative;">
+        3 дня бесплатного доступа. Без карты, без обязательств.
+        Отмена в один клик.
       </p>
-      <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;">
-        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Начать бесплатно →</a>
-        <a href="{{ url_for('wheel') }}" class="btn btn-glass btn-lg">🎡 Крутить скидку</a>
-        <a href="{{ url_for('checklist') }}" class="btn btn-ghost btn-lg">📋 Чек-лист</a>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;position:relative;">
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Попробовать бесплатно →</a>
+        <a href="{{ url_for('wheel') }}"    class="btn btn-glass btn-lg">🎡 Крутить скидку</a>
       </div>
-      <div class="hero-trust" style="justify-content:center;margin-top:24px;">
-        <div class="trust-item">3 дня бесплатно</div>
-        <div class="trust-item">Отмена в 1 клик</div>
-        <div class="trust-item">Поддержка 24/7</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:24px;position:relative;">
+        <div class="trust-pill">✓ 3 дня бесплатно</div>
+        <div class="trust-pill">✓ Отмена в 1 клик</div>
+        <div class="trust-pill">✓ Поддержка 24/7</div>
+        <div class="trust-pill">✓ Антибан встроен</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── Footer ── -->
-<footer class="site-footer" style="margin-top:0;">
+<!-- ══ Footer ══ -->
+<footer class="site-footer">
   <div class="container footer-inner">
     <div>
       <a href="{{ url_for('index') }}" class="logo" style="margin-bottom:8px;">
         <span class="logo-mark">TG</span>
         <span class="logo-text">Lead Wareon</span>
       </a>
-      <p style="font-size:11px;color:var(--text-3);margin-top:6px;">Сервис для легального Telegram-маркетинга. Не инструмент спама.</p>
+      <p style="font-size:11px;color:rgba(255,255,255,0.2);margin-top:6px;">Сервис для легального Telegram-маркетинга. Не инструмент спама.</p>
     </div>
     <div class="footer-links">
       <a href="{{ url_for('privacy') }}">Конфиденциальность</a>
@@ -592,10 +989,10 @@
   </div>
 </footer>
 
-<!-- Floating support button -->
-<div style="position:fixed;bottom:24px;right:24px;z-index:100;">
+<!-- Floating support -->
+<div class="fixed-support" style="position:fixed;bottom:24px;right:24px;z-index:200;">
   <a href="https://t.me/TGLeadSupportBot" target="_blank"
-     style="display:flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--gold-light),var(--gold));box-shadow:0 8px 24px rgba(201,147,63,0.45);text-decoration:none;font-size:22px;animation:pulse 3s infinite;">
+     style="display:flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--orange-2),var(--orange));box-shadow:0 0 24px rgba(255,106,0,0.5),0 8px 20px rgba(0,0,0,0.5);font-size:22px;animation:pulseDot 3s infinite;">
     💬
   </a>
 </div>
@@ -603,33 +1000,33 @@
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 <script>
   // Live counter
-  let count = 182430;
-  function fmt(n) { return n.toLocaleString('ru-RU'); }
-  function tick() {
-    count += Math.floor(Math.random() * 12) + 1;
-    const el1 = document.getElementById('liveCount');
-    const el2 = document.getElementById('liveCount2');
-    if (el1) el1.textContent = fmt(count);
-    if (el2) el2.textContent = fmt(count);
-  }
-  tick();
-  setInterval(tick, 3000);
+  let count = 1245;
+  const fmt = n => n.toLocaleString('ru-RU');
+  const tick = () => {
+    count += Math.floor(Math.random() * 8) + 1;
+    ['tc1','tc2'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = fmt(count);
+    });
+    const td = document.getElementById('todayCount');
+    if (td) td.textContent = fmt(count);
+  };
+  tick(); setInterval(tick, 3500);
 
   // ROMI
-  function calcROMI() {
-    const leads = +document.getElementById('romi-leads').value || 0;
-    const check = +document.getElementById('romi-check').value || 0;
-    const conv  = +document.getElementById('romi-conv').value  || 0;
+  const rCalc = () => {
+    const leads = +document.getElementById('r-leads').value || 0;
+    const check = +document.getElementById('r-check').value || 0;
+    const conv  = +document.getElementById('r-conv').value  || 0;
     const rev   = Math.round(leads * (conv/100) * check);
-    const cost  = 990;
-    const romi  = Math.round(((rev - cost) / cost) * 100);
-    document.getElementById('romi-revenue').textContent = rev.toLocaleString('ru-RU') + '₽';
-    document.getElementById('romi-result').textContent  = romi.toLocaleString('ru-RU') + '%';
-  }
-  document.getElementById('romi-leads').addEventListener('input', calcROMI);
-  document.getElementById('romi-check').addEventListener('input', calcROMI);
-  document.getElementById('romi-conv').addEventListener('input',  calcROMI);
-  calcROMI();
+    const romi  = Math.round(((rev - 990) / 990) * 100);
+    document.getElementById('r-rev').textContent  = rev.toLocaleString('ru-RU') + ' ₽';
+    document.getElementById('r-romi').textContent = romi.toLocaleString('ru-RU') + '%';
+  };
+  document.getElementById('r-leads').addEventListener('input', rCalc);
+  document.getElementById('r-check').addEventListener('input', rCalc);
+  document.getElementById('r-conv').addEventListener('input',  rCalc);
+  rCalc();
 </script>
 </body>
 </html>
