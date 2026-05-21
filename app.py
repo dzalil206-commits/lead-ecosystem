@@ -1,5 +1,11 @@
 import os, sqlite3, random, string, io, asyncio, threading, concurrent.futures
 from datetime import datetime, timedelta
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 from flask import Flask, render_template, request, redirect, url_for, flash, session, g, send_file, jsonify
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -12,17 +18,28 @@ from telethon.errors import (
 import requests
 
 # ---------- НАСТРОЙКИ ----------
-SECRET_KEY = 'ваш-секретный-ключ-сюда'
-DATABASE = 'lead_ecosystem.db'
-ADMIN_ID = 5062414502
+SECRET_KEY       = os.environ.get('SECRET_KEY', 'dev-secret-change-in-production')
+ADMIN_SECRET_KEY = os.environ.get('ADMIN_SECRET_KEY', '')
+USDT_WALLET      = os.environ.get('USDT_WALLET', '')
+ADMIN_ID         = int(os.environ.get('ADMIN_ID', '5062414502'))
+DATABASE         = os.environ.get('DATABASE', 'lead_ecosystem.db')
 SUPPORT_USERNAME = '@TGLeadSupportBot'
-USDT_WALLET = "5599002124687536"
-ADMIN_SECRET_KEY = "мой_секретный_ключ_2026"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+def parse_dt(value):
+    """Парсит дату из SQLite — пробует форматы с микросекундами и без."""
+    if isinstance(value, datetime):
+        return value
+    for fmt in ('%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d'):
+        try:
+            return datetime.strptime(value, fmt)
+        except ValueError:
+            continue
+    raise ValueError(f'Неизвестный формат даты: {value!r}')
 
 def run_async(coro):
     """Run an async coroutine from a synchronous Flask route."""
@@ -270,7 +287,7 @@ def dashboard():
     licenses = db.execute("SELECT * FROM licenses WHERE user_id = ? AND is_active = 1", (current_user.id,)).fetchall()
     user_licenses = []
     for lic in licenses:
-        days_left = (datetime.strptime(lic['expires_at'], '%Y-%m-%d %H:%M:%S.%f') - datetime.now()).days
+        days_left = (parse_dt(lic['expires_at']) - datetime.now()).days
         user_licenses.append({
             'product': lic['product'],
             'created_at': lic['created_at'],
@@ -281,7 +298,7 @@ def dashboard():
     days_left = None
     if miner_license:
         try:
-            days_left = (datetime.strptime(miner_license['expires_at'], '%Y-%m-%d %H:%M:%S.%f') - datetime.now()).days
+            days_left = (parse_dt(miner_license['expires_at']) - datetime.now()).days
         except:
             days_left = None
 
@@ -715,7 +732,7 @@ def api_verify_license():
         return jsonify({'error': 'Лицензия не найдена или неактивна'}), 404
     
     # Проверяем срок действия
-    expires_at = datetime.strptime(license['expires_at'], '%Y-%m-%d %H:%M:%S.%f')
+    expires_at = parse_dt(license['expires_at'])
     if datetime.now() > expires_at:
         return jsonify({'error': 'Срок лицензии истёк'}), 410
     
