@@ -25,7 +25,7 @@
   --border-2:     rgba(255,255,255,0.14);
   --border-hot:   rgba(255,106,0,0.45);
 
-  --green:        #00e5a0;
+  --green:        #e8c87a;
   --red:          #ff4545;
 
   /* Legacy aliases (inner pages) */
@@ -85,33 +85,33 @@ img, svg { display: block; }
 .nebula-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
+  filter: blur(150px);
   pointer-events: none;
 }
 .nebula-orb-1 {
-  width: 900px;
-  height: 900px;
+  width: 1100px;
+  height: 1100px;
   background: radial-gradient(circle,
-    rgba(255,80,0,0.55) 0%,
-    rgba(255,120,0,0.25) 35%,
-    rgba(200,60,0,0.08) 65%,
+    rgba(255,80,0,0.32) 0%,
+    rgba(255,120,0,0.12) 40%,
+    rgba(200,60,0,0.03) 70%,
     transparent 100%
   );
-  bottom: -300px;
-  left: -200px;
-  animation: nebulaPulse 8s ease-in-out infinite;
+  bottom: -500px;
+  left: -280px;
+  animation: nebulaPulse 12s ease-in-out infinite;
 }
 .nebula-orb-2 {
-  width: 500px;
-  height: 500px;
+  width: 700px;
+  height: 700px;
   background: radial-gradient(circle,
-    rgba(255,140,0,0.2) 0%,
-    rgba(255,80,0,0.06) 60%,
+    rgba(255,120,0,0.09) 0%,
+    rgba(255,80,0,0.02) 60%,
     transparent 100%
   );
-  top: 10%;
-  right: 5%;
-  animation: nebulaPulse 11s ease-in-out infinite reverse;
+  top: 0%;
+  right: -5%;
+  animation: nebulaPulse 16s ease-in-out infinite reverse;
 }
 @keyframes nebulaPulse {
   0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.9; }
@@ -374,7 +374,7 @@ p { line-height: 1.7; }
   width: 100px; height: 3px;
   background: linear-gradient(90deg, var(--orange), transparent);
 }
-.card-glow-cyan { background: linear-gradient(90deg, var(--green), transparent); }
+.card-glow-cyan { background: linear-gradient(90deg, var(--orange-3), transparent); }
 
 /* Compat */
 .card-hover {

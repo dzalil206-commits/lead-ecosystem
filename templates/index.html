@@ -118,8 +118,8 @@
     .status-dot-live {
       width: 6px; height: 6px;
       border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 6px var(--green);
+      background: var(--orange-3);
+      box-shadow: 0 0 6px rgba(255,170,68,0.7);
       animation: blink 2s infinite;
     }
     .opc-body { padding: 18px; }
@@ -147,7 +147,7 @@
       gap: 4px;
       font-size: 12px;
       font-weight: 600;
-      color: var(--green);
+      color: var(--orange-3);
       margin-top: 4px;
     }
     .chart-svg-wrap { height: 90px; position: relative; }
@@ -163,16 +163,16 @@
       right: 0;
       width: 10px; height: 10px;
       border-radius: 50%;
-      background: var(--green);
+      background: var(--orange-3);
       transform: translateY(-50%);
-      box-shadow: 0 0 10px var(--green), 0 0 20px rgba(0,229,160,0.4);
+      box-shadow: 0 0 10px var(--orange-3), 0 0 20px rgba(255,170,68,0.4);
     }
     .chart-live::after {
       content: '';
       position: absolute;
       inset: -6px;
       border-radius: 50%;
-      border: 1px solid rgba(0,229,160,0.4);
+      border: 1px solid rgba(255,170,68,0.4);
       animation: ringPulse 2s infinite;
     }
     @keyframes ringPulse {
@@ -211,8 +211,8 @@
       flex-shrink: 0;
     }
     .ad-orange { background: var(--orange-3); box-shadow: 0 0 6px rgba(255,170,68,0.6); }
-    .ad-green  { background: var(--green);    box-shadow: 0 0 6px rgba(0,229,160,0.6); }
-    .ad-white  { background: rgba(255,255,255,0.5); }
+    .ad-green  { background: var(--orange-2); box-shadow: 0 0 6px rgba(255,140,0,0.6); }
+    .ad-white  { background: rgba(255,255,255,0.4); }
 
     /* Floating badges */
     .float-badge {
@@ -231,8 +231,8 @@
       animation: floatUpDown 4s ease-in-out infinite;
     }
     .float-badge-2 {
-      border-color: rgba(0,229,160,0.4);
-      color: var(--green);
+      border-color: rgba(255,106,0,0.3);
+      color: rgba(255,200,140,0.9);
       animation-delay: 2s;
     }
     .float-badge-top  { top: -16px;  right: 20px; }
@@ -359,7 +359,7 @@
       margin-bottom: 16px;
     }
     .chip-orange { background: rgba(255,106,0,0.1); color: var(--orange-3); border: 1px solid rgba(255,106,0,0.3); }
-    .chip-green  { background: rgba(0,229,160,0.1); color: var(--green);    border: 1px solid rgba(0,229,160,0.3); }
+    .chip-green  { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.15); }
     .prod-price {
       font-size: 34px; font-weight: 900; letter-spacing: -0.04em;
       margin: 12px 0 4px;
@@ -423,11 +423,11 @@
       gap: 7px;
       padding: 5px 14px;
       border-radius: 999px;
-      border: 1px solid rgba(0,229,160,0.3);
-      background: rgba(0,229,160,0.06);
+      border: 1px solid rgba(255,106,0,0.3);
+      background: rgba(255,106,0,0.06);
       font-size: 12px;
       font-weight: 600;
-      color: var(--green);
+      color: var(--orange-3);
       margin-bottom: 24px;
     }
 
@@ -477,8 +477,7 @@
       font-size: 14px;
     }
     .vs-row-item:last-child { border-bottom: none; }
-    .val-bad  { color: #ff5555; font-weight: 600; }
-    .val-good { color: var(--green); font-weight: 600; }
+    .val-bad  { color: rgba(255,100,100,0.75); font-weight: 600; }
     .val-hot  { color: var(--orange-3); font-weight: 600; }
     @media (min-width: 700px) { .vs-grid { grid-template-columns: 1fr auto 1fr; } }
     .vs-center { display: flex; align-items: center; justify-content: center; padding: 0 16px; }
@@ -497,37 +496,44 @@
 <div class="orbital-canvas">
   <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <!-- Soft blur for orbital lines -->
+      <filter id="orbitBlur" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="2.5"/>
+      </filter>
+      <!-- Glow for dots -->
+      <filter id="dotGlow" x="-100%" y="-100%" width="300%" height="300%">
+        <feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
     </defs>
-    <!-- Orbital paths — thin white ellipses in perspective, like the reference image -->
-    <g opacity="0.18" stroke="white" stroke-width="0.8" fill="none">
-      <ellipse cx="820" cy="520" rx="560" ry="180"  transform="rotate(-28 820 520)"/>
-      <ellipse cx="820" cy="520" rx="380" ry="120"  transform="rotate(-28 820 520)"/>
-      <ellipse cx="820" cy="520" rx="220" ry="68"   transform="rotate(-28 820 520)"/>
-      <ellipse cx="820" cy="520" rx="700" ry="230"  transform="rotate(-18 820 520)"/>
-      <ellipse cx="820" cy="520" rx="460" ry="90"   transform="rotate(-40 820 520)"/>
+    <!-- Orbital paths — blurred, very soft -->
+    <g opacity="0.10" stroke="white" stroke-width="1" fill="none" filter="url(#orbitBlur)">
+      <ellipse cx="820" cy="520" rx="560" ry="180" transform="rotate(-28 820 520)"/>
+      <ellipse cx="820" cy="520" rx="380" ry="120" transform="rotate(-28 820 520)"/>
+      <ellipse cx="820" cy="520" rx="220" ry="68"  transform="rotate(-28 820 520)"/>
+      <ellipse cx="820" cy="520" rx="700" ry="230" transform="rotate(-18 820 520)"/>
+      <ellipse cx="820" cy="520" rx="460" ry="90"  transform="rotate(-40 820 520)"/>
     </g>
-    <!-- Orbital node dots -->
-    <g fill="white" filter="url(#glow)">
-      <circle cx="280"  cy="370" r="2.5" opacity="0.7"/>
-      <circle cx="1160" cy="210" r="3"   opacity="0.9"/>
-      <circle cx="390"  cy="490" r="2"   opacity="0.5"/>
-      <circle cx="970"  cy="320" r="2.5" opacity="0.7"/>
-      <circle cx="840"  cy="640" r="2"   opacity="0.5"/>
-      <circle cx="1240" cy="620" r="3.5" opacity="1.0"/>
-      <circle cx="620"  cy="250" r="2"   opacity="0.6"/>
-      <circle cx="1050" cy="490" r="1.8" opacity="0.5"/>
+    <!-- Orbital node dots — soft glow, low opacity -->
+    <g fill="rgba(255,255,255,0.55)" filter="url(#dotGlow)">
+      <circle cx="280"  cy="370" r="2"/>
+      <circle cx="1160" cy="210" r="2.5"/>
+      <circle cx="390"  cy="490" r="1.5"/>
+      <circle cx="970"  cy="320" r="2"/>
+      <circle cx="840"  cy="640" r="1.5"/>
+      <circle cx="1240" cy="620" r="2.5"/>
+      <circle cx="620"  cy="250" r="1.5"/>
     </g>
-    <!-- Small star field -->
+    <!-- Faint star field -->
     <g fill="white">
-      <circle cx="120"  cy="80"  r="1" opacity="0.4"/>
-      <circle cx="340"  cy="150" r="0.8" opacity="0.3"/>
-      <circle cx="560"  cy="50"  r="1.2" opacity="0.5"/>
-      <circle cx="900"  cy="100" r="0.9" opacity="0.35"/>
-      <circle cx="1100" cy="60"  r="1" opacity="0.4"/>
-      <circle cx="1380" cy="200" r="0.8" opacity="0.3"/>
-      <circle cx="200"  cy="700" r="1" opacity="0.3"/>
-      <circle cx="1300" cy="800" r="1.2" opacity="0.4"/>
+      <circle cx="120"  cy="80"  r="0.8" opacity="0.25"/>
+      <circle cx="340"  cy="150" r="0.7" opacity="0.2"/>
+      <circle cx="560"  cy="50"  r="0.9" opacity="0.3"/>
+      <circle cx="900"  cy="100" r="0.7" opacity="0.2"/>
+      <circle cx="1100" cy="60"  r="0.8" opacity="0.25"/>
+      <circle cx="1380" cy="200" r="0.6" opacity="0.18"/>
+      <circle cx="200"  cy="700" r="0.7" opacity="0.18"/>
+      <circle cx="1300" cy="800" r="0.9" opacity="0.22"/>
     </g>
   </svg>
 </div>
@@ -662,7 +668,7 @@
               <div class="mini-stat-lbl">Uptime</div>
             </div>
             <div class="mini-stat">
-              <div class="mini-stat-val" style="color:var(--green);">0</div>
+              <div class="mini-stat-val" style="color:var(--orange-3);">0</div>
               <div class="mini-stat-lbl">Банов</div>
             </div>
             <div class="mini-stat">
@@ -707,7 +713,7 @@
     <span class="ticker-sep">◆</span>
     <span class="ticker-item">💬 Сообщений отправлено: <strong>498 221</strong></span>
     <span class="ticker-sep">◆</span>
-    <span class="ticker-item">🛡️ Блокировок за 30 дней: <strong style="color:var(--green)">0</strong></span>
+    <span class="ticker-item">🛡️ Блокировок за 30 дней: <strong style="color:var(--orange-3)">0</strong></span>
     <span class="ticker-sep">◆</span>
     <span class="ticker-item">🔥 Лидов сегодня: <strong id="tc2">0</strong></span>
     <span class="ticker-sep">◆</span>
@@ -717,7 +723,7 @@
     <span class="ticker-sep">◆</span>
     <span class="ticker-item">💬 Сообщений отправлено: <strong>498 221</strong></span>
     <span class="ticker-sep">◆</span>
-    <span class="ticker-item">🛡️ Блокировок за 30 дней: <strong style="color:var(--green)">0</strong></span>
+    <span class="ticker-item">🛡️ Блокировок за 30 дней: <strong style="color:var(--orange-3)">0</strong></span>
   </div>
 </div>
 
@@ -733,7 +739,7 @@
       <div class="stats-bar-label">Пользователей</div>
     </div>
     <div class="stats-bar-item">
-      <div class="stats-bar-num" style="color:var(--green);">98%</div>
+      <div class="stats-bar-num" style="color:var(--orange-3);">98%</div>
       <div class="stats-bar-label">Uptime платформы</div>
     </div>
     <div class="stats-bar-item">
@@ -858,7 +864,7 @@
           <div class="prod-chip chip-green">📨 Sender</div>
           <h3 style="font-size:22px;font-weight:800;margin-bottom:6px;">TG Lead Sender</h3>
           <p style="font-size:14px;color:rgba(255,255,255,0.5);margin-bottom:0;">Гибкий движок авторассылки и нейрочаттинга для монетизации аудитории.</p>
-          <div class="prod-price" style="color:var(--green);">990 ₽</div>
+          <div class="prod-price" style="color:var(--orange-3);">990 ₽</div>
           <div class="prod-period" style="color:rgba(255,255,255,0.35);">в месяц</div>
           <ul class="prod-list">
             <li>Сценарии под арбитраж и инфобиз</li>
@@ -893,11 +899,11 @@
       <div class="vs-center"><div class="vs-badge">VS</div></div>
       <div class="vs-col vs-col-hot">
         <h3 style="font-size:15px;margin-bottom:20px;color:var(--orange-3);">🚀 TG Lead Wareon</h3>
-        <div class="vs-row-item"><span>Поиск чатов</span>    <span class="val-good">1 минута</span></div>
-        <div class="vs-row-item"><span>Сбор аудитории</span> <span class="val-good">5 минут</span></div>
+        <div class="vs-row-item"><span>Поиск чатов</span>    <span class="val-hot">1 минута</span></div>
+        <div class="vs-row-item"><span>Сбор аудитории</span> <span class="val-hot">5 минут</span></div>
         <div class="vs-row-item"><span>Написание текстов</span><span class="val-hot">AI генерирует</span></div>
-        <div class="vs-row-item"><span>Рассылка 100 чел.</span><span class="val-good">10 минут</span></div>
-        <div class="vs-row-item"><span>Риск бана</span>       <span class="val-good">Минимальный</span></div>
+        <div class="vs-row-item"><span>Рассылка 100 чел.</span><span class="val-hot">10 минут</span></div>
+        <div class="vs-row-item"><span>Риск бана</span>       <span class="val-hot">Минимальный</span></div>
         <div style="padding-top:14px;font-weight:700;">Итого: <span class="val-hot">16 минут</span></div>
       </div>
     </div>
@@ -932,7 +938,7 @@
         <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.1em;">Потенциальная выручка</div>
         <div id="r-rev" style="font-size:44px;font-weight:900;letter-spacing:-0.04em;color:var(--orange-3);">0 ₽</div>
         <div style="font-size:13px;color:rgba(255,255,255,0.35);margin-top:8px;">Затраты на TG Lead: 990 ₽</div>
-        <div style="font-size:22px;font-weight:700;color:var(--green);margin-top:6px;">ROMI: <span id="r-romi">0%</span></div>
+        <div style="font-size:22px;font-weight:700;color:var(--orange-3);margin-top:6px;">ROMI: <span id="r-romi">0%</span></div>
       </div>
     </div>
   </div>
