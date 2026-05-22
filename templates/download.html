@@ -3,73 +3,215 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Скачать — TG Lead Wareon</title>
+  <title>Скачать приложения — TG Lead Wareon</title>
+  <meta name="description" content="Скачайте десктопные приложения TG Lead Miner и TG Lead Sender для Windows. Анализ аудитории и коммуникация с подписчиками Telegram."/>
+  <meta property="og:title" content="Скачать TG Lead Wareon — Miner и Sender"/>
+  <meta property="og:description" content="Десктопные приложения для анализа Telegram-аудитории и автоматизации коммуникации. Windows 10/11."/>
+  <meta property="og:url" content="https://tgleadwareon.ru/download"/>
+  <meta property="og:type" content="website"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { overflow-x: hidden; }
+    .dl-wrap { max-width: 760px; margin: 0 auto; padding: 60px 24px 100px; }
+    .dl-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,106,0,0.10); border: 1px solid rgba(255,106,0,0.25);
+      border-radius: 100px; padding: 5px 14px;
+      font-size: 12px; font-weight: 700; color: #ff8c00;
+      letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 16px;
+    }
+    .dl-hero-title { font-size: clamp(26px,4vw,38px); font-weight: 900; letter-spacing: -0.03em; margin-bottom: 10px; }
+    .dl-hero-sub { font-size: 15px; color: rgba(255,255,255,0.45); line-height: 1.7; margin-bottom: 48px; max-width: 520px; }
+
+    .dl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
+    @media (max-width: 640px) { .dl-grid { grid-template-columns: 1fr; } }
+
+    .dl-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 20px; padding: 28px;
+      display: flex; flex-direction: column;
+      position: relative; overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .dl-card:hover { border-color: rgba(255,106,0,0.35); }
+    .dl-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.5), transparent);
+    }
+    .dl-card-icon { font-size: 36px; margin-bottom: 14px; }
+    .dl-card-name { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px; }
+    .dl-card-sub { font-size: 13px; color: rgba(255,255,255,0.35); margin-bottom: 18px; }
+    .dl-features { list-style: none; display: flex; flex-direction: column; gap: 9px; margin-bottom: 24px; flex: 1; }
+    .dl-features li { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.4; }
+    .dl-features li::before { content: '✓'; color: #48c764; font-weight: 700; font-size: 12px; margin-top: 1px; flex-shrink: 0; }
+    .dl-meta { font-size: 12px; color: rgba(255,255,255,0.25); margin-bottom: 18px; }
+    .dl-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 13px 20px; border-radius: 12px; font-size: 14px; font-weight: 700;
+      text-decoration: none; transition: all 0.2s; font-family: inherit; cursor: pointer; border: none;
+      background: linear-gradient(135deg, #ff8c00, #ff6a00);
+      color: #fff;
+      box-shadow: 0 0 24px rgba(255,106,0,0.35);
+    }
+    .dl-btn:hover { box-shadow: 0 0 40px rgba(255,106,0,0.55); transform: translateY(-1px); }
+    .dl-btn-disabled {
+      background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.35);
+      box-shadow: none; cursor: not-allowed; border: 1px solid rgba(255,255,255,0.10);
+    }
+    .dl-btn-disabled:hover { transform: none; box-shadow: none; }
+    .dl-btn-soon { font-size: 11px; opacity: 0.6; margin-top: 8px; text-align: center; }
+
+    .dl-steps {
+      background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 18px; padding: 28px 32px; margin-bottom: 28px;
+    }
+    .dl-steps-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+    .step-list { display: flex; flex-direction: column; gap: 14px; }
+    .step-item { display: flex; align-items: flex-start; gap: 14px; font-size: 14px; color: rgba(255,255,255,0.65); line-height: 1.5; }
+    .step-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: rgba(255,106,0,0.15); border: 1px solid rgba(255,106,0,0.35);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #ff8c00; flex-shrink: 0; margin-top: 1px;
+    }
+    .step-item strong { color: #fff; }
+    .step-item a { color: #ff8c00; text-decoration: none; }
+    .step-item a:hover { text-decoration: underline; }
+
+    .dl-legal {
+      background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px; padding: 16px 20px;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .dl-legal p { font-size: 12px; color: rgba(255,255,255,0.30); line-height: 1.65; margin: 0; }
+    .dl-legal strong { color: rgba(255,255,255,0.45); }
+  </style>
 </head>
 <body class="page-dark">
+
 <header class="site-header">
-    <div class="container header-inner">
-        <a href="{{ url_for('index') }}" class="logo">
-            <span class="logo-mark">TG</span>
-            <span class="logo-text">Lead Wareon</span>
-        </a>
-        <nav class="nav-main">
-            <a href="{{ url_for('index') }}">Главная</a>
-            <a href="{{ url_for('pricing') }}">Тарифы</a>
-            <a href="{{ url_for('support') }}">Поддержка</a>
-        </nav>
-        <div class="header-actions">
-            <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">Войти</a>
-            <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Регистрация</a>
-        </div>
+  <div class="container header-inner">
+    <a href="{{ url_for('index') }}" class="logo">
+      <span class="logo-mark">TG</span>
+      <span class="logo-text">Lead Wareon</span>
+    </a>
+    <nav class="nav-main">
+      <a href="{{ url_for('index') }}">Главная</a>
+      <a href="{{ url_for('pricing') }}">Тарифы</a>
+      <a href="{{ url_for('support') }}">Поддержка</a>
+    </nav>
+    <div class="header-actions">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">Кабинет</a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">Войти</a>
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Регистрация</a>
+      {% endif %}
     </div>
+  </div>
 </header>
 
-<main class="section">
-    <div class="container" style="max-width:600px;margin:0 auto;">
-        <h1 style="text-align:center;margin-bottom:8px;">📥 Скачать TG Lead Miner</h1>
-        <p style="text-align:center;color:var(--text-muted);margin-bottom:32px;">Десктопное приложение для сбора аудитории Telegram. Работает на Windows 10/11.</p>
+<main>
+<div class="dl-wrap">
 
-        <div class="glass" style="padding:32px;border-radius:18px;text-align:center;margin-bottom:20px;">
-            <div style="font-size:48px;margin-bottom:16px;">💻</div>
-            <h2 style="margin-bottom:8px;">TG Lead Miner Desktop</h2>
-            <p style="color:var(--text-muted);font-size:14px;margin-bottom:20px;">Версия 1.0 | Windows 10/11 | 15 МБ</p>
-            
-            <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-muted);margin-bottom:20px;text-align:left;">
-                <div>✅ Сбор участников из чатов и каналов</div>
-                <div>✅ Фильтрация ботов</div>
-                <div>✅ Экспорт в TXT</div>
-                <div>✅ Проверка лицензии через сайт</div>
-                <div>✅ Современный интерфейс</div>
-            </div>
+  <div class="dl-eyebrow">💻 Десктоп-приложения</div>
+  <h1 class="dl-hero-title">Скачать TG Lead Wareon</h1>
+  <p class="dl-hero-sub">
+    Два приложения для Windows: анализ Telegram-аудитории и автоматизация коммуникации с подписчиками.
+    Работают с лицензионным ключом из личного кабинета.
+  </p>
 
-            <a href="#" class="btn btn-primary btn-lg" style="opacity:0.6;pointer-events:none;">Скачать .exe (скоро)</a>
-            <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">Файл появится после загрузки на сервер</p>
-        </div>
+  <!-- Карточки приложений -->
+  <div class="dl-grid">
 
-        <div class="glass" style="padding:24px;border-radius:18px;">
-            <h3 style="margin-bottom:12px;">📋 Как начать</h3>
-            <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-muted);">
-                <div><strong>1.</strong> Купите лицензию Miner на сайте</div>
-                <div><strong>2.</strong> Скачайте приложение</div>
-                <div><strong>3.</strong> Введите лицензионный ключ</div>
-                <div><strong>4.</strong> Введите API ID, API Hash, номер телефона</div>
-                <div><strong>5.</strong> Укажите ссылку на чат и нажмите «Собрать»</div>
-            </div>
-        </div>
+    <!-- Miner -->
+    <div class="dl-card">
+      <div class="dl-card-icon">⛏️</div>
+      <div class="dl-card-name">TG Lead Miner</div>
+      <div class="dl-card-sub">Анализ аудитории · Windows 10/11</div>
+      <ul class="dl-features">
+        <li>Выгрузка аудитории из Telegram-чатов</li>
+        <li>Фильтрация ботов и неактивных</li>
+        <li>Экспорт базы в TXT / CSV</li>
+        <li>Встроенная проверка лицензии</li>
+        <li>Тёмный интерфейс, горячие клавиши</li>
+      </ul>
+      <div class="dl-meta">Версия 1.0 · ~15 МБ · Требует лицензию Miner</div>
+      <a href="#" class="dl-btn dl-btn-disabled" aria-disabled="true">⬇ Скачать .exe</a>
+      <div class="dl-btn-soon">Файл появится после проверки на сервере</div>
     </div>
+
+    <!-- Sender -->
+    <div class="dl-card">
+      <div class="dl-card-icon">📨</div>
+      <div class="dl-card-name">TG Lead Sender</div>
+      <div class="dl-card-sub">Коммуникация с базой · Windows 10/11</div>
+      <ul class="dl-features">
+        <li>Загрузка базы контактов из файла</li>
+        <li>Персонализация сообщений (имя, переменные)</li>
+        <li>Настройка задержек и имитация активности</li>
+        <li>Прогресс-бар и подробный лог</li>
+        <li>Пауза и остановка в любой момент</li>
+      </ul>
+      <div class="dl-meta">В разработке · ~18 МБ · Требует лицензию Sender</div>
+      <a href="#" class="dl-btn dl-btn-disabled" aria-disabled="true">⬇ Скачать .exe</a>
+      <div class="dl-btn-soon">Выйдет в ближайшее время</div>
+    </div>
+
+  </div>
+
+  <!-- Как начать -->
+  <div class="dl-steps">
+    <div class="dl-steps-title">📋 Как начать работу</div>
+    <div class="step-list">
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div><strong>Купите лицензию</strong> на <a href="{{ url_for('pricing') }}">странице тарифов</a> — доступны Miner, Sender и комбо-пакеты</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div><strong>Скачайте приложение</strong> — кнопка выше станет активной после загрузки файла на сервер</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div><strong>Введите лицензионный ключ</strong> — найдёте его в <a href="{{ url_for('dashboard') }}">личном кабинете</a> → раздел «Мои лицензии»</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">4</div>
+        <div><strong>Для Miner:</strong> введите API ID, API Hash и номер телефона — получить на <a href="https://my.telegram.org/apps" target="_blank" rel="noopener">my.telegram.org/apps</a></div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">5</div>
+        <div><strong>Укажите чат или канал</strong> для анализа — приложение выгрузит аудиторию в файл</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Legal -->
+  <div class="dl-legal">
+    <span style="font-size:18px;">⚖️</span>
+    <p>
+      <strong>Важно.</strong>
+      Приложения предназначены для легальной коммуникации с аудиторией, давшей согласие на получение сообщений.
+      Использование должно соответствовать законодательству РФ, правилам Telegram и ФЗ «О рекламе».
+      Ответственность за характер использования лежит на пользователе.
+    </p>
+  </div>
+
+</div>
 </main>
 
 <footer class="site-footer">
-    <div class="container footer-inner">
-        <div class="footer-left"><span class="logo-text">TG Lead Wareon</span></div>
-        <div class="footer-links">
-            <a href="{{ url_for('privacy') }}">Политика</a>
-            <a href="{{ url_for('terms') }}">Соглашение</a>
-            <a href="{{ url_for('support') }}">Поддержка</a>
-        </div>
+  <div class="container footer-inner">
+    <div class="footer-left"><span class="logo-text">TG Lead Wareon</span></div>
+    <div class="footer-links">
+      <a href="{{ url_for('privacy') }}">Политика</a>
+      <a href="{{ url_for('terms') }}">Соглашение</a>
+      <a href="{{ url_for('support') }}">Поддержка</a>
     </div>
+  </div>
 </footer>
 </body>
 </html>

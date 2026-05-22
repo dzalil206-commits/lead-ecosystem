@@ -99,6 +99,33 @@
     </div>
   </div>
 
+  <!-- Готовые сообщения для шеринга -->
+  <div class="ref-card">
+    <h3 style="font-size:16px;margin:0 0 6px;">📢 Готовые сообщения для шеринга</h3>
+    <p style="font-size:13px;color:var(--text-muted);margin:0 0 16px;">Скопируйте и отправьте в Telegram — подставьте вашу ссылку</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:14px 16px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(255,106,0,0.7);margin-bottom:8px;">Короткое · для переписки</div>
+        <div class="promo-text" style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.6;">Нашёл инструмент для работы с Telegram-аудиторией — TG Lead Wareon. Есть бесплатный период 3 дня. Регистрируйся по моей ссылке: {{ ref_link }}</div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="copyPromo(this)">📋 Копировать</button>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:14px 16px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(255,106,0,0.7);margin-bottom:8px;">Развёрнутое · для канала</div>
+        <div class="promo-text" style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.6;">⚡ Если работаете с Telegram — попробуйте TG Lead Wareon.
+
+Miner: анализирует аудиторию чатов и каналов, выгружает базу контактов.
+Sender: автоматизирует коммуникацию с подписчиками.
+
+3 дня бесплатно, потом от 490₽/мес.
+→ {{ ref_link }}</div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="copyPromo(this)">📋 Копировать</button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Список рефералов -->
   <div class="ref-card">
     <h3 style="font-size:16px;margin:0 0 16px;">Приглашённые пользователи</h3>
@@ -136,6 +163,13 @@ function copyLink() {
   inp.select();
   navigator.clipboard.writeText(inp.value).then(() => {
     const btn = event.target;
+    btn.textContent = '✓ Скопировано!';
+    setTimeout(() => btn.textContent = '📋 Копировать', 2000);
+  });
+}
+function copyPromo(btn) {
+  const text = btn.closest('div').querySelector('.promo-text').innerText;
+  navigator.clipboard.writeText(text).then(() => {
     btn.textContent = '✓ Скопировано!';
     setTimeout(() => btn.textContent = '📋 Копировать', 2000);
   });

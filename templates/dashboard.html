@@ -143,25 +143,59 @@
             </div>
             
             <!-- Быстрый старт -->
-            <div class="glass" style="padding:16px;border-radius:18px;margin-bottom:20px;">
-                <h3 style="margin-bottom:12px;">🚀 Запуск за 15 минут</h3>
-                <div style="display:flex;flex-direction:column;gap:10px;">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <span style="width:28px;height:28px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;color:#111;flex-shrink:0;">1</span>
-                        <span style="flex:1;">Добавьте аккаунт и прокси</span>
+            <div class="glass" style="padding:20px 24px;border-radius:18px;margin-bottom:20px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                    <h3 style="margin:0;font-size:15px;">🚀 Запуск за 15 минут</h3>
+                    {% set steps_done = (1 if user_licenses else 0) + (1 if sender_accounts else 0) + (1 if total_leads_collected else 0) %}
+                    <span style="font-size:12px;color:var(--text-muted);">{{ steps_done }}/3 шага выполнено</span>
+                </div>
+                <!-- Прогресс-бар -->
+                <div style="height:3px;background:rgba(255,255,255,0.07);border-radius:3px;margin-bottom:18px;overflow:hidden;">
+                    <div style="height:100%;width:{{ (steps_done/3*100)|int }}%;background:linear-gradient(90deg,#ff8c00,#ff6a00);border-radius:3px;transition:width 0.4s;"></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                    <!-- Шаг 1: Лицензия -->
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <span style="width:28px;height:28px;border-radius:999px;background:{% if user_licenses %}rgba(59,232,140,0.2);border:1px solid rgba(59,232,140,0.4){% else %}var(--accent){% endif %};display:flex;align-items:center;justify-content:center;font-size:13px;color:{% if user_licenses %}#3be88c{% else %}#111{% endif %};flex-shrink:0;">{% if user_licenses %}✓{% else %}1{% endif %}</span>
+                        <span style="flex:1;font-size:14px;{% if user_licenses %}color:rgba(255,255,255,0.4);text-decoration:line-through;{% endif %}">Активируйте лицензию</span>
+                        {% if not user_licenses %}
+                        <a href="{{ url_for('pricing') }}" class="btn btn-primary btn-sm">Тарифы</a>
+                        {% else %}
+                        <span style="font-size:12px;color:#3be88c;">✓ Активна</span>
+                        {% endif %}
+                    </div>
+                    <!-- Шаг 2: Скачать и запустить Miner -->
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <span style="width:28px;height:28px;border-radius:999px;background:{% if total_leads_collected %}rgba(59,232,140,0.2);border:1px solid rgba(59,232,140,0.4){% else %}var(--accent){% endif %};display:flex;align-items:center;justify-content:center;font-size:13px;color:{% if total_leads_collected %}#3be88c{% else %}#111{% endif %};flex-shrink:0;">{% if total_leads_collected %}✓{% else %}2{% endif %}</span>
+                        <div style="flex:1;">
+                            <div style="font-size:14px;{% if total_leads_collected %}color:rgba(255,255,255,0.4);text-decoration:line-through;{% endif %}">Скачайте и запустите Miner</div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Десктоп-приложение для анализа аудитории</div>
+                        </div>
+                        {% if not total_leads_collected %}
+                        <a href="{{ url_for('download') }}" class="btn btn-outline btn-sm">Скачать</a>
+                        {% else %}
+                        <span style="font-size:12px;color:#3be88c;">✓ Запущен</span>
+                        {% endif %}
+                    </div>
+                    <!-- Шаг 3: Настроить Sender -->
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <span style="width:28px;height:28px;border-radius:999px;background:{% if sender_accounts %}rgba(59,232,140,0.2);border:1px solid rgba(59,232,140,0.4){% else %}var(--accent){% endif %};display:flex;align-items:center;justify-content:center;font-size:13px;color:{% if sender_accounts %}#3be88c{% else %}#111{% endif %};flex-shrink:0;">{% if sender_accounts %}✓{% else %}3{% endif %}</span>
+                        <div style="flex:1;">
+                            <div style="font-size:14px;{% if sender_accounts %}color:rgba(255,255,255,0.4);text-decoration:line-through;{% endif %}">Подключите Telegram-аккаунт</div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Для работы Sender нужен привязанный аккаунт</div>
+                        </div>
+                        {% if not sender_accounts %}
                         <button class="btn btn-outline btn-sm" data-modal-open="modalAddAccount">Добавить</button>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <span style="width:28px;height:28px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;color:#111;flex-shrink:0;">2</span>
-                        <span style="flex:1;">Запустите Miner</span>
-                        <a href="javascript:void(0)" onclick="document.querySelector('[data-section=miner-module]').click()" class="btn btn-outline btn-sm">Запустить</a>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <span style="width:28px;height:28px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;color:#111;flex-shrink:0;">3</span>
-                        <span style="flex:1;">Настройте Sender</span>
-                        <a href="javascript:void(0)" onclick="document.querySelector('[data-section=sender-module]').click()" class="btn btn-outline btn-sm">Настроить</a>
+                        {% else %}
+                        <span style="font-size:12px;color:#3be88c;">✓ Добавлен</span>
+                        {% endif %}
                     </div>
                 </div>
+                {% if steps_done == 3 %}
+                <div style="margin-top:16px;padding:12px 14px;background:rgba(59,232,140,0.06);border:1px solid rgba(59,232,140,0.2);border-radius:10px;font-size:13px;color:rgba(59,232,140,0.85);">
+                    🎉 Всё готово! Вы полностью настроили рабочую среду.
+                </div>
+                {% endif %}
             </div>
         </div>
 

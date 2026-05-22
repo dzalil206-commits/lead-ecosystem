@@ -1,4 +1,7 @@
 import os, uuid, sqlite3, random, string, io, asyncio, threading, concurrent.futures
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 import requests
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -33,6 +36,11 @@ LAVA_API_KEY        = os.environ.get('LAVA_API_KEY', '')
 REVIEW_BOT_TOKEN    = os.environ.get('REVIEW_BOT_TOKEN', '')
 NOTIFY_BOT_TOKEN    = os.environ.get('NOTIFY_BOT_TOKEN', '')
 BASE_URL            = os.environ.get('BASE_URL', 'http://localhost:5000')
+SMTP_HOST           = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
+SMTP_PORT           = int(os.environ.get('SMTP_PORT', '587'))
+SMTP_USER           = os.environ.get('SMTP_USER', '')
+SMTP_PASS           = os.environ.get('SMTP_PASS', '')
+SMTP_FROM           = os.environ.get('SMTP_FROM', 'noreply@tgleadwareon.ru')
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
@@ -71,6 +79,42 @@ def parse_dt(value):
         except ValueError:
             continue
     raise ValueError(f'Неизвестный формат даты: {value!r}')
+
+def send_email(to_email: str, subject: str, html_body: str):
+    """Отправляет HTML-письмо через SMTP. Если SMTP не настроен — логирует и пропускает."""
+    if not SMTP_USER or not SMTP_PASS:
+        logging.warning(f'EMAIL: SMTP не настроен, пропускаем письмо для {to_email}')
+        return
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From']    = f'TG Lead Wareon <{SMTP_FROM}>'
+        msg['To']      = to_email
+        msg.attach(MIMEText(html_body, 'html', 'utf-8'))
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as smtp:
+            smtp.ehlo()
+            smtp.starttls()
+            smtp.login(SMTP_USER, SMTP_PASS)
+            smtp.sendmail(SMTP_FROM, [to_email], msg.as_string())
+        logging.info(f'EMAIL: отправлено на {to_email}')
+    except Exception as e:
+        logging.error(f'EMAIL: ошибка при отправке на {to_email} — {e}')
+
+
+def send_purchase_email(to_email: str, product: str, price: int, expires_at):
+    """Читает email_purchase.html и отправляет письмо с деталями покупки."""
+    try:
+        tpl_path = os.path.join(os.path.dirname(__file__), 'templates', 'email_purchase.html')
+        with open(tpl_path, 'r', encoding='utf-8') as f:
+            html = f.read()
+        html = html.replace('{PRODUCT_NAME}', product)
+        html = html.replace('{AMOUNT}', str(price))
+        expires_str = expires_at.strftime('%d.%m.%Y') if hasattr(expires_at, 'strftime') else str(expires_at)[:10]
+        html = html.replace('{EXPIRES_DATE}', expires_str)
+        send_email(to_email, f'✅ Лицензия TG Lead Wareon {product} активирована', html)
+    except Exception as e:
+        logging.error(f'EMAIL: ошибка при подготовке purchase-письма — {e}')
+
 
 def create_lava_payment(amount_rub, user_id, product, days, user_email=''):
     """Создаёт счёт в Lava.top. Возвращает (payment_url, invoice_id) или (None, None)."""
@@ -973,6 +1017,13 @@ def lava_webhook():
             send_telegram(ADMIN_ID,
                 f'💰 Новая оплата!\nПользователь: {user_id} ({(user_row or {}).get("email","")})\n'
                 f'Тариф: {product} · {price}₽\nПровайдер: Lava.top')
+            # Email-уведомление пользователю
+            if user_row and user_row['email']:
+                threading.Thread(
+                    target=send_purchase_email,
+                    args=(user_row['email'], product, price, expires_at),
+                    daemon=True
+                ).start()
 
         db.commit()
 
