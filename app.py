@@ -29,6 +29,7 @@ YOOKASSA_SHOP_ID    = os.environ.get('YOOKASSA_SHOP_ID', '')
 YOOKASSA_SECRET_KEY = os.environ.get('YOOKASSA_SECRET_KEY', '')
 LAVA_API_KEY        = os.environ.get('LAVA_API_KEY', '')
 REVIEW_BOT_TOKEN    = os.environ.get('REVIEW_BOT_TOKEN', '')
+NOTIFY_BOT_TOKEN    = os.environ.get('NOTIFY_BOT_TOKEN', '')
 BASE_URL            = os.environ.get('BASE_URL', 'http://localhost:5000')
 
 app = Flask(__name__)
@@ -81,7 +82,7 @@ def create_lava_payment(amount_rub, user_id, product, days, user_email=''):
                 'email':        user_email or f'user{user_id}@tgleadwareon.ru',
                 'offerId':      os.environ.get(f'LAVA_OFFER_{product.upper()}', ''),
                 'currency':     'RUB',
-                'periodicity':  'MONTHLY',
+                'periodicity':  'ONE_TIME',
                 'buyerLanguage': 'RU',
                 'orderId':      order_id,
                 'successUrl':   f'{BASE_URL}/payment/success?product={product}&provider=lava',
@@ -291,12 +292,28 @@ def init_db():
     for sql in [
         "ALTER TABLE users ADD COLUMN referral_id INTEGER",
         "ALTER TABLE miner_jobs ADD COLUMN error_msg TEXT",
+        "ALTER TABLE users ADD COLUMN telegram_id TEXT",
     ]:
         try:
             db.execute(sql)
         except Exception:
             pass
     db.commit()
+
+
+def send_telegram(chat_id, text):
+    """Отправляет сообщение через Telegram-бот. Никогда не падает."""
+    token = NOTIFY_BOT_TOKEN or REVIEW_BOT_TOKEN
+    if not token or not chat_id:
+        return
+    try:
+        requests.post(
+            f'https://api.telegram.org/bot{token}/sendMessage',
+            json={'chat_id': chat_id, 'text': text, 'parse_mode': 'HTML'},
+            timeout=5,
+        )
+    except Exception:
+        pass
 
 
 def log_action(user_id, action, details=None):
@@ -921,14 +938,12 @@ def lava_webhook():
         ).fetchone()
 
         if existing:
-            # Продление — добавляем 30 дней к текущей дате истечения
             db.execute(
                 "UPDATE licenses SET expires_at = datetime(expires_at, '+30 days') WHERE id=?",
                 (existing['id'],)
             )
             log_action(user_id, 'subscription_renewed', f'{product}:lava:{invoice_id}')
         else:
-            # Новая подписка — создаём лицензию
             license_key = generate_license_key()
             expires_at  = datetime.now() + timedelta(days=days)
             db.execute(
@@ -940,6 +955,15 @@ def lava_webhook():
                 (user_id, product.lower())
             )
             log_action(user_id, 'subscription_activated', f'{product}:{price}rub:lava:{invoice_id}')
+            # Уведомление пользователю и админу
+            user_row = db.execute("SELECT telegram_id, email FROM users WHERE id=?", (user_id,)).fetchone()
+            if user_row and user_row['telegram_id']:
+                send_telegram(user_row['telegram_id'],
+                    f'✅ <b>TG Lead Wareon</b>\n\nЛицензия <b>{product}</b> активирована на 30 дней.\n'
+                    f'Войдите в кабинет: {BASE_URL}/dashboard')
+            send_telegram(ADMIN_ID,
+                f'💰 Новая оплата!\nПользователь: {user_id} ({(user_row or {}).get("email","")})\n'
+                f'Тариф: {product} · {price}₽\nПровайдер: Lava.top')
 
         db.commit()
 
@@ -1374,6 +1398,44 @@ def admin_reject_review(review_id):
     db.commit()
     flash('Отзыв удалён.', 'success')
     return redirect(url_for('admin_reviews'))
+
+
+# ---------- CRON: НАПОМИНАНИЯ ОБ ИСТЕЧЕНИИ ----------
+@app.route('/cron/expiry_check')
+def cron_expiry_check():
+    """Вызывай каждый день через cron или внешний планировщик.
+    Защита: секретный ключ в параметре ?key="""
+    if request.args.get('key', '') != ADMIN_SECRET_KEY:
+        return jsonify({'error': 'forbidden'}), 403
+
+    db = get_db()
+    # Лицензии, истекающие через 1–3 дня
+    expiring = db.execute("""
+        SELECT l.user_id, l.product, l.expires_at,
+               u.email, u.telegram_id
+        FROM licenses l
+        JOIN users u ON u.id = l.user_id
+        WHERE l.is_active = 1
+          AND date(l.expires_at) BETWEEN date('now', '+1 day') AND date('now', '+3 days')
+    """).fetchall()
+
+    notified = 0
+    for row in expiring:
+        days_left = (parse_dt(row['expires_at']) - datetime.now()).days + 1
+        text = (
+            f'⏰ <b>TG Lead Wareon</b>\n\n'
+            f'Лицензия <b>{row["product"]}</b> истекает через <b>{days_left} дн.</b>\n\n'
+            f'Продлите, чтобы не прерывать работу:\n{BASE_URL}/pricing'
+        )
+        if row['telegram_id']:
+            send_telegram(row['telegram_id'], text)
+            notified += 1
+        # Всегда уведомляем админа
+        send_telegram(ADMIN_ID,
+            f'⏰ Истекает лицензия\nПользователь: {row["user_id"]} ({row["email"]})\n'
+            f'Тариф: {row["product"]} · через {days_left} дн.')
+
+    return jsonify({'checked': len(expiring), 'notified': notified})
 
 
 # ---------- ЗАПУСК ----------
