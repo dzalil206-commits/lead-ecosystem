@@ -27,6 +27,7 @@ DATABASE            = os.environ.get('DATABASE', 'lead_ecosystem.db')
 SUPPORT_USERNAME    = '@TGLeadSupportBot'
 YOOKASSA_SHOP_ID    = os.environ.get('YOOKASSA_SHOP_ID', '')
 YOOKASSA_SECRET_KEY = os.environ.get('YOOKASSA_SECRET_KEY', '')
+LAVA_API_KEY        = os.environ.get('LAVA_API_KEY', '')
 REVIEW_BOT_TOKEN    = os.environ.get('REVIEW_BOT_TOKEN', '')
 BASE_URL            = os.environ.get('BASE_URL', 'http://localhost:5000')
 
@@ -67,6 +68,42 @@ def parse_dt(value):
         except ValueError:
             continue
     raise ValueError(f'Неизвестный формат даты: {value!r}')
+
+def create_lava_payment(amount_rub, user_id, product, days, user_email=''):
+    """Создаёт счёт в Lava.top. Возвращает (payment_url, invoice_id) или (None, None)."""
+    if not LAVA_API_KEY:
+        return None, None
+    try:
+        order_id = f'tglw-{user_id}-{product}-{uuid.uuid4().hex[:8]}'
+        resp = requests.post(
+            'https://gate.lava.top/api/v2/invoice',
+            json={
+                'email':        user_email or f'user{user_id}@tgleadwareon.ru',
+                'offerId':      os.environ.get(f'LAVA_OFFER_{product.upper()}', ''),
+                'currency':     'RUB',
+                'buyerLanguage': 'RU',
+                'orderId':      order_id,
+                'successUrl':   f'{BASE_URL}/payment/success?product={product}&provider=lava',
+                'failUrl':      f'{BASE_URL}/pricing',
+                'hookUrl':      f'{BASE_URL}/payment/lava/webhook',
+                'comment':      f'TG Lead Wareon — {product} на {days} дней',
+            },
+            headers={
+                'X-Api-Key':    LAVA_API_KEY,
+                'Content-Type': 'application/json',
+                'Accept':       'application/json',
+            },
+            timeout=10,
+        )
+        data = resp.json()
+        pay_url = data.get('url') or data.get('URL')
+        inv_id  = data.get('id') or data.get('InvoiceId') or order_id
+        if not pay_url:
+            return None, None
+        return pay_url, inv_id
+    except Exception:
+        return None, None
+
 
 def create_yookassa_payment(amount_rub, user_id, product, days):
     """Создаёт платёж в ЮKassa. Возвращает (confirmation_url, payment_id) или (None, None)."""
@@ -747,19 +784,32 @@ def buy(product='miner'):
 
     if request.method == 'POST':
         db = get_db()
-        # Пробуем создать платёж через ЮKassa
-        confirm_url, payment_id = create_yookassa_payment(
-            info['rub'], current_user.id, product, info['days']
+        user_row = db.execute("SELECT email FROM users WHERE id=?", (current_user.id,)).fetchone()
+        user_email = user_row['email'] if user_row else ''
+
+        # 1. Пробуем Lava.top
+        confirm_url, payment_id = create_lava_payment(
+            info['rub'], current_user.id, product, info['days'], user_email
         )
+        provider = 'lava'
+
+        # 2. Фолбэк на ЮKassa
+        if not confirm_url:
+            confirm_url, payment_id = create_yookassa_payment(
+                info['rub'], current_user.id, product, info['days']
+            )
+            provider = 'yookassa'
+
         if confirm_url:
             db.execute(
                 "INSERT INTO payments (user_id, product, amount, status) VALUES (?, ?, ?, ?)",
                 (current_user.id, product, info['rub'], payment_id)
             )
             db.commit()
-            log_action(current_user.id, 'payment_initiated', f'{product}:{info["rub"]}rub')
+            log_action(current_user.id, 'payment_initiated', f'{product}:{info["rub"]}rub:{provider}')
             return redirect(confirm_url)
-        # Фолбэк: ЮKassa не настроена — фиксируем вручную
+
+        # 3. Ни одна система не настроена — фиксируем вручную
         db.execute(
             "INSERT INTO payments (user_id, product, amount, status) VALUES (?, ?, ?, 'pending')",
             (current_user.id, product, info['rub'])
@@ -824,6 +874,62 @@ def payment_webhook():
         (payment_id, user_id, product.lower())
     )
     db.commit()
+    return jsonify({'ok': True})
+
+
+@app.route('/payment/lava/webhook', methods=['POST'])
+def lava_webhook():
+    """Вебхук от Lava.top — вызывается после успешной оплаты."""
+    data = request.get_json(silent=True) or {}
+
+    # Lava.top шлёт событие PAYMENT_SUCCESS
+    event   = data.get('event', '') or data.get('status', '')
+    if event not in ('PAYMENT_SUCCESS', 'payment.succeeded', 'success'):
+        return jsonify({'ok': True})
+
+    order_id   = data.get('orderId') or data.get('order_id', '')
+    invoice_id = data.get('id') or data.get('contractId') or data.get('invoiceId', '')
+    amount     = data.get('amount', 0)
+
+    # orderId формата: tglw-{user_id}-{product}-{hex}
+    if not order_id or not order_id.startswith('tglw-'):
+        return jsonify({'error': 'unknown order'}), 400
+
+    parts = order_id.split('-')
+    if len(parts) < 3:
+        return jsonify({'error': 'bad order format'}), 400
+
+    try:
+        user_id = int(parts[1])
+        product = parts[2].capitalize()
+    except (ValueError, IndexError):
+        return jsonify({'error': 'bad order format'}), 400
+
+    db = get_db()
+
+    # Защита от двойного начисления
+    already = db.execute(
+        "SELECT id FROM licenses WHERE user_id=? AND product=? AND created_at >= datetime('now','-2 minutes')",
+        (user_id, product)
+    ).fetchone()
+    if already:
+        return jsonify({'ok': True})
+
+    days        = PRODUCT_PRICES.get(product.lower(), {}).get('days', 30)
+    price       = PRODUCT_PRICES.get(product.lower(), {}).get('rub', 0)
+    license_key = generate_license_key()
+    expires_at  = datetime.now() + timedelta(days=days)
+
+    db.execute(
+        "INSERT INTO licenses (user_id, license_key, product, price, expires_at, is_active) VALUES (?,?,?,?,?,1)",
+        (user_id, license_key, product, price, expires_at)
+    )
+    db.execute(
+        "UPDATE payments SET status='succeeded' WHERE user_id=? AND product=? AND status='pending'",
+        (user_id, product.lower())
+    )
+    db.commit()
+    log_action(user_id, 'payment_succeeded', f'{product}:{price}rub:lava:{invoice_id}')
     return jsonify({'ok': True})
 
 
