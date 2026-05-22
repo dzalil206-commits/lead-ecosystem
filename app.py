@@ -1,5 +1,6 @@
 import os, uuid, sqlite3, random, string, io, asyncio, threading, concurrent.futures
 from datetime import datetime, timedelta
+from collections import defaultdict
 
 try:
     from dotenv import load_dotenv
@@ -33,6 +34,28 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+# ---------- RATE LIMITER (in-memory, sliding window) ----------
+_rl_lock = threading.Lock()
+_rl_store: dict = defaultdict(list)  # key -> list of timestamps
+
+def _rate_limit(key: str, max_calls: int, window_seconds: int) -> bool:
+    """Returns True if request is allowed, False if rate limit exceeded."""
+    now = datetime.now()
+    cutoff = now - timedelta(seconds=window_seconds)
+    with _rl_lock:
+        _rl_store[key] = [t for t in _rl_store[key] if t > cutoff]
+        if len(_rl_store[key]) >= max_calls:
+            return False
+        _rl_store[key].append(now)
+        return True
+
+def rate_limit_ip(action: str, max_calls: int, window_seconds: int) -> bool:
+    ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()
+    return _rate_limit(f'{action}:{ip}', max_calls, window_seconds)
+
+def rate_limit_user(user_id: int, action: str, max_calls: int, window_seconds: int) -> bool:
+    return _rate_limit(f'{action}:u{user_id}', max_calls, window_seconds)
 
 def parse_dt(value):
     """Парсит дату из SQLite — пробует форматы с микросекундами и без."""
@@ -215,6 +238,15 @@ def init_db():
             sold_to INTEGER,
             sold_at TIMESTAMP
         );
+        CREATE TABLE IF NOT EXISTS user_actions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            action TEXT NOT NULL,
+            details TEXT,
+            ip TEXT,
+            user_agent TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     ''')
     db.commit()
     # Миграции для существующих таблиц (безопасны — падают если колонка уже есть)
@@ -227,6 +259,20 @@ def init_db():
         except Exception:
             pass
     db.commit()
+
+
+def log_action(user_id, action, details=None):
+    """Log a user action for audit trail. Never raises."""
+    try:
+        ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()
+        ua = request.headers.get('User-Agent', '')[:200]
+        get_db().execute(
+            "INSERT INTO user_actions (user_id, action, details, ip, user_agent) VALUES (?,?,?,?,?)",
+            (user_id, action, str(details)[:500] if details else None, ip, ua)
+        )
+        get_db().commit()
+    except Exception:
+        pass
 
 
 class User(UserMixin):
@@ -280,9 +326,9 @@ def faq():
 @app.route('/support', methods=['GET', 'POST'])
 def support():
     if request.method == 'POST':
-        name = request.form.get('name', '')
-        email = request.form.get('email', '')
-        message = request.form.get('message', '')
+        if not rate_limit_ip('support', max_calls=5, window_seconds=3600):
+            flash('Слишком много сообщений. Попробуйте через час.', 'error')
+            return redirect(url_for('support'))
         flash('Сообщение отправлено!', 'success')
         return redirect(url_for('support'))
     return render_template('support.html')
@@ -319,6 +365,10 @@ def download():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        if not rate_limit_ip('register', max_calls=5, window_seconds=3600):
+            flash('Слишком много попыток регистрации. Попробуйте через час.', 'error')
+            return render_template('register.html')
+
         email     = request.form['email'].strip()
         password  = request.form['password'].strip()
         full_name = request.form.get('full_name', '').strip()
@@ -350,6 +400,7 @@ def register():
         if ref_id and ref_id.isdigit():
             db.execute("UPDATE licenses SET expires_at = datetime(expires_at, '+1 day') WHERE user_id = ? AND is_active = 1", (ref_id,))
             db.commit()
+        log_action(user_id, 'register', email)
         flash('Регистрация успешна! Войдите.', 'success')
         return redirect(url_for('login'))
     return render_template('register.html')
@@ -357,6 +408,10 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        if not rate_limit_ip('login', max_calls=10, window_seconds=900):
+            flash('Слишком много попыток входа. Подождите 15 минут.', 'error')
+            return render_template('login.html')
+
         email = request.form['email'].strip()
         password = request.form['password'].strip()
         db = get_db()
@@ -364,7 +419,9 @@ def login():
         if row and check_password_hash(row['password'], password):
             user = User(row['id'], row['email'], row['full_name'])
             login_user(user)
+            log_action(row['id'], 'login', email)
             return redirect(url_for('dashboard'))
+        log_action(None, 'login_failed', email)
         flash('Неверный email или пароль.', 'error')
     return render_template('login.html')
 
@@ -700,6 +757,7 @@ def buy(product='miner'):
                 (current_user.id, product, info['rub'], payment_id)
             )
             db.commit()
+            log_action(current_user.id, 'payment_initiated', f'{product}:{info["rub"]}rub')
             return redirect(confirm_url)
         # Фолбэк: ЮKassa не настроена — фиксируем вручную
         db.execute(
@@ -841,6 +899,10 @@ def miner_collect():
         flash('Введите ссылку на чат или канал.', 'error')
         return redirect(url_for('miner'))
 
+    if not rate_limit_user(current_user.id, 'miner_collect', max_calls=20, window_seconds=3600):
+        flash('Превышен лимит запросов. Подождите немного.', 'error')
+        return redirect(url_for('miner'))
+
     db = get_db()
 
     # Проверка лицензии
@@ -890,6 +952,7 @@ def miner_collect():
         daemon=True,
     ).start()
 
+    log_action(current_user.id, 'miner_collect', link)
     flash('Сбор запущен! Статус обновляется автоматически.', 'success')
     return redirect(url_for('miner'))
 
@@ -1000,8 +1063,10 @@ def admin_dashboard():
     licenses         = db.execute("SELECT * FROM licenses ORDER BY created_at DESC").fetchall()
     pending_payments = db.execute("SELECT * FROM payments WHERE status='pending' ORDER BY created_at DESC LIMIT 20").fetchall()
     pending_reviews  = db.execute("SELECT COUNT(*) FROM reviews WHERE is_approved=0").fetchone()[0]
+    recent_actions   = db.execute("SELECT * FROM user_actions ORDER BY created_at DESC LIMIT 50").fetchall()
     return render_template('admin.html', users=users, licenses=licenses,
-                           pending_payments=pending_payments, pending_reviews=pending_reviews)
+                           pending_payments=pending_payments, pending_reviews=pending_reviews,
+                           recent_actions=recent_actions)
 
 @app.route('/admin/give_license', methods=['POST'])
 def admin_give_license():
