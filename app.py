@@ -839,12 +839,7 @@ def buy(product='start'):
         flash('Платёж зафиксирован. Лицензия будет выдана после подтверждения оплаты.', 'info')
         return redirect(url_for('dashboard'))
 
-    return render_template(
-        'buy.html', product=product,
-        selected_plan='Pro', billing_period='1 месяц',
-        amount_rub=info['rub'], amount_usdt=info['usdt'],
-        usdt_wallet=USDT_WALLET,
-    )
+    return render_template('buy.html', product=product, amount_rub=info['rub'])
 
 
 @app.route('/payment/webhook', methods=['POST'])
