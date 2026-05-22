@@ -788,16 +788,19 @@ def sender_add_proxy():
 
 # ---------- ПОКУПКА ----------
 PRODUCT_PRICES = {
-    'miner':  {'rub': 490,  'usdt': 8,  'days': 30},
-    'sender': {'rub': 990,  'usdt': 15, 'days': 30},
+    'miner':  {'rub': 490,   'usdt': 8,  'days': 30},
+    'sender': {'rub': 990,   'usdt': 15, 'days': 30},
+    'start':  {'rub': 990,   'usdt': 15, 'days': 30},
+    'pro':    {'rub': 2490,  'usdt': 38, 'days': 30},
+    'scale':  {'rub': 6990,  'usdt': 108, 'days': 30},
 }
 
 @app.route('/buy/<product>', methods=['GET', 'POST'])
 @app.route('/buy', methods=['GET', 'POST'])
 @login_required
-def buy(product='miner'):
+def buy(product='start'):
     if product not in PRODUCT_PRICES:
-        product = 'miner'
+        product = 'start'
     info = PRODUCT_PRICES[product]
 
     if request.method == 'POST':

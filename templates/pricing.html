@@ -672,7 +672,7 @@
       <div class="sticky-price-num" id="sticky-total">0₽</div>
       <div class="sticky-price-per">в месяц</div>
     </div>
-    <a href="{{ url_for('register') }}" class="sticky-cta" id="sticky-cta" style="pointer-events:none;opacity:0.45;">
+    <a href="/buy/start" class="sticky-cta" id="sticky-cta" style="pointer-events:none;opacity:0.45;">
       Перейти к оплате →
     </a>
   </div>
@@ -766,6 +766,7 @@
       const stickyBar = document.getElementById('sticky-bar');
       stickyBar.classList.add('visible');
       const cta = document.getElementById('sticky-cta');
+      cta.href = '/buy/' + plan;
       cta.style.pointerEvents = 'auto';
       cta.style.opacity = '1';
     });
