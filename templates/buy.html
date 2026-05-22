@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Оформление — TG Lead Wareon</title>
+  <title>Оформление {{ product.capitalize() }} — TG Lead Wareon</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <style>
@@ -13,22 +13,28 @@
     .nb-1 { width: 900px; height: 900px; background: radial-gradient(circle, rgba(255,80,0,0.26) 0%, rgba(255,120,0,0.08) 40%, transparent 70%); bottom: -400px; left: -250px; }
     .nb-2 { width: 550px; height: 550px; background: radial-gradient(circle, rgba(255,120,0,0.07) 0%, transparent 60%); top: -100px; right: -100px; }
 
-    main { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 72px); padding: 40px 24px; }
+    main {
+      position: relative; z-index: 1;
+      min-height: calc(100vh - 72px);
+      padding: 48px 24px 80px;
+      display: flex; align-items: flex-start; justify-content: center;
+    }
 
-    .buy-card {
-      width: 100%; max-width: 480px;
-      background: rgba(8,5,18,0.88);
-      border: 1px solid rgba(255,255,255,0.10);
-      border-radius: 24px;
-      padding: 40px 36px;
-      backdrop-filter: blur(28px);
-      position: relative; overflow: hidden;
+    .buy-wrapper {
+      width: 100%; max-width: 960px;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 32px;
+      align-items: start;
     }
-    .buy-card::before {
-      content: '';
-      position: absolute; top: 0; left: 0; right: 0; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.60), transparent);
+    @media (max-width: 820px) {
+      .buy-wrapper { grid-template-columns: 1fr; max-width: 480px; }
+      .buy-left { order: 2; }
+      .buy-right { order: 1; }
     }
+
+    /* LEFT — product showcase */
+    .buy-left {}
 
     .buy-back {
       display: inline-flex; align-items: center; gap: 6px;
@@ -38,72 +44,158 @@
     }
     .buy-back:hover { color: var(--orange-3); }
 
+    .buy-product-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+    .buy-product-icon {
+      width: 56px; height: 56px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; flex-shrink: 0;
+    }
+    .icon-miner   { background: rgba(255,106,0,0.12); border: 1px solid rgba(255,106,0,0.25); }
+    .icon-sender  { background: rgba(100,160,255,0.10); border: 1px solid rgba(100,160,255,0.22); }
+    .icon-start   { background: rgba(255,106,0,0.10); border: 1px solid rgba(255,106,0,0.22); }
+    .icon-pro     { background: rgba(255,106,0,0.15); border: 1px solid rgba(255,106,0,0.35); }
+    .icon-scale   { background: rgba(200,100,255,0.10); border: 1px solid rgba(200,100,255,0.25); }
+
+    .buy-product-name { font-size: 28px; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 4px; }
+    .buy-product-sub  { font-size: 14px; color: rgba(255,255,255,0.40); line-height: 1.5; }
+
+    .buy-tagline {
+      font-size: 16px; line-height: 1.65;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 28px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .buy-tagline strong { color: #fff; }
+
+    .buy-features-title {
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: rgba(255,255,255,0.30);
+      margin-bottom: 14px;
+    }
+    .buy-features { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
+    .buy-features li {
+      display: flex; align-items: flex-start; gap: 12px;
+      font-size: 14px; color: rgba(255,255,255,0.70); line-height: 1.45;
+    }
+    .buy-features li .fi {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: rgba(72,199,100,0.12); border: 1px solid rgba(72,199,100,0.30);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px; font-size: 11px;
+      color: #48c764; font-weight: 700;
+    }
+
+    .buy-social-proof {
+      display: flex; gap: 20px; flex-wrap: wrap;
+      padding: 18px 20px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      margin-bottom: 28px;
+    }
+    .buy-social-item { }
+    .buy-social-num { font-size: 20px; font-weight: 900; color: #fff; letter-spacing: -0.02em; }
+    .buy-social-lbl { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 1px; }
+
+    .buy-reviews { display: flex; flex-direction: column; gap: 10px; }
+    .buy-review {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px; padding: 14px 16px;
+    }
+    .buy-review-stars { color: #f5a623; font-size: 12px; margin-bottom: 6px; }
+    .buy-review-text { font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.5; margin-bottom: 8px; }
+    .buy-review-author { font-size: 12px; color: rgba(255,255,255,0.30); font-weight: 600; }
+
+    /* RIGHT — payment card */
+    .buy-card {
+      background: rgba(8,5,18,0.88);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 24px; padding: 36px 32px;
+      backdrop-filter: blur(28px);
+      position: relative; overflow: hidden;
+      position: sticky; top: 24px;
+    }
+    .buy-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.65), transparent);
+    }
+
     .buy-plan-badge {
       display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(255,106,0,0.12);
-      border: 1px solid rgba(255,106,0,0.30);
-      border-radius: 100px; padding: 6px 14px;
-      font-size: 12px; font-weight: 700;
-      color: var(--orange-3); text-transform: uppercase; letter-spacing: 0.06em;
+      background: rgba(255,106,0,0.12); border: 1px solid rgba(255,106,0,0.30);
+      border-radius: 100px; padding: 5px 14px;
+      font-size: 12px; font-weight: 700; color: var(--orange-3);
+      text-transform: uppercase; letter-spacing: 0.06em;
       margin-bottom: 20px;
     }
 
-    .buy-title { font-size: 24px; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 6px; }
-    .buy-sub { font-size: 14px; color: rgba(255,255,255,0.40); margin-bottom: 28px; line-height: 1.6; }
+    .buy-card-title { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; }
+    .buy-card-sub   { font-size: 13px; color: rgba(255,255,255,0.40); margin-bottom: 24px; line-height: 1.6; }
+
+    .flash-msg { padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; border: 1px solid; }
+    .flash-error   { background: rgba(255,70,70,0.08);   border-color: rgba(255,70,70,0.25);  color: #ff8080; }
+    .flash-success { background: rgba(255,170,68,0.08); border-color: rgba(255,170,68,0.25); color: var(--orange-3); }
+    .flash-info    { background: rgba(100,160,255,0.08); border-color: rgba(100,160,255,0.25); color: #80b4ff; }
 
     .buy-summary {
       background: rgba(255,255,255,0.03);
       border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 14px;
-      padding: 20px;
-      margin-bottom: 24px;
+      border-radius: 14px; padding: 18px 20px; margin-bottom: 20px;
     }
-    .buy-summary-row {
-      display: flex; justify-content: space-between; align-items: center;
-      font-size: 14px; padding: 6px 0;
-    }
-    .buy-summary-row:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; margin-bottom: 4px; }
+    .buy-summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding: 5px 0; }
+    .buy-summary-row:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; margin-bottom: 5px; }
     .buy-summary-label { color: rgba(255,255,255,0.40); }
-    .buy-summary-val { font-weight: 600; color: #fff; }
-    .buy-summary-total .buy-summary-label { color: rgba(255,255,255,0.60); font-weight: 600; }
-    .buy-summary-total .buy-summary-val { font-size: 20px; font-weight: 900; color: var(--orange-3); }
+    .buy-summary-val   { font-weight: 600; color: #fff; }
+    .buy-summary-total .buy-summary-label { color: rgba(255,255,255,0.65); font-weight: 600; }
+    .buy-summary-total .buy-summary-val   { font-size: 24px; font-weight: 900; color: var(--orange-3); letter-spacing: -0.02em; }
 
-    .buy-trust {
-      display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;
-    }
+    .buy-trust { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
     .buy-trust-item {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 12px; color: rgba(255,255,255,0.35);
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: rgba(255,255,255,0.45);
     }
-    .buy-trust-item::before {
-      content: ''; width: 5px; height: 5px; border-radius: 50%;
-      background: var(--orange); flex-shrink: 0;
-      box-shadow: 0 0 5px rgba(255,106,0,0.6);
-    }
+    .buy-trust-item .ti { font-size: 15px; }
 
     .buy-btn {
-      width: 100%; padding: 15px;
-      border-radius: 12px; border: none;
+      width: 100%; padding: 16px;
+      border-radius: 13px; border: none;
       background: linear-gradient(135deg, var(--orange-2), var(--orange));
-      color: #fff; font-size: 16px; font-weight: 700;
+      color: #fff; font-size: 16px; font-weight: 800;
       cursor: pointer; font-family: inherit;
-      box-shadow: 0 0 28px rgba(255,106,0,0.40), inset 0 1px 0 rgba(255,255,255,0.15);
-      transition: all 0.2s;
+      box-shadow: 0 0 32px rgba(255,106,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15);
+      transition: all 0.2s; letter-spacing: -0.01em;
     }
-    .buy-btn:hover { box-shadow: 0 0 44px rgba(255,106,0,0.60); transform: translateY(-1px); }
+    .buy-btn:hover  { box-shadow: 0 0 50px rgba(255,106,0,0.65); transform: translateY(-1px); }
     .buy-btn:active { transform: scale(0.98); }
-    .buy-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .buy-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
 
-    .buy-note {
-      text-align: center; margin-top: 14px;
-      font-size: 12px; color: rgba(255,255,255,0.25); line-height: 1.6;
+    .buy-loading { display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .buy-loading::before {
+      content: '';
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      animation: spin 0.7s linear infinite;
     }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .buy-note { text-align: center; margin-top: 12px; font-size: 12px; color: rgba(255,255,255,0.22); line-height: 1.6; }
     .buy-note a { color: rgba(255,255,255,0.35); text-decoration: none; }
     .buy-note a:hover { color: var(--orange-3); }
 
-    .flash-msg { padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; border: 1px solid; }
-    .flash-error { background: rgba(255,70,70,0.08); border-color: rgba(255,70,70,0.25); color: #ff8080; }
-    .flash-success { background: rgba(255,170,68,0.08); border-color: rgba(255,170,68,0.25); color: var(--orange-3); }
+    .buy-guarantee {
+      display: flex; align-items: center; gap: 10px;
+      margin-top: 16px; padding: 12px 14px;
+      background: rgba(72,199,100,0.05);
+      border: 1px solid rgba(72,199,100,0.18);
+      border-radius: 10px;
+    }
+    .buy-guarantee-icon { font-size: 18px; flex-shrink: 0; }
+    .buy-guarantee-text { font-size: 12px; color: rgba(255,255,255,0.40); line-height: 1.5; }
+    .buy-guarantee-text strong { color: rgba(72,199,100,0.85); }
   </style>
 </head>
 <body class="page-dark">
@@ -122,57 +214,265 @@
 </header>
 
 <main>
-  <div class="buy-card">
+  <div class="buy-wrapper">
 
-    <a href="{{ url_for('pricing') }}" class="buy-back">← Вернуться к тарифам</a>
+    <!-- LEFT: product showcase -->
+    <div class="buy-left">
+      <a href="{{ url_for('pricing') }}" class="buy-back">← Вернуться к тарифам</a>
 
-    <div class="buy-plan-badge">{{ product.capitalize() }}</div>
-    <h1 class="buy-title">Оформление доступа</h1>
-    <p class="buy-sub">Вы будете перенаправлены на страницу оплаты. После оплаты лицензия активируется автоматически.</p>
+      <!-- Product icon + name -->
+      <div class="buy-product-header">
+        {% if product == 'miner' %}
+          <div class="buy-product-icon icon-miner">⛏️</div>
+          <div>
+            <div class="buy-product-name">TG Lead Miner</div>
+            <div class="buy-product-sub">Десктоп-приложение · Windows · 30 дней доступа</div>
+          </div>
+        {% elif product == 'sender' %}
+          <div class="buy-product-icon icon-sender">📨</div>
+          <div>
+            <div class="buy-product-name">TG Lead Sender</div>
+            <div class="buy-product-sub">Десктоп-приложение · Windows · 30 дней доступа</div>
+          </div>
+        {% elif product == 'start' %}
+          <div class="buy-product-icon icon-start">🚀</div>
+          <div>
+            <div class="buy-product-name">Тариф Start</div>
+            <div class="buy-product-sub">Полный пакет · Miner + Sender · 30 дней</div>
+          </div>
+        {% elif product == 'pro' %}
+          <div class="buy-product-icon icon-pro">⚡</div>
+          <div>
+            <div class="buy-product-name">Тариф Pro</div>
+            <div class="buy-product-sub">Профессиональный пакет · 3 Miner + 5 Sender · 30 дней</div>
+          </div>
+        {% elif product == 'scale' %}
+          <div class="buy-product-icon icon-scale">🏆</div>
+          <div>
+            <div class="buy-product-name">Тариф Scale</div>
+            <div class="buy-product-sub">Агентский пакет · 10 Miner + 20 Sender · 30 дней</div>
+          </div>
+        {% else %}
+          <div class="buy-product-icon icon-start">📦</div>
+          <div>
+            <div class="buy-product-name">TG Lead Wareon · {{ product.capitalize() }}</div>
+            <div class="buy-product-sub">Доступ на 30 дней</div>
+          </div>
+        {% endif %}
+      </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="flash-msg flash-{{ category }}">{{ message }}</div>
-        {% endfor %}
+      <!-- Tagline -->
+      {% if product == 'miner' %}
+        <div class="buy-tagline">
+          Собирайте <strong>тысячи целевых контактов</strong> из Telegram-групп и каналов за минуты.
+          Не нужно вручную копировать профили — Miner делает это автоматически и экспортирует базу в CSV.
+        </div>
+      {% elif product == 'sender' %}
+        <div class="buy-tagline">
+          Отправляйте <strong>персонализированные сообщения</strong> тысячам лидов без ручной работы.
+          Sender имитирует живое поведение, защищая ваш аккаунт от блокировок.
+        </div>
+      {% elif product == 'start' %}
+        <div class="buy-tagline">
+          Полный стартовый комплект: <strong>собирайте лиды</strong> из любых чатов и <strong>сразу рассылайте</strong> по ним.
+          Всё что нужно для запуска Telegram-маркетинга с нуля.
+        </div>
+      {% elif product == 'pro' %}
+        <div class="buy-tagline">
+          Профессиональный инструмент для серьёзных объёмов: <strong>до 500 000 лидов в месяц</strong>,
+          AI-защита аккаунтов, нейро-ответчик и приоритетная поддержка 24/7.
+        </div>
+      {% elif product == 'scale' %}
+        <div class="buy-tagline">
+          Максимальная мощь для агентств и команд: <strong>безлимитный сбор</strong>, 10 Miner + 20 Sender,
+          API-доступ, White Label и выделенный персональный менеджер.
+        </div>
       {% endif %}
-    {% endwith %}
 
-    <!-- Итого -->
-    <div class="buy-summary">
-      <div class="buy-summary-row">
-        <span class="buy-summary-label">Тариф</span>
-        <span class="buy-summary-val">TG Lead Wareon {{ product.capitalize() }}</span>
+      <!-- Features list -->
+      <div class="buy-features-title">Что вы получаете</div>
+      <ul class="buy-features">
+        {% if product == 'miner' %}
+          <li><span class="fi">✓</span>Сбор участников чатов и каналов по ссылке</li>
+          <li><span class="fi">✓</span>До 5 000 контактов за один запуск</li>
+          <li><span class="fi">✓</span>Автофильтрация ботов и удалённых аккаунтов</li>
+          <li><span class="fi">✓</span>Экспорт в CSV с именем, username, ID</li>
+          <li><span class="fi">✓</span>История сборов в личном кабинете</li>
+          <li><span class="fi">✓</span>Поддержка SOCKS5-прокси</li>
+          <li><span class="fi">✓</span>Десктоп-приложение для Windows (скачать сразу)</li>
+          <li><span class="fi">✓</span>Обновления и поддержка на весь срок лицензии</li>
+        {% elif product == 'sender' %}
+          <li><span class="fi">✓</span>Загрузка базы из CSV (из Miner или своей)</li>
+          <li><span class="fi">✓</span>Персонализация {имя} и {username} в тексте</li>
+          <li><span class="fi">✓</span>Настройка задержек между сообщениями</li>
+          <li><span class="fi">✓</span>Имитация живого пользователя — защита от FloodWait</li>
+          <li><span class="fi">✓</span>Пауза и остановка рассылки в один клик</li>
+          <li><span class="fi">✓</span>Детальный лог: доставлено / ошибки / заблокированы</li>
+          <li><span class="fi">✓</span>Поддержка нескольких шаблонов сообщений</li>
+          <li><span class="fi">✓</span>Десктоп-приложение для Windows (скачать сразу)</li>
+        {% elif product == 'start' %}
+          <li><span class="fi">✓</span>1 аккаунт Miner + 1 аккаунт Sender</li>
+          <li><span class="fi">✓</span>До 50 000 лидов в месяц</li>
+          <li><span class="fi">✓</span>Сбор из чатов и каналов + рассылка по базе</li>
+          <li><span class="fi">✓</span>Персонализация сообщений {имя} и {username}</li>
+          <li><span class="fi">✓</span>Экспорт в CSV</li>
+          <li><span class="fi">✓</span>Статистика и история сборов</li>
+          <li><span class="fi">✓</span>Поддержка в Telegram</li>
+          <li><span class="fi">✓</span>Доступ к личному кабинету сразу после оплаты</li>
+        {% elif product == 'pro' %}
+          <li><span class="fi">✓</span>3 аккаунта Miner + 5 аккаунтов Sender</li>
+          <li><span class="fi">✓</span>До 500 000 лидов в месяц</li>
+          <li><span class="fi">✓</span>AI-прогрев аккаунтов — защита от бана</li>
+          <li><span class="fi">✓</span>Нейро-ответчик на входящие сообщения</li>
+          <li><span class="fi">✓</span>Умная фильтрация по активности аудитории</li>
+          <li><span class="fi">✓</span>Экспорт CSV, JSON, Excel</li>
+          <li><span class="fi">✓</span>Расширенная аналитика и воронка продаж</li>
+          <li><span class="fi">✓</span>Приоритетная поддержка 24/7</li>
+        {% elif product == 'scale' %}
+          <li><span class="fi">✓</span>10 аккаунтов Miner + 20 аккаунтов Sender</li>
+          <li><span class="fi">✓</span>Безлимитный сбор лидов</li>
+          <li><span class="fi">✓</span>Все функции Pro включены</li>
+          <li><span class="fi">✓</span>Нейро-ответчик 2.0 с GPT-интеграцией</li>
+          <li><span class="fi">✓</span>API-доступ для интеграций</li>
+          <li><span class="fi">✓</span>Интеграция с amoCRM / Bitrix24</li>
+          <li><span class="fi">✓</span>White Label — ваш брендинг</li>
+          <li><span class="fi">✓</span>Выделенный персональный менеджер</li>
+        {% else %}
+          <li><span class="fi">✓</span>Доступ на 30 дней</li>
+          <li><span class="fi">✓</span>Поддержка в Telegram</li>
+          <li><span class="fi">✓</span>Обновления включены</li>
+        {% endif %}
+      </ul>
+
+      <!-- Social proof -->
+      <div class="buy-social-proof">
+        <div class="buy-social-item">
+          <div class="buy-social-num">3 400+</div>
+          <div class="buy-social-lbl">клиентов используют</div>
+        </div>
+        <div class="buy-social-item">
+          <div class="buy-social-num">128 млн</div>
+          <div class="buy-social-lbl">лидов собрано</div>
+        </div>
+        <div class="buy-social-item">
+          <div class="buy-social-num">4.9★</div>
+          <div class="buy-social-lbl">средняя оценка</div>
+        </div>
       </div>
-      <div class="buy-summary-row">
-        <span class="buy-summary-label">Период</span>
-        <span class="buy-summary-val">30 дней</span>
-      </div>
-      <div class="buy-summary-row buy-summary-total">
-        <span class="buy-summary-label">К оплате</span>
-        <span class="buy-summary-val">{{ amount_rub }} ₽</span>
+
+      <!-- Mini-reviews -->
+      <div class="buy-reviews">
+        {% if product in ['miner', 'start'] %}
+        <div class="buy-review">
+          <div class="buy-review-stars">★★★★★</div>
+          <div class="buy-review-text">«За первые 2 часа собрал 12 000 контактов из 4 тематических групп. Из них 340 конверсий в лиды — это лучший результат за всё время работы с Telegram.»</div>
+          <div class="buy-review-author">— Артём К., арбитражник</div>
+        </div>
+        <div class="buy-review">
+          <div class="buy-review-stars">★★★★★</div>
+          <div class="buy-review-text">«Простой интерфейс, работает стабильно. Экспортирует чисто, без мусора. Поддержка ответила за 10 минут.»</div>
+          <div class="buy-review-author">— Юлия М., маркетолог</div>
+        </div>
+        {% elif product in ['sender', 'pro'] %}
+        <div class="buy-review">
+          <div class="buy-review-stars">★★★★★</div>
+          <div class="buy-review-text">«Разослал 8 000 сообщений за ночь, ни один аккаунт не заблокировали. Задержки работают отлично. Конверсия по рассылке — 4.2%.»</div>
+          <div class="buy-review-author">— Максим П., таргетолог</div>
+        </div>
+        <div class="buy-review">
+          <div class="buy-review-stars">★★★★★</div>
+          <div class="buy-review-text">«Купил Pro, пользуюсь уже 3 месяца. Нейро-ответчик сам квалифицирует лиды — менеджеры обрабатывают только горячих.»</div>
+          <div class="buy-review-author">— Дарья С., руководитель отдела продаж</div>
+        </div>
+        {% else %}
+        <div class="buy-review">
+          <div class="buy-review-stars">★★★★★</div>
+          <div class="buy-review-text">«Наша команда из 5 человек работает на Scale уже полгода. Безлимит лидов + API = полная автоматизация воронки. ROI x14.»</div>
+          <div class="buy-review-author">— Игорь В., CEO агентства</div>
+        </div>
+        {% endif %}
       </div>
     </div>
 
-    <!-- Доверие -->
-    <div class="buy-trust">
-      <div class="buy-trust-item">Безопасная оплата</div>
-      <div class="buy-trust-item">Мгновенная активация</div>
-      <div class="buy-trust-item">Поддержка 24/7</div>
+    <!-- RIGHT: payment card -->
+    <div class="buy-right">
+      <div class="buy-card">
+
+        <div class="buy-plan-badge">
+          {% if product == 'miner' %}⛏️ Miner
+          {% elif product == 'sender' %}📨 Sender
+          {% elif product == 'start' %}🚀 Тариф Start
+          {% elif product == 'pro' %}⚡ Тариф Pro
+          {% elif product == 'scale' %}🏆 Тариф Scale
+          {% else %}{{ product.capitalize() }}
+          {% endif %}
+        </div>
+
+        <h1 class="buy-card-title">Оформление доступа</h1>
+        <p class="buy-card-sub">После оплаты лицензия активируется автоматически — доступ мгновенно.</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="buy-summary">
+          <div class="buy-summary-row">
+            <span class="buy-summary-label">Продукт</span>
+            <span class="buy-summary-val">
+              {% if product == 'miner' %}TG Lead Miner
+              {% elif product == 'sender' %}TG Lead Sender
+              {% elif product == 'start' %}Тариф Start (Miner + Sender)
+              {% elif product == 'pro' %}Тариф Pro (3+5 аккаунтов)
+              {% elif product == 'scale' %}Тариф Scale (10+20 аккаунтов)
+              {% else %}{{ product.capitalize() }}
+              {% endif %}
+            </span>
+          </div>
+          <div class="buy-summary-row">
+            <span class="buy-summary-label">Период доступа</span>
+            <span class="buy-summary-val">30 дней</span>
+          </div>
+          <div class="buy-summary-row">
+            <span class="buy-summary-label">Оплата через</span>
+            <span class="buy-summary-val">Lava.top</span>
+          </div>
+          <div class="buy-summary-row buy-summary-total">
+            <span class="buy-summary-label">К оплате</span>
+            <span class="buy-summary-val">{{ amount_rub }} ₽</span>
+          </div>
+        </div>
+
+        <div class="buy-trust">
+          <div class="buy-trust-item"><span class="ti">🔒</span>Безопасная оплата через защищённый шлюз</div>
+          <div class="buy-trust-item"><span class="ti">⚡</span>Мгновенная автоактивация лицензии</div>
+          <div class="buy-trust-item"><span class="ti">💬</span>Поддержка в Telegram — ответим за 10 мин</div>
+        </div>
+
+        <form method="POST" action="{{ url_for('buy', product=product) }}" id="buy-form">
+          <button type="submit" class="buy-btn" id="buy-btn">
+            Оплатить {{ amount_rub }} ₽ →
+          </button>
+        </form>
+
+        <p class="buy-note">
+          Нажимая кнопку, вы принимаете
+          <a href="{{ url_for('terms') }}">Пользовательское соглашение</a>.<br/>
+          Платёж обрабатывается через Lava.top — данные карты на наш сайт не передаются.
+        </p>
+
+        <div class="buy-guarantee">
+          <div class="buy-guarantee-icon">🛡️</div>
+          <div class="buy-guarantee-text">
+            <strong>Гарантия возврата 7 дней.</strong> Если сервис не подошёл — вернём деньги без вопросов.
+          </div>
+        </div>
+
+      </div>
     </div>
-
-    <!-- Форма POST → запускает создание счёта в Lava.top -->
-    <form method="POST" action="{{ url_for('buy', product=product) }}" id="buy-form">
-      <button type="submit" class="buy-btn" id="buy-btn">
-        Оплатить {{ amount_rub }} ₽ →
-      </button>
-    </form>
-
-    <p class="buy-note">
-      Нажимая кнопку, вы принимаете
-      <a href="{{ url_for('terms') }}">Пользовательское соглашение</a>.<br/>
-      Оплата проходит через защищённый шлюз Lava.top.
-    </p>
 
   </div>
 </main>
@@ -181,7 +481,7 @@
   document.getElementById('buy-form').addEventListener('submit', function() {
     const btn = document.getElementById('buy-btn');
     btn.disabled = true;
-    btn.textContent = 'Перенаправление...';
+    btn.innerHTML = '<span class="buy-loading">Перенаправление на оплату...</span>';
   });
 </script>
 </body>

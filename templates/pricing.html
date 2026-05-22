@@ -9,412 +9,221 @@
   <style>
     body { overflow-x: hidden; }
 
-    /* Nebula */
     .nb { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
     .nb-o { position: absolute; border-radius: 50%; filter: blur(150px); pointer-events: none; }
-    .nb-1 {
-      width: 1100px; height: 1100px;
-      background: radial-gradient(circle, rgba(255,80,0,0.28) 0%, rgba(255,120,0,0.09) 40%, transparent 70%);
-      bottom: -500px; left: -350px;
-    }
-    .nb-2 {
-      width: 700px; height: 700px;
-      background: radial-gradient(circle, rgba(255,120,0,0.07) 0%, transparent 60%);
-      top: -150px; right: -150px;
-    }
+    .nb-1 { width: 1100px; height: 1100px; background: radial-gradient(circle, rgba(255,80,0,0.28) 0%, rgba(255,120,0,0.09) 40%, transparent 70%); bottom: -500px; left: -350px; }
+    .nb-2 { width: 700px; height: 700px; background: radial-gradient(circle, rgba(255,120,0,0.07) 0%, transparent 60%); top: -150px; right: -150px; }
 
-    /* Orbital canvas */
     .orbital-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
     .orbital-canvas svg { width: 100%; height: 100%; }
 
-    /* Page layout */
-    main { position: relative; z-index: 1; padding-bottom: 100px; }
+    main { position: relative; z-index: 1; padding-bottom: 120px; }
 
-    /* Section spacing */
     .pricing-section { padding: 80px 0 48px; }
     .pricing-section-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
 
-    /* Section header */
     .sec-hd { text-align: center; margin-bottom: 56px; }
     .sec-hd .eyebrow {
       display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(255,106,0,0.10);
-      border: 1px solid rgba(255,106,0,0.25);
-      border-radius: 100px;
-      padding: 6px 14px;
-      font-size: 12px; font-weight: 600;
-      color: var(--orange-3);
-      letter-spacing: 0.06em; text-transform: uppercase;
-      margin-bottom: 16px;
+      background: rgba(255,106,0,0.10); border: 1px solid rgba(255,106,0,0.25);
+      border-radius: 100px; padding: 6px 14px;
+      font-size: 12px; font-weight: 600; color: var(--orange-3);
+      letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 16px;
     }
-    .sec-hd h2 {
-      font-size: clamp(28px, 4vw, 42px);
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      margin-bottom: 12px;
-    }
-    .sec-hd p { font-size: 16px; color: rgba(255,255,255,0.45); max-width: 480px; margin: 0 auto; line-height: 1.7; }
+    .sec-hd h2 { font-size: clamp(28px, 4vw, 42px); font-weight: 800; letter-spacing: -0.03em; margin-bottom: 12px; }
+    .sec-hd p { font-size: 16px; color: rgba(255,255,255,0.45); max-width: 520px; margin: 0 auto; line-height: 1.7; }
 
     /* Billing toggle */
-    .billing-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      margin-bottom: 48px;
-    }
-    .billing-lbl {
-      font-size: 14px; font-weight: 500;
-      color: rgba(255,255,255,0.35);
-      transition: color 0.2s;
-      cursor: pointer;
-    }
+    .billing-wrap { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 48px; }
+    .billing-lbl { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.35); transition: color 0.2s; cursor: pointer; }
     .billing-lbl.active { color: #fff; }
-    .toggle-track {
-      width: 42px; height: 24px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 100px;
-      position: relative;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
+    .toggle-track { width: 42px; height: 24px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 100px; position: relative; cursor: pointer; transition: background 0.2s; }
     .toggle-track.on { background: rgba(255,106,0,0.35); border-color: rgba(255,106,0,0.50); }
-    .toggle-knob {
-      position: absolute;
-      top: 3px; left: 3px;
-      width: 16px; height: 16px;
-      border-radius: 50%;
-      background: #fff;
-      transition: transform 0.2s;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
-    }
+    .toggle-knob { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
     .toggle-track.on .toggle-knob { transform: translateX(18px); }
-    .year-save {
-      font-size: 11px; font-weight: 700;
-      background: rgba(255,106,0,0.18);
-      border: 1px solid rgba(255,106,0,0.35);
-      border-radius: 100px;
-      padding: 3px 10px;
-      color: var(--orange-3);
-    }
+    .year-save { font-size: 11px; font-weight: 700; background: rgba(255,106,0,0.18); border: 1px solid rgba(255,106,0,0.35); border-radius: 100px; padding: 3px 10px; color: var(--orange-3); }
 
-    /* Pricing grid */
-    .plan-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      margin-bottom: 0;
-    }
-    @media (max-width: 768px) { .plan-grid { grid-template-columns: 1fr; } }
+    /* Plan grid */
+    .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 0; }
+    @media (max-width: 860px) { .plan-grid { grid-template-columns: 1fr; max-width: 480px; margin-left: auto; margin-right: auto; } }
 
     .plan-card {
-      background: rgba(8,5,18,0.80);
-      border: 1px solid rgba(255,255,255,0.09);
-      border-radius: 20px;
-      padding: 32px 28px;
-      backdrop-filter: blur(24px);
-      position: relative;
-      overflow: hidden;
-      transition: border-color 0.25s, transform 0.2s;
-      cursor: default;
+      background: rgba(8,5,18,0.80); border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 20px; padding: 32px 28px;
+      backdrop-filter: blur(24px); position: relative; overflow: hidden;
+      transition: border-color 0.25s, transform 0.2s; cursor: default;
+      display: flex; flex-direction: column;
     }
-    .plan-card::before {
-      content: '';
-      position: absolute; top: 0; left: 0; right: 0; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.25), transparent);
-    }
-    .plan-card.featured {
-      border-color: rgba(255,106,0,0.40);
-      background: rgba(15,8,25,0.90);
-      transform: translateY(-8px);
-    }
-    .plan-card.featured::before {
-      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.70), transparent);
-    }
+    .plan-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,106,0,0.25), transparent); }
+    .plan-card.featured { border-color: rgba(255,106,0,0.40); background: rgba(15,8,25,0.90); transform: translateY(-8px); }
+    .plan-card.featured::before { background: linear-gradient(90deg, transparent, rgba(255,106,0,0.70), transparent); }
     .plan-card:hover { border-color: rgba(255,106,0,0.30); }
     .plan-card.featured:hover { border-color: rgba(255,106,0,0.60); }
 
-    .plan-badge {
-      display: inline-block;
-      background: linear-gradient(135deg, var(--orange-2), var(--orange));
-      color: #fff;
-      font-size: 11px; font-weight: 700;
-      letter-spacing: 0.05em; text-transform: uppercase;
-      border-radius: 100px; padding: 4px 12px;
-      margin-bottom: 16px;
-    }
+    .plan-badge { display: inline-block; background: linear-gradient(135deg, var(--orange-2), var(--orange)); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 100px; padding: 4px 12px; margin-bottom: 16px; }
     .plan-name { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
     .plan-tagline { font-size: 13px; color: rgba(255,255,255,0.40); margin-bottom: 24px; line-height: 1.5; }
 
-    .plan-price { margin-bottom: 8px; }
-    .plan-price-num {
-      font-size: 42px; font-weight: 900;
-      letter-spacing: -0.04em;
-      line-height: 1;
-      color: #fff;
-    }
+    .plan-price { margin-bottom: 4px; }
+    .plan-price-num { font-size: 46px; font-weight: 900; letter-spacing: -0.04em; line-height: 1; color: #fff; }
     .plan-price-cur { font-size: 22px; font-weight: 700; vertical-align: top; margin-top: 8px; display: inline-block; }
-    .plan-price-per { font-size: 14px; color: rgba(255,255,255,0.35); margin-bottom: 28px; }
+    .plan-price-old { font-size: 16px; color: rgba(255,255,255,0.25); text-decoration: line-through; margin-left: 8px; }
+    .plan-price-per { font-size: 13px; color: rgba(255,255,255,0.35); margin-bottom: 6px; }
+    .plan-price-year-note { font-size: 12px; color: var(--orange-3); margin-bottom: 24px; display: none; }
+    .plan-price-year-note.visible { display: block; }
 
-    .plan-divider {
-      height: 1px;
-      background: rgba(255,255,255,0.07);
-      margin-bottom: 20px;
-    }
-    .plan-features { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
-    .plan-features li {
-      display: flex; align-items: flex-start; gap: 10px;
-      font-size: 14px; color: rgba(255,255,255,0.60);
-      line-height: 1.4;
-    }
-    .plan-features li .feat-icon {
-      width: 16px; height: 16px;
-      border-radius: 50%;
-      background: rgba(255,106,0,0.15);
-      border: 1px solid rgba(255,106,0,0.35);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-    .plan-features li .feat-icon::after {
-      content: '';
-      width: 5px; height: 5px;
-      border-radius: 50%;
-      background: var(--orange-3);
-    }
+    .plan-divider { height: 1px; background: rgba(255,255,255,0.07); margin-bottom: 20px; }
 
-    .plan-btn {
-      width: 100%; padding: 13px;
-      border-radius: 12px; border: none;
-      font-size: 15px; font-weight: 700;
-      cursor: pointer; font-family: inherit;
-      transition: all 0.2s;
+    .plan-features { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; flex: 1; }
+    .plan-features li { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: rgba(255,255,255,0.65); line-height: 1.4; }
+    .plan-features li.feat-highlight { color: #fff; font-weight: 500; }
+    .plan-features li .feat-icon { width: 18px; height: 18px; border-radius: 50%; background: rgba(255,106,0,0.15); border: 1px solid rgba(255,106,0,0.35); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .plan-features li .feat-icon::after { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--orange-3); }
+    .plan-features li .feat-icon.check { background: rgba(72,199,100,0.15); border-color: rgba(72,199,100,0.40); }
+    .plan-features li .feat-icon.check::after { background: #48c764; }
+
+    .plan-btn { width: 100%; padding: 14px; border-radius: 12px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.2s; text-decoration: none; display: block; text-align: center; }
+    .plan-btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.14); color: rgba(255,255,255,0.75); }
+    .plan-btn-outline:hover { border-color: rgba(255,106,0,0.45); color: var(--orange-3); }
+    .plan-btn-primary { background: linear-gradient(135deg, var(--orange-2), var(--orange)); color: #fff; box-shadow: 0 0 28px rgba(255,106,0,0.40), inset 0 1px 0 rgba(255,255,255,0.15); }
+    .plan-btn-primary:hover { box-shadow: 0 0 44px rgba(255,106,0,0.60); transform: translateY(-1px); }
+    .plan-btn.selected { background: linear-gradient(135deg, var(--orange-2), var(--orange)); color: #fff; border: none; box-shadow: 0 0 28px rgba(255,106,0,0.40); }
+
+    /* Guarantee */
+    .guarantee-band {
+      background: rgba(72,199,100,0.05); border: 1px solid rgba(72,199,100,0.18);
+      border-radius: 16px; padding: 18px 24px;
+      display: flex; align-items: center; gap: 16px;
+      margin-top: 32px;
     }
-    .plan-btn-outline {
-      background: transparent;
-      border: 1px solid rgba(255,255,255,0.14);
-      color: rgba(255,255,255,0.75);
+    .guarantee-icon { font-size: 28px; flex-shrink: 0; }
+    .guarantee-text strong { font-size: 15px; font-weight: 700; color: #fff; display: block; margin-bottom: 2px; }
+    .guarantee-text span { font-size: 13px; color: rgba(255,255,255,0.45); line-height: 1.5; }
+
+    /* Product cards (Miner/Sender) */
+    .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 680px) { .product-grid { grid-template-columns: 1fr; } }
+
+    .product-card {
+      background: rgba(8,5,18,0.80); border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 20px; padding: 32px; backdrop-filter: blur(24px);
+      position: relative; overflow: hidden;
+      transition: border-color 0.25s, transform 0.2s;
     }
-    .plan-btn-outline:hover {
-      border-color: rgba(255,106,0,0.45);
-      color: var(--orange-3);
-    }
-    .plan-btn-primary {
-      background: linear-gradient(135deg, var(--orange-2), var(--orange));
-      color: #fff;
-      box-shadow: 0 0 28px rgba(255,106,0,0.40), inset 0 1px 0 rgba(255,255,255,0.15);
-    }
-    .plan-btn-primary:hover {
-      box-shadow: 0 0 44px rgba(255,106,0,0.60);
-      transform: translateY(-1px);
-    }
-    .plan-btn.selected {
-      background: linear-gradient(135deg, var(--orange-2), var(--orange));
-      color: #fff;
-      border: none;
-      box-shadow: 0 0 28px rgba(255,106,0,0.40);
-    }
+    .product-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,106,0,0.30), transparent); }
+    .product-card:hover { border-color: rgba(255,106,0,0.35); transform: translateY(-2px); }
+
+    .product-card-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
+    .product-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+    .product-icon-miner { background: rgba(255,106,0,0.12); border: 1px solid rgba(255,106,0,0.25); }
+    .product-icon-sender { background: rgba(100,160,255,0.10); border: 1px solid rgba(100,160,255,0.22); }
+    .product-card-title { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px; }
+    .product-card-sub { font-size: 13px; color: rgba(255,255,255,0.40); line-height: 1.5; }
+
+    .product-for { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.30); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+    .product-audience { font-size: 13px; color: rgba(255,255,255,0.50); margin-bottom: 20px; line-height: 1.5; }
+
+    .product-features { list-style: none; display: flex; flex-direction: column; gap: 9px; margin-bottom: 24px; }
+    .product-features li { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.4; }
+    .product-features li::before { content: ''; width: 16px; height: 16px; border-radius: 50%; background: rgba(255,106,0,0.12); border: 1px solid rgba(255,106,0,0.30); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+
+    .product-price-row { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.07); }
+    .product-price-big { font-size: 38px; font-weight: 900; letter-spacing: -0.04em; line-height: 1; color: #fff; }
+    .product-price-details { }
+    .product-price-cur { font-size: 20px; font-weight: 700; vertical-align: top; display: inline-block; margin-top: 5px; }
+    .product-price-period { font-size: 13px; color: rgba(255,255,255,0.35); display: block; margin-top: 2px; }
+    .product-price-saving { font-size: 11px; background: rgba(72,199,100,0.12); border: 1px solid rgba(72,199,100,0.28); border-radius: 100px; padding: 2px 8px; color: #48c764; font-weight: 600; }
+
+    .product-btn { display: block; width: 100%; padding: 13px; border-radius: 12px; border: 1px solid rgba(255,106,0,0.35); background: rgba(255,106,0,0.08); color: var(--orange-3); font-size: 15px; font-weight: 700; text-align: center; text-decoration: none; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+    .product-btn:hover { background: rgba(255,106,0,0.16); border-color: rgba(255,106,0,0.60); box-shadow: 0 0 24px rgba(255,106,0,0.20); }
 
     /* Addons */
-    .addons-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 16px;
-    }
-    .addon-card {
-      background: rgba(8,5,18,0.75);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 16px;
-      padding: 22px 22px;
-      backdrop-filter: blur(20px);
-      position: relative; overflow: hidden;
-      transition: border-color 0.2s;
-    }
-    .addon-card::before {
-      content: '';
-      position: absolute; top: 0; left: 0; right: 0; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.18), transparent);
-    }
-    .addon-card.active-addon {
-      border-color: rgba(255,106,0,0.45);
-    }
-    .addon-card.active-addon::before {
-      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.55), transparent);
-    }
+    .addons-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .addon-card { background: rgba(8,5,18,0.75); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 22px; backdrop-filter: blur(20px); position: relative; overflow: hidden; transition: border-color 0.2s; }
+    .addon-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,106,0,0.18), transparent); }
+    .addon-card.active-addon { border-color: rgba(255,106,0,0.45); }
+    .addon-card.active-addon::before { background: linear-gradient(90deg, transparent, rgba(255,106,0,0.55), transparent); }
     .addon-icon { font-size: 22px; margin-bottom: 10px; }
     .addon-name { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
     .addon-desc { font-size: 13px; color: rgba(255,255,255,0.40); line-height: 1.5; margin-bottom: 16px; }
     .addon-footer { display: flex; align-items: center; justify-content: space-between; }
     .addon-price { font-size: 16px; font-weight: 800; color: var(--orange-3); }
-    .addon-btn {
-      padding: 7px 16px;
-      border-radius: 9px;
-      font-size: 13px; font-weight: 600;
-      cursor: pointer; font-family: inherit;
-      transition: all 0.2s;
-      border: 1px solid rgba(255,255,255,0.14);
-      background: transparent;
-      color: rgba(255,255,255,0.65);
-    }
+    .addon-btn { padding: 7px 16px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.14); background: transparent; color: rgba(255,255,255,0.65); }
     .addon-btn:hover { border-color: rgba(255,106,0,0.45); color: var(--orange-3); }
-    .addon-btn.added {
-      background: rgba(255,106,0,0.18);
-      border-color: rgba(255,106,0,0.45);
-      color: var(--orange-3);
-    }
+    .addon-btn.added { background: rgba(255,106,0,0.18); border-color: rgba(255,106,0,0.45); color: var(--orange-3); }
 
     /* ROMI Calculator */
-    .calc-card {
-      background: rgba(8,5,18,0.80);
-      border: 1px solid rgba(255,255,255,0.09);
-      border-radius: 24px;
-      padding: 40px;
-      backdrop-filter: blur(24px);
-      max-width: 640px;
-      margin: 0 auto;
-      position: relative; overflow: hidden;
-    }
-    .calc-card::before {
-      content: '';
-      position: absolute; top: 0; left: 0; right: 0; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.55), transparent);
-    }
+    .calc-card { background: rgba(8,5,18,0.80); border: 1px solid rgba(255,255,255,0.09); border-radius: 24px; padding: 40px; backdrop-filter: blur(24px); max-width: 680px; margin: 0 auto; position: relative; overflow: hidden; }
+    .calc-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,106,0,0.55), transparent); }
     .calc-title { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; }
     .calc-sub { font-size: 14px; color: rgba(255,255,255,0.40); margin-bottom: 28px; }
     .calc-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
     @media (max-width: 540px) { .calc-fields { grid-template-columns: 1fr; } }
-
-    .calc-field label {
-      display: block;
-      font-size: 12px; font-weight: 600;
-      color: rgba(255,255,255,0.45);
-      text-transform: uppercase; letter-spacing: 0.07em;
-      margin-bottom: 8px;
-    }
-    .calc-field input {
-      width: 100%;
-      background: rgba(0,0,8,0.8);
-      border: 1px solid rgba(255,255,255,0.10);
-      border-radius: 11px;
-      padding: 11px 14px;
-      color: #fff;
-      font-size: 15px;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .calc-field input:focus {
-      border-color: rgba(255,106,0,0.55);
-      box-shadow: 0 0 0 3px rgba(255,106,0,0.10);
-    }
-    .calc-result {
-      background: rgba(255,106,0,0.07);
-      border: 1px solid rgba(255,106,0,0.20);
-      border-radius: 14px;
-      padding: 20px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      text-align: center;
-    }
-    .calc-result-item {}
-    .calc-result-val { font-size: 28px; font-weight: 900; letter-spacing: -0.03em; color: var(--orange-3); margin-bottom: 4px; }
+    .calc-field label { display: block; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+    .calc-field input { width: 100%; background: rgba(0,0,8,0.8); border: 1px solid rgba(255,255,255,0.10); border-radius: 11px; padding: 11px 14px; color: #fff; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box; }
+    .calc-field input:focus { border-color: rgba(255,106,0,0.55); box-shadow: 0 0 0 3px rgba(255,106,0,0.10); }
+    .calc-result { background: rgba(255,106,0,0.07); border: 1px solid rgba(255,106,0,0.20); border-radius: 14px; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; text-align: center; }
+    .calc-result-val { font-size: 32px; font-weight: 900; letter-spacing: -0.03em; color: var(--orange-3); margin-bottom: 4px; }
     .calc-result-lbl { font-size: 12px; color: rgba(255,255,255,0.35); }
 
+    /* Compare table */
+    .compare-table { width: 100%; border-collapse: collapse; }
+    .compare-table th, .compare-table td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; }
+    .compare-table th { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.40); padding: 18px 16px; }
+    .compare-table td:first-child, .compare-table th:first-child { text-align: left; color: rgba(255,255,255,0.60); }
+    .compare-table .check { color: #48c764; font-size: 16px; font-weight: 700; }
+    .compare-table .no { color: rgba(255,255,255,0.15); }
+    .compare-table .pro-col { color: var(--orange-3); font-weight: 700; }
+    .compare-table .pro-head { color: var(--orange-3) !important; }
+    .compare-wrap { background: rgba(8,5,18,0.75); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; overflow: hidden; backdrop-filter: blur(20px); }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table .cat-row td { background: rgba(255,255,255,0.02); color: rgba(255,255,255,0.30); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 10px 16px 8px; }
+
     /* Sticky bar */
-    .sticky-bar {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      z-index: 100;
-      background: rgba(6,3,15,0.95);
-      border-top: 1px solid rgba(255,255,255,0.08);
-      backdrop-filter: blur(24px);
-      padding: 14px 24px;
-      transform: translateY(100%);
-      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
+    .sticky-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: rgba(6,3,15,0.96); border-top: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(24px); padding: 14px 24px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); }
     .sticky-bar.visible { transform: translateY(0); }
-    .sticky-bar-inner {
-      max-width: 1100px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
+    .sticky-bar-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; gap: 16px; }
     .sticky-plan-info { flex: 1; }
     .sticky-plan-name { font-size: 14px; font-weight: 700; color: #fff; }
     .sticky-addons { font-size: 12px; color: rgba(255,255,255,0.40); margin-top: 2px; }
     .sticky-price { text-align: right; }
     .sticky-price-num { font-size: 24px; font-weight: 900; letter-spacing: -0.03em; color: var(--orange-3); }
     .sticky-price-per { font-size: 12px; color: rgba(255,255,255,0.35); }
-    .sticky-cta {
-      padding: 12px 28px;
-      border-radius: 12px;
-      border: none;
-      background: linear-gradient(135deg, var(--orange-2), var(--orange));
-      color: #fff;
-      font-size: 15px; font-weight: 700;
-      cursor: pointer; font-family: inherit;
-      box-shadow: 0 0 24px rgba(255,106,0,0.40);
-      transition: all 0.2s;
-      text-decoration: none;
-      white-space: nowrap;
-    }
+    .sticky-cta { padding: 12px 28px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--orange-2), var(--orange)); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 0 24px rgba(255,106,0,0.40); transition: all 0.2s; text-decoration: none; white-space: nowrap; }
     .sticky-cta:hover { box-shadow: 0 0 40px rgba(255,106,0,0.60); transform: translateY(-1px); }
 
-    /* Compare table */
-    .compare-table { width: 100%; border-collapse: collapse; }
-    .compare-table th, .compare-table td {
-      padding: 14px 16px;
-      font-size: 14px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      text-align: center;
-    }
-    .compare-table th { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.40); }
-    .compare-table td:first-child, .compare-table th:first-child { text-align: left; color: rgba(255,255,255,0.60); }
-    .compare-table .check { color: var(--orange-3); font-size: 16px; }
-    .compare-table .no { color: rgba(255,255,255,0.15); }
-    .compare-table .pro-col { color: var(--orange-3); font-weight: 700; }
-    .compare-wrap {
-      background: rgba(8,5,18,0.75);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 20px;
-      overflow: hidden;
-      backdrop-filter: blur(20px);
-    }
+    /* Social proof strip */
+    .social-strip { display: flex; align-items: center; justify-content: center; gap: 32px; padding: 24px 0; flex-wrap: wrap; }
+    .social-stat { text-align: center; }
+    .social-stat-num { font-size: 28px; font-weight: 900; letter-spacing: -0.03em; color: #fff; }
+    .social-stat-lbl { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+    .social-divider { width: 1px; height: 40px; background: rgba(255,255,255,0.08); }
+    @media (max-width: 540px) { .social-divider { display: none; } }
   </style>
 </head>
 <body class="page-dark">
 
-<!-- Nebula -->
 <div class="nb">
   <div class="nb-o nb-1"></div>
   <div class="nb-o nb-2"></div>
 </div>
 
-<!-- Orbital lines -->
 <div class="orbital-canvas">
   <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <filter id="orb-blur"><feGaussianBlur stdDeviation="2.5"/></filter>
-    </defs>
+    <defs><filter id="orb-blur"><feGaussianBlur stdDeviation="2.5"/></filter></defs>
     <g opacity="0.07" stroke="white" stroke-width="1" fill="none" filter="url(#orb-blur)">
       <ellipse cx="720" cy="900" rx="900" ry="280" transform="rotate(-8 720 900)"/>
       <ellipse cx="720" cy="900" rx="620" ry="190" transform="rotate(-8 720 900)"/>
       <ellipse cx="720" cy="900" rx="380" ry="115" transform="rotate(-5 720 900)"/>
     </g>
     <g fill="rgba(255,255,255,0.30)">
-      <circle cx="200" cy="200" r="1.5"/>
-      <circle cx="1200" cy="140" r="2"/>
-      <circle cx="80"   cy="500" r="1.5"/>
-      <circle cx="1350" cy="600" r="2"/>
-      <circle cx="600"  cy="80"  r="1.5"/>
+      <circle cx="200" cy="200" r="1.5"/><circle cx="1200" cy="140" r="2"/>
+      <circle cx="80" cy="500" r="1.5"/><circle cx="1350" cy="600" r="2"/>
+      <circle cx="600" cy="80" r="1.5"/>
     </g>
   </svg>
 </div>
 
-<!-- Header -->
 <header class="site-header" style="position:relative;z-index:10;">
   <div class="container header-inner">
     <a href="{{ url_for('index') }}" class="logo">
@@ -431,23 +240,32 @@
     </nav>
     <div class="header-actions">
       <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">Войти</a>
-      <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Регистрация</a>
+      <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">3 дня бесплатно</a>
     </div>
-    <button class="nav-toggle" aria-label="Открыть меню">
-      <span></span><span></span>
-    </button>
+    <button class="nav-toggle" aria-label="Открыть меню"><span></span><span></span></button>
   </div>
 </header>
 
 <main>
 
-  <!-- PLANS -->
-  <section class="pricing-section">
+  <!-- HERO -->
+  <section class="pricing-section" style="padding-bottom:0;">
     <div class="pricing-section-inner">
       <div class="sec-hd">
         <div class="eyebrow">Тарифы</div>
-        <h2>Соберите свой тариф</h2>
-        <p>Выберите базу и добавьте нужные модули. Никаких скрытых платежей.</p>
+        <h2>Начните с бесплатного триала,<br/>масштабируйтесь без ограничений</h2>
+        <p>Все тарифы включают Miner + Sender. Первые 3 дня — бесплатно, без привязки карты.</p>
+      </div>
+
+      <!-- Социальное доказательство -->
+      <div class="social-strip" style="margin-bottom:40px;">
+        <div class="social-stat"><div class="social-stat-num">3 400+</div><div class="social-stat-lbl">активных клиентов</div></div>
+        <div class="social-divider"></div>
+        <div class="social-stat"><div class="social-stat-num">128 млн</div><div class="social-stat-lbl">лидов собрано</div></div>
+        <div class="social-divider"></div>
+        <div class="social-stat"><div class="social-stat-num">4.9 / 5</div><div class="social-stat-lbl">средняя оценка</div></div>
+        <div class="social-divider"></div>
+        <div class="social-stat"><div class="social-stat-num">7 мин</div><div class="social-stat-lbl">до первого лида</div></div>
       </div>
 
       <!-- Billing toggle -->
@@ -466,86 +284,125 @@
         <!-- Start -->
         <div class="plan-card" data-plan="start" data-base-monthly="990" data-base-yearly="790">
           <div class="plan-name">Start</div>
-          <div class="plan-tagline">Для тех, кто только начинает автоматизировать Telegram</div>
+          <div class="plan-tagline">Для малого бизнеса и тех, кто только запускает Telegram-маркетинг</div>
           <div class="plan-price">
             <span class="plan-price-cur">₽</span><span class="plan-price-num price-val">990</span>
           </div>
-          <div class="plan-price-per">в месяц</div>
+          <div class="plan-price-per">в месяц &nbsp;·&nbsp; включает НДС</div>
+          <div class="plan-price-year-note" id="year-note-start">≈ 790₽/мес при оплате год вперёд</div>
           <div class="plan-divider"></div>
           <ul class="plan-features">
-            <li><span class="feat-icon"></span>1 Miner + 1 Sender</li>
-            <li><span class="feat-icon"></span>До 50 000 лидов/мес</li>
-            <li><span class="feat-icon"></span>Базовый экспорт CSV</li>
+            <li class="feat-highlight"><span class="feat-icon"></span>1 аккаунт Miner + 1 аккаунт Sender</li>
+            <li><span class="feat-icon"></span>До 50 000 лидов в месяц</li>
+            <li><span class="feat-icon"></span>Сбор из чатов и каналов по ссылке</li>
+            <li><span class="feat-icon"></span>Рассылка с персонализацией {имя}</li>
+            <li><span class="feat-icon"></span>Экспорт базы в CSV</li>
+            <li><span class="feat-icon"></span>История сборов и статистика</li>
             <li><span class="feat-icon"></span>Поддержка в Telegram</li>
+            <li><span class="feat-icon"></span>Десктоп-приложение для Windows</li>
           </ul>
           <button class="plan-btn plan-btn-outline select-plan-btn" data-plan="start">Выбрать Start</button>
         </div>
 
         <!-- Pro (featured) -->
         <div class="plan-card featured" data-plan="pro" data-base-monthly="2490" data-base-yearly="1990">
-          <div class="plan-badge">Выбор арбитражников</div>
+          <div class="plan-badge">🔥 Хит продаж</div>
           <div class="plan-name">Pro</div>
-          <div class="plan-tagline">Полноценная связка для опытных арбитражников</div>
+          <div class="plan-tagline">Профессиональный инструмент для арбитражников и маркетологов</div>
           <div class="plan-price">
             <span class="plan-price-cur">₽</span><span class="plan-price-num price-val">2490</span>
           </div>
-          <div class="plan-price-per">в месяц</div>
+          <div class="plan-price-per">в месяц &nbsp;·&nbsp; включает НДС</div>
+          <div class="plan-price-year-note" id="year-note-pro">≈ 1 990₽/мес при оплате год вперёд</div>
           <div class="plan-divider"></div>
           <ul class="plan-features">
-            <li><span class="feat-icon"></span>2 Miner + 3 Sender</li>
-            <li><span class="feat-icon"></span>До 150 000 лидов/мес</li>
-            <li><span class="feat-icon"></span>Экспорт CSV, JSON, CRM</li>
-            <li><span class="feat-icon"></span>AI-прогрев аккаунтов</li>
-            <li><span class="feat-icon"></span>Приоритетная поддержка</li>
+            <li class="feat-highlight"><span class="feat-icon check"></span>3 аккаунта Miner + 5 аккаунтов Sender</li>
+            <li class="feat-highlight"><span class="feat-icon check"></span>До 500 000 лидов в месяц</li>
+            <li><span class="feat-icon"></span>Умная фильтрация по активности</li>
+            <li><span class="feat-icon"></span>AI-прогрев аккаунтов (защита от бана)</li>
+            <li><span class="feat-icon"></span>Нейро-ответчик на входящие сообщения</li>
+            <li><span class="feat-icon"></span>Экспорт в CSV, JSON, Excel</li>
+            <li><span class="feat-icon"></span>Расширенная аналитика и воронка</li>
+            <li><span class="feat-icon"></span>Приоритетная поддержка 24/7</li>
+            <li><span class="feat-icon check"></span>Всё из тарифа Start</li>
           </ul>
           <button class="plan-btn plan-btn-primary select-plan-btn" data-plan="pro">Выбрать Pro</button>
         </div>
 
         <!-- Scale -->
-        <div class="plan-card" data-plan="scale" data-base-monthly="6990" data-base-yearly="5490">
+        <div class="plan-card" data-plan="scale" data-base-monthly="6990" data-base-yearly="5590">
           <div class="plan-name">Scale</div>
-          <div class="plan-tagline">Для агентств и больших арбитражных команд</div>
+          <div class="plan-tagline">Для агентств, арбитражных команд и белых лейблов</div>
           <div class="plan-price">
             <span class="plan-price-cur">₽</span><span class="plan-price-num price-val">6990</span>
           </div>
-          <div class="plan-price-per">в месяц</div>
+          <div class="plan-price-per">в месяц &nbsp;·&nbsp; включает НДС</div>
+          <div class="plan-price-year-note" id="year-note-scale">≈ 5 590₽/мес при оплате год вперёд</div>
           <div class="plan-divider"></div>
           <ul class="plan-features">
-            <li><span class="feat-icon"></span>5 Miner + 10 Sender</li>
-            <li><span class="feat-icon"></span>Безлимит лидов</li>
-            <li><span class="feat-icon"></span>Все модули включены</li>
-            <li><span class="feat-icon"></span>Выделенный менеджер</li>
-            <li><span class="feat-icon"></span>API-доступ</li>
+            <li class="feat-highlight"><span class="feat-icon check"></span>10 аккаунтов Miner + 20 аккаунтов Sender</li>
+            <li class="feat-highlight"><span class="feat-icon check"></span>Безлимитный сбор лидов</li>
+            <li><span class="feat-icon"></span>Все функции Pro включены</li>
+            <li><span class="feat-icon"></span>Нейро-ответчик 2.0 с GPT-интеграцией</li>
+            <li><span class="feat-icon"></span>API-доступ для интеграций</li>
+            <li><span class="feat-icon"></span>Интеграция с amoCRM, Bitrix24</li>
+            <li><span class="feat-icon"></span>White Label — ваш брендинг</li>
+            <li><span class="feat-icon"></span>Выделенный персональный менеджер</li>
+            <li><span class="feat-icon check"></span>Всё из тарифа Pro</li>
           </ul>
           <button class="plan-btn plan-btn-outline select-plan-btn" data-plan="scale">Выбрать Scale</button>
         </div>
 
       </div>
+
+      <!-- Гарантия -->
+      <div class="guarantee-band">
+        <div class="guarantee-icon">🛡️</div>
+        <div class="guarantee-text">
+          <strong>Гарантия возврата 7 дней</strong>
+          <span>Если сервис не подошёл — вернём деньги без вопросов в течение 7 дней после первой оплаты. Просто напишите в поддержку.</span>
+        </div>
+      </div>
+
     </div>
   </section>
 
-  <!-- COMPARE -->
-  <section class="pricing-section" style="padding-top:0;">
+  <!-- COMPARE TABLE -->
+  <section class="pricing-section" style="padding-top:48px;">
     <div class="pricing-section-inner">
+      <div class="sec-hd" style="margin-bottom:32px;">
+        <div class="eyebrow">Сравнение</div>
+        <h2>Что входит в каждый тариф</h2>
+      </div>
       <div class="compare-wrap">
         <table class="compare-table">
           <thead>
             <tr>
               <th>Возможность</th>
               <th>Start</th>
-              <th class="pro-col">Pro</th>
+              <th class="pro-head">Pro</th>
               <th>Scale</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td>Miner аккаунтов</td><td>1</td><td class="pro-col">2</td><td>5</td></tr>
-            <tr><td>Sender аккаунтов</td><td>1</td><td class="pro-col">3</td><td>10</td></tr>
-            <tr><td>Лидов в месяц</td><td>50 000</td><td class="pro-col">150 000</td><td>∞</td></tr>
-            <tr><td>Экспорт CSV/JSON</td><td class="check">✓</td><td class="check pro-col">✓</td><td class="check">✓</td></tr>
-            <tr><td>AI-прогрев</td><td class="no">—</td><td class="check pro-col">✓</td><td class="check">✓</td></tr>
-            <tr><td>Нейро-ответчик</td><td class="no">—</td><td class="no">—</td><td class="check">✓</td></tr>
-            <tr><td>Выделенный менеджер</td><td class="no">—</td><td class="no">—</td><td class="check">✓</td></tr>
+            <tr class="cat-row"><td colspan="4">Основные лимиты</td></tr>
+            <tr><td>Miner аккаунтов</td><td>1</td><td class="pro-col">3</td><td>10</td></tr>
+            <tr><td>Sender аккаунтов</td><td>1</td><td class="pro-col">5</td><td>20</td></tr>
+            <tr><td>Лидов в месяц</td><td>50 000</td><td class="pro-col">500 000</td><td>∞ безлимит</td></tr>
+            <tr><td>Параллельных сборов</td><td>1</td><td class="pro-col">3</td><td>10</td></tr>
+            <tr class="cat-row"><td colspan="4">Функции</td></tr>
+            <tr><td>Экспорт CSV</td><td class="check">✓</td><td class="check pro-col">✓</td><td class="check">✓</td></tr>
+            <tr><td>Экспорт JSON / Excel</td><td class="no">—</td><td class="check pro-col">✓</td><td class="check">✓</td></tr>
+            <tr><td>Фильтрация по активности</td><td class="no">—</td><td class="check pro-col">✓</td><td class="check">✓</td></tr>
+            <tr><td>AI-прогрев аккаунтов</td><td class="no">—</td><td class="check pro-col">✓</td><td class="check">✓</td></tr>
+            <tr><td>Нейро-ответчик</td><td class="no">—</td><td class="pro-col">v1</td><td>v2.0 + GPT</td></tr>
+            <tr><td>Расширенная аналитика</td><td class="no">—</td><td class="check pro-col">✓</td><td class="check">✓</td></tr>
+            <tr class="cat-row"><td colspan="4">Интеграции и сервис</td></tr>
             <tr><td>API-доступ</td><td class="no">—</td><td class="no">—</td><td class="check">✓</td></tr>
+            <tr><td>CRM интеграция (amoCRM, Bitrix24)</td><td class="no">—</td><td class="no">—</td><td class="check">✓</td></tr>
+            <tr><td>White Label</td><td class="no">—</td><td class="no">—</td><td class="check">✓</td></tr>
+            <tr><td>Выделенный менеджер</td><td class="no">—</td><td class="no">—</td><td class="check">✓</td></tr>
+            <tr><td>Поддержка</td><td>Telegram</td><td class="pro-col">24/7 приоритет</td><td>Личный менеджер</td></tr>
           </tbody>
         </table>
       </div>
@@ -553,128 +410,165 @@
   </section>
 
   <!-- ОТДЕЛЬНЫЕ ПРОДУКТЫ -->
-  <section class="pricing-section" style="padding-top:0;">
+  <section class="pricing-section" style="padding-top:48px;">
     <div class="pricing-section-inner">
       <div class="sec-hd">
-        <div class="eyebrow">Отдельно</div>
-        <h2>Только один инструмент</h2>
-        <p>Если нужен только сбор или только рассылка — берите по отдельности.</p>
+        <div class="eyebrow">Отдельные инструменты</div>
+        <h2>Нужен только один инструмент?</h2>
+        <p>Возьмите Miner или Sender отдельно — если нужен только сбор или только рассылка. В 2–3 раза дешевле пакетного тарифа.</p>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:700px;margin:0 auto;">
+      <div class="product-grid">
 
         <!-- Miner -->
-        <div style="background:rgba(8,5,18,0.80);border:1px solid rgba(255,255,255,0.09);border-radius:20px;padding:28px;backdrop-filter:blur(24px);position:relative;overflow:hidden;">
-          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,106,0,0.30),transparent);"></div>
-          <div style="font-size:28px;margin-bottom:12px;">⛏️</div>
-          <div style="font-size:18px;font-weight:800;margin-bottom:6px;">Miner</div>
-          <div style="font-size:13px;color:rgba(255,255,255,0.40);margin-bottom:20px;line-height:1.5;">Сбор лидов из Telegram-чатов и каналов. 1 аккаунт, до 50 000 лидов/мес.</div>
-          <div style="margin-bottom:20px;">
-            <span style="font-size:36px;font-weight:900;letter-spacing:-0.03em;">490</span>
-            <span style="font-size:16px;color:rgba(255,255,255,0.40);">₽/мес</span>
+        <div class="product-card">
+          <div class="product-card-header">
+            <div class="product-icon product-icon-miner">⛏️</div>
+            <div>
+              <div class="product-card-title">TG Lead Miner</div>
+              <div class="product-card-sub">Десктоп-приложение для Windows. Собирает участников Telegram-групп и каналов в базу лидов.</div>
+            </div>
           </div>
-          <a href="/buy/miner" style="display:block;text-align:center;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.14);background:transparent;color:rgba(255,255,255,0.75);font-size:14px;font-weight:700;text-decoration:none;transition:all 0.2s;"
-             onmouseover="this.style.borderColor='rgba(255,106,0,0.45)';this.style.color='#ffaa44';"
-             onmouseout="this.style.borderColor='rgba(255,255,255,0.14)';this.style.color='rgba(255,255,255,0.75)';">
-            Купить Miner →
-          </a>
+
+          <div class="product-for">Для кого</div>
+          <div class="product-audience">Маркетологи, арбитражники и владельцы бизнеса, которым нужна горячая целевая аудитория из Telegram без лишних трат.</div>
+
+          <ul class="product-features">
+            <li>Сбор участников по ссылке на чат или канал</li>
+            <li>Фильтрация ботов и неактивных аккаунтов</li>
+            <li>До 5 000 контактов за один запуск</li>
+            <li>Экспорт в CSV одним кликом</li>
+            <li>История всех сборов в личном кабинете</li>
+            <li>Поддержка SOCKS5-прокси для безопасности</li>
+            <li>Работает через ваш Telegram-аккаунт</li>
+            <li>Обновления и поддержка включены</li>
+          </ul>
+
+          <div class="product-price-row">
+            <div>
+              <span class="plan-price-cur" style="font-size:18px;">₽</span><span class="product-price-big">490</span>
+            </div>
+            <div>
+              <span class="product-price-period">в месяц · 30 дней доступа</span>
+              <span class="product-price-saving">Экономия vs Pro: 2 000₽/мес</span>
+            </div>
+          </div>
+          <a href="{{ url_for('buy', product='miner') }}" class="product-btn">Купить Miner за 490 ₽ →</a>
         </div>
 
         <!-- Sender -->
-        <div style="background:rgba(8,5,18,0.80);border:1px solid rgba(255,255,255,0.09);border-radius:20px;padding:28px;backdrop-filter:blur(24px);position:relative;overflow:hidden;">
-          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,106,0,0.30),transparent);"></div>
-          <div style="font-size:28px;margin-bottom:12px;">📨</div>
-          <div style="font-size:18px;font-weight:800;margin-bottom:6px;">Sender</div>
-          <div style="font-size:13px;color:rgba(255,255,255,0.40);margin-bottom:20px;line-height:1.5;">Автоматическая рассылка по базе лидов. 1 аккаунт, персонализация сообщений.</div>
-          <div style="margin-bottom:20px;">
-            <span style="font-size:36px;font-weight:900;letter-spacing:-0.03em;">990</span>
-            <span style="font-size:16px;color:rgba(255,255,255,0.40);">₽/мес</span>
+        <div class="product-card">
+          <div class="product-card-header">
+            <div class="product-icon product-icon-sender">📨</div>
+            <div>
+              <div class="product-card-title">TG Lead Sender</div>
+              <div class="product-card-sub">Десктоп-приложение для Windows. Автоматически рассылает сообщения по базе лидов из Miner.</div>
+            </div>
           </div>
-          <a href="/buy/sender" style="display:block;text-align:center;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.14);background:transparent;color:rgba(255,255,255,0.75);font-size:14px;font-weight:700;text-decoration:none;transition:all 0.2s;"
-             onmouseover="this.style.borderColor='rgba(255,106,0,0.45)';this.style.color='#ffaa44';"
-             onmouseout="this.style.borderColor='rgba(255,255,255,0.14)';this.style.color='rgba(255,255,255,0.75)';">
-            Купить Sender →
-          </a>
+
+          <div class="product-for">Для кого</div>
+          <div class="product-audience">Те, у кого уже есть база контактов в Telegram — или собранная Miner, или своя — и нужно быстро запустить массовую рассылку.</div>
+
+          <ul class="product-features">
+            <li>Загрузка базы CSV из Miner или своей</li>
+            <li>Персонализация: {имя}, {username} в тексте</li>
+            <li>Настройка задержек между сообщениями</li>
+            <li>Имитация живого пользователя (защита от бана)</li>
+            <li>Пауза и полная остановка в один клик</li>
+            <li>Подробный лог: отправлено / ошибки / блоки</li>
+            <li>Поддержка нескольких шаблонов сообщений</li>
+            <li>Работает в фоне без окна браузера</li>
+          </ul>
+
+          <div class="product-price-row">
+            <div>
+              <span class="plan-price-cur" style="font-size:18px;">₽</span><span class="product-price-big">990</span>
+            </div>
+            <div>
+              <span class="product-price-period">в месяц · 30 дней доступа</span>
+              <span class="product-price-saving">Окупается с первой рассылки</span>
+            </div>
+          </div>
+          <a href="{{ url_for('buy', product='sender') }}" class="product-btn">Купить Sender за 990 ₽ →</a>
         </div>
 
+      </div>
+
+      <!-- Комбо-подсказка -->
+      <div style="margin-top:20px;text-align:center;padding:18px 24px;background:rgba(255,106,0,0.05);border:1px solid rgba(255,106,0,0.18);border-radius:14px;">
+        <span style="font-size:14px;color:rgba(255,255,255,0.50);">💡 Возьмите оба инструмента и сэкономьте — тариф <strong style="color:var(--orange-3);">Start за 990₽/мес</strong> включает и Miner, и Sender вместе.</span>
       </div>
     </div>
   </section>
 
   <!-- ADDONS -->
-  <section class="pricing-section" style="padding-top:0;">
+  <section class="pricing-section" style="padding-top:48px;">
     <div class="pricing-section-inner">
       <div class="sec-hd">
         <div class="eyebrow">Модули</div>
         <h2>Дополнительные модули</h2>
-        <p>Добавьте нужные функции к любому тарифу.</p>
+        <p>Подключите нужные функции к любому тарифу. Можно добавить сейчас или позже в личном кабинете.</p>
       </div>
       <div class="addons-grid" id="addons-grid">
-
         <div class="addon-card" data-addon="warmup" data-price="390">
           <div class="addon-icon">🛡️</div>
           <div class="addon-name">Автопрогрев аккаунтов</div>
-          <div class="addon-desc">Имитация человеческого поведения, авто-повышение траста аккаунтов.</div>
+          <div class="addon-desc">Имитация живой активности: просмотры, реакции, вступления в группы. Повышает траст аккаунта и снижает риск блокировки.</div>
           <div class="addon-footer">
             <div class="addon-price">+390₽/мес</div>
             <button class="addon-btn">Добавить</button>
           </div>
         </div>
-
         <div class="addon-card" data-addon="aishield" data-price="390">
           <div class="addon-icon">🧠</div>
           <div class="addon-name">AI-Защита аккаунта</div>
-          <div class="addon-desc">Умная ротация прокси, авто-пауза при FloodWait и аномалиях.</div>
+          <div class="addon-desc">Умная ротация прокси, авто-пауза при FloodWait, детектор аномалий. Ваш аккаунт работает без блокировок.</div>
           <div class="addon-footer">
             <div class="addon-price">+390₽/мес</div>
             <button class="addon-btn">Добавить</button>
           </div>
         </div>
-
         <div class="addon-card" data-addon="analytics" data-price="290">
           <div class="addon-icon">📊</div>
           <div class="addon-name">Расширенная аналитика</div>
-          <div class="addon-desc">Детальные отчёты по воронке, когортный анализ, экспорт в PDF.</div>
+          <div class="addon-desc">Детальная воронка по каждой рассылке, когортный анализ аудитории, экспорт отчётов в PDF.</div>
           <div class="addon-footer">
             <div class="addon-price">+290₽/мес</div>
             <button class="addon-btn">Добавить</button>
           </div>
         </div>
-
         <div class="addon-card" data-addon="neuro" data-price="590">
           <div class="addon-icon">🤖</div>
           <div class="addon-name">Нейро-ответчик 2.0</div>
-          <div class="addon-desc">Персонализированные ответы с A/B-тестами и GPT-интеграцией.</div>
+          <div class="addon-desc">GPT-powered автоответы на входящие: A/B-тесты посылов, персонализация, встроенная воронка квалификации лида.</div>
           <div class="addon-footer">
             <div class="addon-price">+590₽/мес</div>
             <button class="addon-btn">Добавить</button>
           </div>
         </div>
-
         <div class="addon-card" data-addon="crm" data-price="490">
           <div class="addon-icon">🔗</div>
           <div class="addon-name">Интеграция с CRM</div>
-          <div class="addon-desc">Прямая выгрузка лидов в amoCRM, HubSpot, Bitrix24.</div>
+          <div class="addon-desc">Прямая выгрузка лидов в amoCRM, HubSpot, Bitrix24 по webhook. Без ручного копирования таблиц.</div>
           <div class="addon-footer">
             <div class="addon-price">+490₽/мес</div>
             <button class="addon-btn">Добавить</button>
           </div>
         </div>
-
       </div>
     </div>
   </section>
 
-  <!-- CALCULATOR -->
-  <section class="pricing-section" style="padding-top:0;">
+  <!-- ROMI CALCULATOR -->
+  <section class="pricing-section" style="padding-top:48px;">
     <div class="pricing-section-inner">
       <div class="sec-hd">
         <div class="eyebrow">Калькулятор</div>
-        <h2>Посчитайте вашу выгоду</h2>
-        <p>Введите параметры бизнеса — увидите потенциальную выручку от TG Lead Wareon.</p>
+        <h2>Посчитайте свою выгоду</h2>
+        <p>Введите параметры бизнеса и сразу увидите потенциальную выручку.</p>
       </div>
       <div class="calc-card">
         <div class="calc-title">ROMI калькулятор</div>
-        <div class="calc-sub">Оцените возврат инвестиций до покупки</div>
+        <div class="calc-sub">Сколько вы заработаете с TG Lead Wareon — считаем честно</div>
         <div class="calc-fields">
           <div class="calc-field">
             <label>Лидов в месяц</label>
@@ -682,24 +576,24 @@
           </div>
           <div class="calc-field">
             <label>Конверсия в клиента (%)</label>
-            <input id="calc-conv" type="number" value="5" min="0" max="100" step="0.1"/>
+            <input id="calc-conv" type="number" value="3" min="0" max="100" step="0.1"/>
           </div>
           <div class="calc-field">
             <label>Средний чек (₽)</label>
             <input id="calc-check" type="number" value="5000" min="0"/>
           </div>
           <div class="calc-field">
-            <label>Тариф в месяц (₽)</label>
+            <label>Стоимость тарифа (₽)</label>
             <input id="calc-plan-cost" type="number" value="2490" min="0"/>
           </div>
         </div>
         <div class="calc-result">
           <div class="calc-result-item">
-            <div class="calc-result-val" id="calc-revenue">2 500 000₽</div>
+            <div class="calc-result-val" id="calc-revenue">1 500 000₽</div>
             <div class="calc-result-lbl">Потенциальная выручка</div>
           </div>
           <div class="calc-result-item">
-            <div class="calc-result-val" id="calc-romi">100 340%</div>
+            <div class="calc-result-val" id="calc-romi">60 140%</div>
             <div class="calc-result-lbl">ROMI</div>
           </div>
         </div>
@@ -721,7 +615,7 @@
       <div class="sticky-price-per">в месяц</div>
     </div>
     <a href="/buy/start" class="sticky-cta" id="sticky-cta" style="pointer-events:none;opacity:0.45;">
-      Перейти к оплате →
+      Оплатить →
     </a>
   </div>
 </div>
@@ -739,78 +633,53 @@
 
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 <script>
-  // Billing toggle
   let isYearly = false;
   const toggleEl = document.getElementById('billing-toggle');
   const billingLabels = document.querySelectorAll('.billing-lbl');
+  const yearNotes = document.querySelectorAll('.plan-price-year-note');
 
   function updatePrices() {
     document.querySelectorAll('.plan-card').forEach(card => {
       const monthly = parseInt(card.dataset.baseMonthly);
-      const yearly = parseInt(card.dataset.baseYearly);
+      const yearly  = parseInt(card.dataset.baseYearly);
       card.querySelector('.price-val').textContent = (isYearly ? yearly : monthly).toLocaleString('ru-RU');
     });
-    billingLabels.forEach(lbl => {
-      lbl.classList.toggle('active', lbl.dataset.billing === (isYearly ? 'yearly' : 'monthly'));
-    });
+    billingLabels.forEach(lbl => lbl.classList.toggle('active', lbl.dataset.billing === (isYearly ? 'yearly' : 'monthly')));
     toggleEl.classList.toggle('on', isYearly);
     toggleEl.setAttribute('aria-pressed', String(isYearly));
-    // Update sticky if plan selected
+    yearNotes.forEach(n => n.classList.toggle('visible', isYearly));
     if (selectedPlan) recalcTotal();
   }
-
   toggleEl.addEventListener('click', () => { isYearly = !isYearly; updatePrices(); });
 
-  // Plan selection
   let selectedPlan = null;
   let selectedAddons = {};
-
-  function getBasePrice(planEl) {
-    return isYearly
-      ? parseInt(planEl.dataset.baseYearly)
-      : parseInt(planEl.dataset.baseMonthly);
-  }
 
   function recalcTotal() {
     if (!selectedPlan) return;
     const card = document.querySelector('.plan-card[data-plan="' + selectedPlan + '"]');
-    const base = getBasePrice(card);
+    const base = isYearly ? parseInt(card.dataset.baseYearly) : parseInt(card.dataset.baseMonthly);
     const addonsTotal = Object.values(selectedAddons).reduce((s, v) => s + v, 0);
     const total = base + addonsTotal;
-
     document.getElementById('sticky-total').textContent = total.toLocaleString('ru-RU') + '₽';
-
     const addonNames = Object.keys(selectedAddons);
-    document.getElementById('sticky-addons').textContent = addonNames.length
-      ? '+ ' + addonNames.join(', ')
-      : '';
+    document.getElementById('sticky-addons').textContent = addonNames.length ? '+ ' + addonNames.join(', ') : '';
   }
 
   document.querySelectorAll('.select-plan-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const plan = btn.dataset.plan;
       selectedPlan = plan;
-
-      // Update button states
       document.querySelectorAll('.select-plan-btn').forEach(b => {
         b.classList.remove('selected', 'plan-btn-primary');
-        const card = b.closest('.plan-card');
-        if (card.classList.contains('featured')) {
-          b.classList.add('plan-btn-primary');
-        } else {
-          b.classList.add('plan-btn-outline');
-          b.classList.remove('plan-btn-primary');
-        }
+        const c = b.closest('.plan-card');
+        b.classList.add(c.classList.contains('featured') ? 'plan-btn-primary' : 'plan-btn-outline');
       });
       btn.classList.add('selected');
       btn.classList.remove('plan-btn-outline', 'plan-btn-primary');
-
       const card = btn.closest('.plan-card');
-      const planName = card.querySelector('.plan-name').textContent;
-      document.getElementById('sticky-plan-name').textContent = planName;
-
+      document.getElementById('sticky-plan-name').textContent = 'Тариф ' + card.querySelector('.plan-name').textContent;
       recalcTotal();
-
       const stickyBar = document.getElementById('sticky-bar');
       stickyBar.classList.add('visible');
       const cta = document.getElementById('sticky-cta');
@@ -820,7 +689,6 @@
     });
   });
 
-  // Addon toggle
   document.querySelectorAll('.addon-card').forEach(card => {
     const btn = card.querySelector('.addon-btn');
     btn.addEventListener('click', () => {
@@ -841,20 +709,17 @@
     });
   });
 
-  // ROMI calculator
   function updateCalc() {
-    const leads = parseFloat(document.getElementById('calc-leads').value) || 0;
-    const conv = parseFloat(document.getElementById('calc-conv').value) || 0;
-    const check = parseFloat(document.getElementById('calc-check').value) || 0;
+    const leads    = parseFloat(document.getElementById('calc-leads').value) || 0;
+    const conv     = parseFloat(document.getElementById('calc-conv').value) || 0;
+    const check    = parseFloat(document.getElementById('calc-check').value) || 0;
     const planCost = parseFloat(document.getElementById('calc-plan-cost').value) || 0;
-    const revenue = Math.round(leads * (conv / 100) * check);
-    const romi = planCost > 0 ? Math.round(((revenue - planCost) / planCost) * 100) : 0;
-
+    const revenue  = Math.round(leads * (conv / 100) * check);
+    const romi     = planCost > 0 ? Math.round(((revenue - planCost) / planCost) * 100) : 0;
     document.getElementById('calc-revenue').textContent = revenue.toLocaleString('ru-RU') + '₽';
-    document.getElementById('calc-romi').textContent = romi.toLocaleString('ru-RU') + '%';
+    document.getElementById('calc-romi').textContent    = romi.toLocaleString('ru-RU') + '%';
   }
-
-  ['calc-leads', 'calc-conv', 'calc-check', 'calc-plan-cost'].forEach(id => {
+  ['calc-leads','calc-conv','calc-check','calc-plan-cost'].forEach(id => {
     document.getElementById(id).addEventListener('input', updateCalc);
   });
   updateCalc();
