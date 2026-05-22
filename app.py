@@ -16,7 +16,8 @@ from telethon.errors import (
     PhoneCodeExpiredError, PasswordHashInvalidError,
     FloodWaitError, PhoneNumberInvalidError,
 )
-import requests
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
 # ---------- НАСТРОЙКИ ----------
 SECRET_KEY       = os.environ.get('SECRET_KEY', 'dev-secret-change-in-production')
@@ -29,6 +30,7 @@ YOOKASSA_SHOP_ID    = os.environ.get('YOOKASSA_SHOP_ID', '')
 YOOKASSA_SECRET_KEY = os.environ.get('YOOKASSA_SECRET_KEY', '')
 LAVA_API_KEY        = os.environ.get('LAVA_API_KEY', '')
 REVIEW_BOT_TOKEN    = os.environ.get('REVIEW_BOT_TOKEN', '')
+NOTIFY_BOT_TOKEN    = os.environ.get('NOTIFY_BOT_TOKEN', '')
 BASE_URL            = os.environ.get('BASE_URL', 'http://localhost:5000')
 
 app = Flask(__name__)
@@ -72,22 +74,29 @@ def parse_dt(value):
 def create_lava_payment(amount_rub, user_id, product, days, user_email=''):
     """Создаёт счёт в Lava.top. Возвращает (payment_url, invoice_id) или (None, None)."""
     if not LAVA_API_KEY:
+        logging.warning('LAVA: LAVA_API_KEY не задан')
+        return None, None
+    offer_id = os.environ.get(f'LAVA_OFFER_{product.upper()}', '')
+    if not offer_id:
+        logging.warning(f'LAVA: LAVA_OFFER_{product.upper()} не задан в .env')
         return None, None
     try:
         order_id = f'tglw-{user_id}-{product}-{uuid.uuid4().hex[:8]}'
+        payload = {
+            'email':         user_email or f'user{user_id}@tgleadwareon.ru',
+            'offerId':       offer_id,
+            'currency':      'RUB',
+            'periodicity':   'ONE_TIME',
+            'buyerLanguage': 'RU',
+            'orderId':       order_id,
+            'successUrl':    f'{BASE_URL}/payment/success?product={product}&provider=lava',
+            'failUrl':       f'{BASE_URL}/pricing',
+            'hookUrl':       f'{BASE_URL}/payment/lava/webhook',
+        }
+        logging.info(f'LAVA: создаём счёт order_id={order_id} offer={offer_id} amount={amount_rub}')
         resp = requests.post(
             'https://gate.lava.top/api/v2/invoice',
-            json={
-                'email':        user_email or f'user{user_id}@tgleadwareon.ru',
-                'offerId':      os.environ.get(f'LAVA_OFFER_{product.upper()}', ''),
-                'currency':     'RUB',
-                'buyerLanguage': 'RU',
-                'orderId':      order_id,
-                'successUrl':   f'{BASE_URL}/payment/success?product={product}&provider=lava',
-                'failUrl':      f'{BASE_URL}/pricing',
-                'hookUrl':      f'{BASE_URL}/payment/lava/webhook',
-                'comment':      f'TG Lead Wareon — {product} на {days} дней',
-            },
+            json=payload,
             headers={
                 'X-Api-Key':    LAVA_API_KEY,
                 'Content-Type': 'application/json',
@@ -95,13 +104,16 @@ def create_lava_payment(amount_rub, user_id, product, days, user_email=''):
             },
             timeout=10,
         )
+        logging.info(f'LAVA: ответ {resp.status_code} — {resp.text[:300]}')
         data = resp.json()
         pay_url = data.get('url') or data.get('URL')
         inv_id  = data.get('id') or data.get('InvoiceId') or order_id
         if not pay_url:
+            logging.error(f'LAVA: нет url в ответе — {data}')
             return None, None
         return pay_url, inv_id
-    except Exception:
+    except Exception as e:
+        logging.error(f'LAVA: исключение — {e}')
         return None, None
 
 
@@ -290,12 +302,28 @@ def init_db():
     for sql in [
         "ALTER TABLE users ADD COLUMN referral_id INTEGER",
         "ALTER TABLE miner_jobs ADD COLUMN error_msg TEXT",
+        "ALTER TABLE users ADD COLUMN telegram_id TEXT",
     ]:
         try:
             db.execute(sql)
         except Exception:
             pass
     db.commit()
+
+
+def send_telegram(chat_id, text):
+    """Отправляет сообщение через Telegram-бот. Никогда не падает."""
+    token = NOTIFY_BOT_TOKEN or REVIEW_BOT_TOKEN
+    if not token or not chat_id:
+        return
+    try:
+        requests.post(
+            f'https://api.telegram.org/bot{token}/sendMessage',
+            json={'chat_id': chat_id, 'text': text, 'parse_mode': 'HTML'},
+            timeout=5,
+        )
+    except Exception:
+        pass
 
 
 def log_action(user_id, action, details=None):
@@ -770,16 +798,19 @@ def sender_add_proxy():
 
 # ---------- ПОКУПКА ----------
 PRODUCT_PRICES = {
-    'miner':  {'rub': 490,  'usdt': 8,  'days': 30},
-    'sender': {'rub': 990,  'usdt': 15, 'days': 30},
+    'miner':  {'rub': 490,   'usdt': 8,  'days': 30},
+    'sender': {'rub': 990,   'usdt': 15, 'days': 30},
+    'start':  {'rub': 990,   'usdt': 15, 'days': 30},
+    'pro':    {'rub': 2490,  'usdt': 38, 'days': 30},
+    'scale':  {'rub': 6990,  'usdt': 108, 'days': 30},
 }
 
 @app.route('/buy/<product>', methods=['GET', 'POST'])
 @app.route('/buy', methods=['GET', 'POST'])
 @login_required
-def buy(product='miner'):
+def buy(product='start'):
     if product not in PRODUCT_PRICES:
-        product = 'miner'
+        product = 'start'
     info = PRODUCT_PRICES[product]
 
     if request.method == 'POST':
@@ -818,12 +849,7 @@ def buy(product='miner'):
         flash('Платёж зафиксирован. Лицензия будет выдана после подтверждения оплаты.', 'info')
         return redirect(url_for('dashboard'))
 
-    return render_template(
-        'buy.html', product=product,
-        selected_plan='Pro', billing_period='1 месяц',
-        amount_rub=info['rub'], amount_usdt=info['usdt'],
-        usdt_wallet=USDT_WALLET,
-    )
+    return render_template('buy.html', product=product, amount_rub=info['rub'])
 
 
 @app.route('/payment/webhook', methods=['POST'])
@@ -879,21 +905,21 @@ def payment_webhook():
 
 @app.route('/payment/lava/webhook', methods=['POST'])
 def lava_webhook():
-    """Вебхук от Lava.top — вызывается после успешной оплаты."""
+    """Вебхук от Lava.top для подписок."""
     data = request.get_json(silent=True) or {}
+    event = data.get('event', '') or data.get('status', '')
 
-    # Lava.top шлёт событие PAYMENT_SUCCESS
-    event   = data.get('event', '') or data.get('status', '')
-    if event not in ('PAYMENT_SUCCESS', 'payment.succeeded', 'success'):
-        return jsonify({'ok': True})
-
-    order_id   = data.get('orderId') or data.get('order_id', '')
-    invoice_id = data.get('id') or data.get('contractId') or data.get('invoiceId', '')
-    amount     = data.get('amount', 0)
+    # Достаём orderId из разных возможных полей
+    order_id = (
+        data.get('orderId') or
+        data.get('order_id') or
+        (data.get('payload') or {}).get('orderId') or ''
+    )
+    invoice_id = data.get('id') or data.get('contractId') or data.get('invoiceId') or ''
 
     # orderId формата: tglw-{user_id}-{product}-{hex}
     if not order_id or not order_id.startswith('tglw-'):
-        return jsonify({'error': 'unknown order'}), 400
+        return jsonify({'ok': True})  # чужой вебхук, игнорируем
 
     parts = order_id.split('-')
     if len(parts) < 3:
@@ -907,29 +933,58 @@ def lava_webhook():
 
     db = get_db()
 
-    # Защита от двойного начисления
-    already = db.execute(
-        "SELECT id FROM licenses WHERE user_id=? AND product=? AND created_at >= datetime('now','-2 minutes')",
-        (user_id, product)
-    ).fetchone()
-    if already:
-        return jsonify({'ok': True})
+    # Новая подписка или ежемесячное продление
+    if event in ('SUBSCRIPTION_ACTIVE', 'PAYMENT_SUCCESS', 'payment.succeeded',
+                 'SUBSCRIPTION_RENEWED', 'subscription.renewed', 'success'):
 
-    days        = PRODUCT_PRICES.get(product.lower(), {}).get('days', 30)
-    price       = PRODUCT_PRICES.get(product.lower(), {}).get('rub', 0)
-    license_key = generate_license_key()
-    expires_at  = datetime.now() + timedelta(days=days)
+        days  = PRODUCT_PRICES.get(product.lower(), {}).get('days', 30)
+        price = PRODUCT_PRICES.get(product.lower(), {}).get('rub', 0)
 
-    db.execute(
-        "INSERT INTO licenses (user_id, license_key, product, price, expires_at, is_active) VALUES (?,?,?,?,?,1)",
-        (user_id, license_key, product, price, expires_at)
-    )
-    db.execute(
-        "UPDATE payments SET status='succeeded' WHERE user_id=? AND product=? AND status='pending'",
-        (user_id, product.lower())
-    )
-    db.commit()
-    log_action(user_id, 'payment_succeeded', f'{product}:{price}rub:lava:{invoice_id}')
+        existing = db.execute(
+            "SELECT id, expires_at FROM licenses WHERE user_id=? AND product=? AND is_active=1",
+            (user_id, product)
+        ).fetchone()
+
+        if existing:
+            db.execute(
+                "UPDATE licenses SET expires_at = datetime(expires_at, '+30 days') WHERE id=?",
+                (existing['id'],)
+            )
+            log_action(user_id, 'subscription_renewed', f'{product}:lava:{invoice_id}')
+        else:
+            license_key = generate_license_key()
+            expires_at  = datetime.now() + timedelta(days=days)
+            db.execute(
+                "INSERT INTO licenses (user_id, license_key, product, price, expires_at, is_active) VALUES (?,?,?,?,?,1)",
+                (user_id, license_key, product, price, expires_at)
+            )
+            db.execute(
+                "UPDATE payments SET status='succeeded' WHERE user_id=? AND product=? AND status='pending'",
+                (user_id, product.lower())
+            )
+            log_action(user_id, 'subscription_activated', f'{product}:{price}rub:lava:{invoice_id}')
+            # Уведомление пользователю и админу
+            user_row = db.execute("SELECT telegram_id, email FROM users WHERE id=?", (user_id,)).fetchone()
+            if user_row and user_row['telegram_id']:
+                send_telegram(user_row['telegram_id'],
+                    f'✅ <b>TG Lead Wareon</b>\n\nЛицензия <b>{product}</b> активирована на 30 дней.\n'
+                    f'Войдите в кабинет: {BASE_URL}/dashboard')
+            send_telegram(ADMIN_ID,
+                f'💰 Новая оплата!\nПользователь: {user_id} ({(user_row or {}).get("email","")})\n'
+                f'Тариф: {product} · {price}₽\nПровайдер: Lava.top')
+
+        db.commit()
+
+    # Отмена или истечение подписки — деактивируем лицензию
+    elif event in ('SUBSCRIPTION_CANCELLED', 'SUBSCRIPTION_EXPIRED',
+                   'subscription.cancelled', 'subscription.expired'):
+        db.execute(
+            "UPDATE licenses SET is_active=0 WHERE user_id=? AND product=? AND is_active=1",
+            (user_id, product)
+        )
+        db.commit()
+        log_action(user_id, f'subscription_{event.lower()}', f'{product}:lava:{invoice_id}')
+
     return jsonify({'ok': True})
 
 
@@ -1351,6 +1406,44 @@ def admin_reject_review(review_id):
     db.commit()
     flash('Отзыв удалён.', 'success')
     return redirect(url_for('admin_reviews'))
+
+
+# ---------- CRON: НАПОМИНАНИЯ ОБ ИСТЕЧЕНИИ ----------
+@app.route('/cron/expiry_check')
+def cron_expiry_check():
+    """Вызывай каждый день через cron или внешний планировщик.
+    Защита: секретный ключ в параметре ?key="""
+    if request.args.get('key', '') != ADMIN_SECRET_KEY:
+        return jsonify({'error': 'forbidden'}), 403
+
+    db = get_db()
+    # Лицензии, истекающие через 1–3 дня
+    expiring = db.execute("""
+        SELECT l.user_id, l.product, l.expires_at,
+               u.email, u.telegram_id
+        FROM licenses l
+        JOIN users u ON u.id = l.user_id
+        WHERE l.is_active = 1
+          AND date(l.expires_at) BETWEEN date('now', '+1 day') AND date('now', '+3 days')
+    """).fetchall()
+
+    notified = 0
+    for row in expiring:
+        days_left = (parse_dt(row['expires_at']) - datetime.now()).days + 1
+        text = (
+            f'⏰ <b>TG Lead Wareon</b>\n\n'
+            f'Лицензия <b>{row["product"]}</b> истекает через <b>{days_left} дн.</b>\n\n'
+            f'Продлите, чтобы не прерывать работу:\n{BASE_URL}/pricing'
+        )
+        if row['telegram_id']:
+            send_telegram(row['telegram_id'], text)
+            notified += 1
+        # Всегда уведомляем админа
+        send_telegram(ADMIN_ID,
+            f'⏰ Истекает лицензия\nПользователь: {row["user_id"]} ({row["email"]})\n'
+            f'Тариф: {row["product"]} · через {days_left} дн.')
+
+    return jsonify({'checked': len(expiring), 'notified': notified})
 
 
 # ---------- ЗАПУСК ----------

@@ -1,86 +1,188 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TG Lead Wareon — Покупка</title>
-  <link rel="stylesheet" href="{ url_for('static', filename='style.css') }" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Оформление — TG Lead Wareon</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    body { min-height: 100vh; overflow-x: hidden; }
+    .nb { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+    .nb-o { position: absolute; border-radius: 50%; filter: blur(150px); pointer-events: none; }
+    .nb-1 { width: 900px; height: 900px; background: radial-gradient(circle, rgba(255,80,0,0.26) 0%, rgba(255,120,0,0.08) 40%, transparent 70%); bottom: -400px; left: -250px; }
+    .nb-2 { width: 550px; height: 550px; background: radial-gradient(circle, rgba(255,120,0,0.07) 0%, transparent 60%); top: -100px; right: -100px; }
+
+    main { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 72px); padding: 40px 24px; }
+
+    .buy-card {
+      width: 100%; max-width: 480px;
+      background: rgba(8,5,18,0.88);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 24px;
+      padding: 40px 36px;
+      backdrop-filter: blur(28px);
+      position: relative; overflow: hidden;
+    }
+    .buy-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.60), transparent);
+    }
+
+    .buy-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 13px; color: rgba(255,255,255,0.35);
+      text-decoration: none; margin-bottom: 28px;
+      transition: color 0.2s;
+    }
+    .buy-back:hover { color: var(--orange-3); }
+
+    .buy-plan-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,106,0,0.12);
+      border: 1px solid rgba(255,106,0,0.30);
+      border-radius: 100px; padding: 6px 14px;
+      font-size: 12px; font-weight: 700;
+      color: var(--orange-3); text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 20px;
+    }
+
+    .buy-title { font-size: 24px; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 6px; }
+    .buy-sub { font-size: 14px; color: rgba(255,255,255,0.40); margin-bottom: 28px; line-height: 1.6; }
+
+    .buy-summary {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .buy-summary-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 14px; padding: 6px 0;
+    }
+    .buy-summary-row:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; margin-bottom: 4px; }
+    .buy-summary-label { color: rgba(255,255,255,0.40); }
+    .buy-summary-val { font-weight: 600; color: #fff; }
+    .buy-summary-total .buy-summary-label { color: rgba(255,255,255,0.60); font-weight: 600; }
+    .buy-summary-total .buy-summary-val { font-size: 20px; font-weight: 900; color: var(--orange-3); }
+
+    .buy-trust {
+      display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .buy-trust-item {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: rgba(255,255,255,0.35);
+    }
+    .buy-trust-item::before {
+      content: ''; width: 5px; height: 5px; border-radius: 50%;
+      background: var(--orange); flex-shrink: 0;
+      box-shadow: 0 0 5px rgba(255,106,0,0.6);
+    }
+
+    .buy-btn {
+      width: 100%; padding: 15px;
+      border-radius: 12px; border: none;
+      background: linear-gradient(135deg, var(--orange-2), var(--orange));
+      color: #fff; font-size: 16px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      box-shadow: 0 0 28px rgba(255,106,0,0.40), inset 0 1px 0 rgba(255,255,255,0.15);
+      transition: all 0.2s;
+    }
+    .buy-btn:hover { box-shadow: 0 0 44px rgba(255,106,0,0.60); transform: translateY(-1px); }
+    .buy-btn:active { transform: scale(0.98); }
+    .buy-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .buy-note {
+      text-align: center; margin-top: 14px;
+      font-size: 12px; color: rgba(255,255,255,0.25); line-height: 1.6;
+    }
+    .buy-note a { color: rgba(255,255,255,0.35); text-decoration: none; }
+    .buy-note a:hover { color: var(--orange-3); }
+
+    .flash-msg { padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; border: 1px solid; }
+    .flash-error { background: rgba(255,70,70,0.08); border-color: rgba(255,70,70,0.25); color: #ff8080; }
+    .flash-success { background: rgba(255,170,68,0.08); border-color: rgba(255,170,68,0.25); color: var(--orange-3); }
+  </style>
 </head>
 <body class="page-dark">
-<header class="site-header">
+<div class="nb"><div class="nb-o nb-1"></div><div class="nb-o nb-2"></div></div>
+
+<header class="site-header" style="position:relative;z-index:10;">
   <div class="container header-inner">
-    <a href="{ url_for('index') }" class="logo">
-      <div class="logo-mark">TG</div>
-      <div class="logo-text">TG Lead Wareon</div>
+    <a href="{{ url_for('index') }}" class="logo">
+      <span class="logo-mark">TG</span>
+      <span class="logo-text">Lead Wareon</span>
     </a>
-    <nav class="nav-main">
-      <a href="{ url_for('index') }">Главная</a>
-      <a href="{ url_for('pricing') }">Тарифы</a>
-      <a href="{ url_for('cases') }">Кейсы</a>
-      <a href="{ url_for('blog') }">Блог</a>
-      <a href="{ url_for('faq') }">FAQ</a>
-      <a href="{ url_for('support') }">Поддержка</a>
-    </nav>
     <div class="header-actions">
-      <a href="{ url_for('login') }" class="btn btn-ghost btn-sm">Войти</a>
-      <a href="{ url_for('register') }" class="btn btn-primary btn-sm">Регистрация</a>
+      <a href="{{ url_for('pricing') }}" class="btn btn-ghost btn-sm">← Тарифы</a>
     </div>
-    <button class="nav-toggle" type="button" aria-label="Открыть меню"><span></span><span></span></button>
   </div>
 </header>
+
 <main>
+  <div class="buy-card">
 
-<section class="section">
-  <div class="container" data-reveal>
-    <div class="buy-layout">
-      <div class="card-hover buy-main">
-        <h1>Оформление подписки</h1>
-        <p class="buy-subtitle">Вы выбрали тариф <strong>{{ selected_plan or 'Pro' }}</strong>. Настройте способ оплаты и дополнительные модули.</p>
-        <div class="payment-methods">
-          <label class="payment-option">
-            <input type="radio" name="payment_method" checked />
-            <span>Банковская карта</span>
-          </label>
-          <label class="payment-option">
-            <input type="radio" name="payment_method" />
-            <span>Счёт для юрлица</span>
-          </label>
-        </div>
-        <div class="payment-details">
-          <p><strong>Тестовый режим</strong>. Форма оплаты служит демо-примером и не отправляет данные.</p>
-          <ul class="payment-info">
-            <li>После оформления вы получите письмо с деталями доступа.</li>
-            <li>Автопродление можно отключить в любой момент.</li>
-          </ul>
-        </div>
+    <a href="{{ url_for('pricing') }}" class="buy-back">← Вернуться к тарифам</a>
+
+    <div class="buy-plan-badge">{{ product.capitalize() }}</div>
+    <h1 class="buy-title">Оформление доступа</h1>
+    <p class="buy-sub">Вы будете перенаправлены на страницу оплаты. После оплаты лицензия активируется автоматически.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Итого -->
+    <div class="buy-summary">
+      <div class="buy-summary-row">
+        <span class="buy-summary-label">Тариф</span>
+        <span class="buy-summary-val">TG Lead Wareon {{ product.capitalize() }}</span>
       </div>
-      <div>
-        <div class="summary-card">
-          <p><strong>Итог по тарифу</strong></p>
-          <p>Базовый тариф: <span>{{ plan_price or '2 490₽/мес' }}</span></p>
-          <p>Доп. модули: <span>по выбору</span></p>
-          <p><strong>Итого к оплате: {{ total_price or 'от 2 490₽/мес' }}</strong></p>
-        </div>
-        <button class="btn btn-primary btn-full">Перейти к оплате</button>
+      <div class="buy-summary-row">
+        <span class="buy-summary-label">Период</span>
+        <span class="buy-summary-val">30 дней</span>
+      </div>
+      <div class="buy-summary-row buy-summary-total">
+        <span class="buy-summary-label">К оплате</span>
+        <span class="buy-summary-val">{{ amount_rub }} ₽</span>
       </div>
     </div>
-  </div>
-</section>
 
+    <!-- Доверие -->
+    <div class="buy-trust">
+      <div class="buy-trust-item">Безопасная оплата</div>
+      <div class="buy-trust-item">Мгновенная активация</div>
+      <div class="buy-trust-item">Поддержка 24/7</div>
+    </div>
+
+    <!-- Форма POST → запускает создание счёта в Lava.top -->
+    <form method="POST" action="{{ url_for('buy', product=product) }}" id="buy-form">
+      <button type="submit" class="buy-btn" id="buy-btn">
+        Оплатить {{ amount_rub }} ₽ →
+      </button>
+    </form>
+
+    <p class="buy-note">
+      Нажимая кнопку, вы принимаете
+      <a href="{{ url_for('terms') }}">Пользовательское соглашение</a>.<br/>
+      Оплата проходит через защищённый шлюз Lava.top.
+    </p>
+
+  </div>
 </main>
-<footer class="site-footer">
-  <div class="container footer-inner">
-    <div>© {{ current_year or 2026 }} TG Lead Wareon. Все права защищены.</div>
-    <div class="footer-links">
-      <a href="{{ url_for('faq') }}">FAQ</a>
-      <a href="{{ url_for('support') }}">Поддержка</a>
-      <a href="{{ url_for('pricing') }}">Тарифы</a>
-    </div>
-  </div>
-</footer>
-<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+<script>
+  document.getElementById('buy-form').addEventListener('submit', function() {
+    const btn = document.getElementById('buy-btn');
+    btn.disabled = true;
+    btn.textContent = 'Перенаправление...';
+  });
+</script>
 </body>
 </html>

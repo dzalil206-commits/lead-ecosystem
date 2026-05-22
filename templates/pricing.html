@@ -552,6 +552,54 @@
     </div>
   </section>
 
+  <!-- ОТДЕЛЬНЫЕ ПРОДУКТЫ -->
+  <section class="pricing-section" style="padding-top:0;">
+    <div class="pricing-section-inner">
+      <div class="sec-hd">
+        <div class="eyebrow">Отдельно</div>
+        <h2>Только один инструмент</h2>
+        <p>Если нужен только сбор или только рассылка — берите по отдельности.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:700px;margin:0 auto;">
+
+        <!-- Miner -->
+        <div style="background:rgba(8,5,18,0.80);border:1px solid rgba(255,255,255,0.09);border-radius:20px;padding:28px;backdrop-filter:blur(24px);position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,106,0,0.30),transparent);"></div>
+          <div style="font-size:28px;margin-bottom:12px;">⛏️</div>
+          <div style="font-size:18px;font-weight:800;margin-bottom:6px;">Miner</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.40);margin-bottom:20px;line-height:1.5;">Сбор лидов из Telegram-чатов и каналов. 1 аккаунт, до 50 000 лидов/мес.</div>
+          <div style="margin-bottom:20px;">
+            <span style="font-size:36px;font-weight:900;letter-spacing:-0.03em;">490</span>
+            <span style="font-size:16px;color:rgba(255,255,255,0.40);">₽/мес</span>
+          </div>
+          <a href="/buy/miner" style="display:block;text-align:center;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.14);background:transparent;color:rgba(255,255,255,0.75);font-size:14px;font-weight:700;text-decoration:none;transition:all 0.2s;"
+             onmouseover="this.style.borderColor='rgba(255,106,0,0.45)';this.style.color='#ffaa44';"
+             onmouseout="this.style.borderColor='rgba(255,255,255,0.14)';this.style.color='rgba(255,255,255,0.75)';">
+            Купить Miner →
+          </a>
+        </div>
+
+        <!-- Sender -->
+        <div style="background:rgba(8,5,18,0.80);border:1px solid rgba(255,255,255,0.09);border-radius:20px;padding:28px;backdrop-filter:blur(24px);position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,106,0,0.30),transparent);"></div>
+          <div style="font-size:28px;margin-bottom:12px;">📨</div>
+          <div style="font-size:18px;font-weight:800;margin-bottom:6px;">Sender</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.40);margin-bottom:20px;line-height:1.5;">Автоматическая рассылка по базе лидов. 1 аккаунт, персонализация сообщений.</div>
+          <div style="margin-bottom:20px;">
+            <span style="font-size:36px;font-weight:900;letter-spacing:-0.03em;">990</span>
+            <span style="font-size:16px;color:rgba(255,255,255,0.40);">₽/мес</span>
+          </div>
+          <a href="/buy/sender" style="display:block;text-align:center;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.14);background:transparent;color:rgba(255,255,255,0.75);font-size:14px;font-weight:700;text-decoration:none;transition:all 0.2s;"
+             onmouseover="this.style.borderColor='rgba(255,106,0,0.45)';this.style.color='#ffaa44';"
+             onmouseout="this.style.borderColor='rgba(255,255,255,0.14)';this.style.color='rgba(255,255,255,0.75)';">
+            Купить Sender →
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
   <!-- ADDONS -->
   <section class="pricing-section" style="padding-top:0;">
     <div class="pricing-section-inner">
@@ -672,7 +720,7 @@
       <div class="sticky-price-num" id="sticky-total">0₽</div>
       <div class="sticky-price-per">в месяц</div>
     </div>
-    <a href="{{ url_for('register') }}" class="sticky-cta" id="sticky-cta" style="pointer-events:none;opacity:0.45;">
+    <a href="/buy/start" class="sticky-cta" id="sticky-cta" style="pointer-events:none;opacity:0.45;">
       Перейти к оплате →
     </a>
   </div>
@@ -766,6 +814,7 @@
       const stickyBar = document.getElementById('sticky-bar');
       stickyBar.classList.add('visible');
       const cta = document.getElementById('sticky-cta');
+      cta.href = '/buy/' + plan;
       cta.style.pointerEvents = 'auto';
       cta.style.opacity = '1';
     });
