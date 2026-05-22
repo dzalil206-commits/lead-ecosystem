@@ -1,5 +1,6 @@
 import os, uuid, sqlite3, random, string, io, asyncio, threading, concurrent.futures
 from datetime import datetime, timedelta
+from collections import defaultdict
 
 try:
     from dotenv import load_dotenv
@@ -26,6 +27,7 @@ DATABASE            = os.environ.get('DATABASE', 'lead_ecosystem.db')
 SUPPORT_USERNAME    = '@TGLeadSupportBot'
 YOOKASSA_SHOP_ID    = os.environ.get('YOOKASSA_SHOP_ID', '')
 YOOKASSA_SECRET_KEY = os.environ.get('YOOKASSA_SECRET_KEY', '')
+LAVA_API_KEY        = os.environ.get('LAVA_API_KEY', '')
 REVIEW_BOT_TOKEN    = os.environ.get('REVIEW_BOT_TOKEN', '')
 BASE_URL            = os.environ.get('BASE_URL', 'http://localhost:5000')
 
@@ -33,6 +35,28 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+# ---------- RATE LIMITER (in-memory, sliding window) ----------
+_rl_lock = threading.Lock()
+_rl_store: dict = defaultdict(list)  # key -> list of timestamps
+
+def _rate_limit(key: str, max_calls: int, window_seconds: int) -> bool:
+    """Returns True if request is allowed, False if rate limit exceeded."""
+    now = datetime.now()
+    cutoff = now - timedelta(seconds=window_seconds)
+    with _rl_lock:
+        _rl_store[key] = [t for t in _rl_store[key] if t > cutoff]
+        if len(_rl_store[key]) >= max_calls:
+            return False
+        _rl_store[key].append(now)
+        return True
+
+def rate_limit_ip(action: str, max_calls: int, window_seconds: int) -> bool:
+    ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()
+    return _rate_limit(f'{action}:{ip}', max_calls, window_seconds)
+
+def rate_limit_user(user_id: int, action: str, max_calls: int, window_seconds: int) -> bool:
+    return _rate_limit(f'{action}:u{user_id}', max_calls, window_seconds)
 
 def parse_dt(value):
     """Парсит дату из SQLite — пробует форматы с микросекундами и без."""
@@ -44,6 +68,42 @@ def parse_dt(value):
         except ValueError:
             continue
     raise ValueError(f'Неизвестный формат даты: {value!r}')
+
+def create_lava_payment(amount_rub, user_id, product, days, user_email=''):
+    """Создаёт счёт в Lava.top. Возвращает (payment_url, invoice_id) или (None, None)."""
+    if not LAVA_API_KEY:
+        return None, None
+    try:
+        order_id = f'tglw-{user_id}-{product}-{uuid.uuid4().hex[:8]}'
+        resp = requests.post(
+            'https://gate.lava.top/api/v2/invoice',
+            json={
+                'email':        user_email or f'user{user_id}@tgleadwareon.ru',
+                'offerId':      os.environ.get(f'LAVA_OFFER_{product.upper()}', ''),
+                'currency':     'RUB',
+                'buyerLanguage': 'RU',
+                'orderId':      order_id,
+                'successUrl':   f'{BASE_URL}/payment/success?product={product}&provider=lava',
+                'failUrl':      f'{BASE_URL}/pricing',
+                'hookUrl':      f'{BASE_URL}/payment/lava/webhook',
+                'comment':      f'TG Lead Wareon — {product} на {days} дней',
+            },
+            headers={
+                'X-Api-Key':    LAVA_API_KEY,
+                'Content-Type': 'application/json',
+                'Accept':       'application/json',
+            },
+            timeout=10,
+        )
+        data = resp.json()
+        pay_url = data.get('url') or data.get('URL')
+        inv_id  = data.get('id') or data.get('InvoiceId') or order_id
+        if not pay_url:
+            return None, None
+        return pay_url, inv_id
+    except Exception:
+        return None, None
+
 
 def create_yookassa_payment(amount_rub, user_id, product, days):
     """Создаёт платёж в ЮKassa. Возвращает (confirmation_url, payment_id) или (None, None)."""
@@ -215,6 +275,15 @@ def init_db():
             sold_to INTEGER,
             sold_at TIMESTAMP
         );
+        CREATE TABLE IF NOT EXISTS user_actions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            action TEXT NOT NULL,
+            details TEXT,
+            ip TEXT,
+            user_agent TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     ''')
     db.commit()
     # Миграции для существующих таблиц (безопасны — падают если колонка уже есть)
@@ -227,6 +296,20 @@ def init_db():
         except Exception:
             pass
     db.commit()
+
+
+def log_action(user_id, action, details=None):
+    """Log a user action for audit trail. Never raises."""
+    try:
+        ip = request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()
+        ua = request.headers.get('User-Agent', '')[:200]
+        get_db().execute(
+            "INSERT INTO user_actions (user_id, action, details, ip, user_agent) VALUES (?,?,?,?,?)",
+            (user_id, action, str(details)[:500] if details else None, ip, ua)
+        )
+        get_db().commit()
+    except Exception:
+        pass
 
 
 class User(UserMixin):
@@ -280,9 +363,9 @@ def faq():
 @app.route('/support', methods=['GET', 'POST'])
 def support():
     if request.method == 'POST':
-        name = request.form.get('name', '')
-        email = request.form.get('email', '')
-        message = request.form.get('message', '')
+        if not rate_limit_ip('support', max_calls=5, window_seconds=3600):
+            flash('Слишком много сообщений. Попробуйте через час.', 'error')
+            return redirect(url_for('support'))
         flash('Сообщение отправлено!', 'success')
         return redirect(url_for('support'))
     return render_template('support.html')
@@ -319,6 +402,10 @@ def download():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        if not rate_limit_ip('register', max_calls=5, window_seconds=3600):
+            flash('Слишком много попыток регистрации. Попробуйте через час.', 'error')
+            return render_template('register.html')
+
         email     = request.form['email'].strip()
         password  = request.form['password'].strip()
         full_name = request.form.get('full_name', '').strip()
@@ -350,6 +437,7 @@ def register():
         if ref_id and ref_id.isdigit():
             db.execute("UPDATE licenses SET expires_at = datetime(expires_at, '+1 day') WHERE user_id = ? AND is_active = 1", (ref_id,))
             db.commit()
+        log_action(user_id, 'register', email)
         flash('Регистрация успешна! Войдите.', 'success')
         return redirect(url_for('login'))
     return render_template('register.html')
@@ -357,6 +445,10 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        if not rate_limit_ip('login', max_calls=10, window_seconds=900):
+            flash('Слишком много попыток входа. Подождите 15 минут.', 'error')
+            return render_template('login.html')
+
         email = request.form['email'].strip()
         password = request.form['password'].strip()
         db = get_db()
@@ -364,7 +456,9 @@ def login():
         if row and check_password_hash(row['password'], password):
             user = User(row['id'], row['email'], row['full_name'])
             login_user(user)
+            log_action(row['id'], 'login', email)
             return redirect(url_for('dashboard'))
+        log_action(None, 'login_failed', email)
         flash('Неверный email или пароль.', 'error')
     return render_template('login.html')
 
@@ -690,18 +784,32 @@ def buy(product='miner'):
 
     if request.method == 'POST':
         db = get_db()
-        # Пробуем создать платёж через ЮKassa
-        confirm_url, payment_id = create_yookassa_payment(
-            info['rub'], current_user.id, product, info['days']
+        user_row = db.execute("SELECT email FROM users WHERE id=?", (current_user.id,)).fetchone()
+        user_email = user_row['email'] if user_row else ''
+
+        # 1. Пробуем Lava.top
+        confirm_url, payment_id = create_lava_payment(
+            info['rub'], current_user.id, product, info['days'], user_email
         )
+        provider = 'lava'
+
+        # 2. Фолбэк на ЮKassa
+        if not confirm_url:
+            confirm_url, payment_id = create_yookassa_payment(
+                info['rub'], current_user.id, product, info['days']
+            )
+            provider = 'yookassa'
+
         if confirm_url:
             db.execute(
                 "INSERT INTO payments (user_id, product, amount, status) VALUES (?, ?, ?, ?)",
                 (current_user.id, product, info['rub'], payment_id)
             )
             db.commit()
+            log_action(current_user.id, 'payment_initiated', f'{product}:{info["rub"]}rub:{provider}')
             return redirect(confirm_url)
-        # Фолбэк: ЮKassa не настроена — фиксируем вручную
+
+        # 3. Ни одна система не настроена — фиксируем вручную
         db.execute(
             "INSERT INTO payments (user_id, product, amount, status) VALUES (?, ?, ?, 'pending')",
             (current_user.id, product, info['rub'])
@@ -766,6 +874,62 @@ def payment_webhook():
         (payment_id, user_id, product.lower())
     )
     db.commit()
+    return jsonify({'ok': True})
+
+
+@app.route('/payment/lava/webhook', methods=['POST'])
+def lava_webhook():
+    """Вебхук от Lava.top — вызывается после успешной оплаты."""
+    data = request.get_json(silent=True) or {}
+
+    # Lava.top шлёт событие PAYMENT_SUCCESS
+    event   = data.get('event', '') or data.get('status', '')
+    if event not in ('PAYMENT_SUCCESS', 'payment.succeeded', 'success'):
+        return jsonify({'ok': True})
+
+    order_id   = data.get('orderId') or data.get('order_id', '')
+    invoice_id = data.get('id') or data.get('contractId') or data.get('invoiceId', '')
+    amount     = data.get('amount', 0)
+
+    # orderId формата: tglw-{user_id}-{product}-{hex}
+    if not order_id or not order_id.startswith('tglw-'):
+        return jsonify({'error': 'unknown order'}), 400
+
+    parts = order_id.split('-')
+    if len(parts) < 3:
+        return jsonify({'error': 'bad order format'}), 400
+
+    try:
+        user_id = int(parts[1])
+        product = parts[2].capitalize()
+    except (ValueError, IndexError):
+        return jsonify({'error': 'bad order format'}), 400
+
+    db = get_db()
+
+    # Защита от двойного начисления
+    already = db.execute(
+        "SELECT id FROM licenses WHERE user_id=? AND product=? AND created_at >= datetime('now','-2 minutes')",
+        (user_id, product)
+    ).fetchone()
+    if already:
+        return jsonify({'ok': True})
+
+    days        = PRODUCT_PRICES.get(product.lower(), {}).get('days', 30)
+    price       = PRODUCT_PRICES.get(product.lower(), {}).get('rub', 0)
+    license_key = generate_license_key()
+    expires_at  = datetime.now() + timedelta(days=days)
+
+    db.execute(
+        "INSERT INTO licenses (user_id, license_key, product, price, expires_at, is_active) VALUES (?,?,?,?,?,1)",
+        (user_id, license_key, product, price, expires_at)
+    )
+    db.execute(
+        "UPDATE payments SET status='succeeded' WHERE user_id=? AND product=? AND status='pending'",
+        (user_id, product.lower())
+    )
+    db.commit()
+    log_action(user_id, 'payment_succeeded', f'{product}:{price}rub:lava:{invoice_id}')
     return jsonify({'ok': True})
 
 
@@ -841,6 +1005,10 @@ def miner_collect():
         flash('Введите ссылку на чат или канал.', 'error')
         return redirect(url_for('miner'))
 
+    if not rate_limit_user(current_user.id, 'miner_collect', max_calls=20, window_seconds=3600):
+        flash('Превышен лимит запросов. Подождите немного.', 'error')
+        return redirect(url_for('miner'))
+
     db = get_db()
 
     # Проверка лицензии
@@ -890,6 +1058,7 @@ def miner_collect():
         daemon=True,
     ).start()
 
+    log_action(current_user.id, 'miner_collect', link)
     flash('Сбор запущен! Статус обновляется автоматически.', 'success')
     return redirect(url_for('miner'))
 
@@ -1000,8 +1169,10 @@ def admin_dashboard():
     licenses         = db.execute("SELECT * FROM licenses ORDER BY created_at DESC").fetchall()
     pending_payments = db.execute("SELECT * FROM payments WHERE status='pending' ORDER BY created_at DESC LIMIT 20").fetchall()
     pending_reviews  = db.execute("SELECT COUNT(*) FROM reviews WHERE is_approved=0").fetchone()[0]
+    recent_actions   = db.execute("SELECT * FROM user_actions ORDER BY created_at DESC LIMIT 50").fetchall()
     return render_template('admin.html', users=users, licenses=licenses,
-                           pending_payments=pending_payments, pending_reviews=pending_reviews)
+                           pending_payments=pending_payments, pending_reviews=pending_reviews,
+                           recent_actions=recent_actions)
 
 @app.route('/admin/give_license', methods=['POST'])
 def admin_give_license():

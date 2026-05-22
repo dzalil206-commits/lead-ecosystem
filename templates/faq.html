@@ -1,94 +1,583 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>FAQ — TG Lead Wareon</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    body { overflow-x: hidden; }
+
+    .nb { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+    .nb-o { position: absolute; border-radius: 50%; filter: blur(150px); pointer-events: none; }
+    .nb-1 {
+      width: 1000px; height: 1000px;
+      background: radial-gradient(circle, rgba(255,80,0,0.26) 0%, rgba(255,120,0,0.08) 40%, transparent 70%);
+      bottom: -500px; left: -300px;
+    }
+    .nb-2 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(255,120,0,0.07) 0%, transparent 60%);
+      top: -100px; right: -100px;
+    }
+
+    .orbital-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+    .orbital-canvas svg { width: 100%; height: 100%; }
+
+    main { position: relative; z-index: 1; }
+
+    /* Hero */
+    .faq-hero {
+      padding: 80px 0 56px;
+      text-align: center;
+    }
+    .faq-hero .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,106,0,0.10);
+      border: 1px solid rgba(255,106,0,0.25);
+      border-radius: 100px;
+      padding: 6px 14px;
+      font-size: 12px; font-weight: 600;
+      color: var(--orange-3);
+      letter-spacing: 0.06em; text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+    .faq-hero h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 900;
+      letter-spacing: -0.035em;
+      margin-bottom: 14px;
+    }
+    .faq-hero p {
+      font-size: 16px;
+      color: rgba(255,255,255,0.45);
+      max-width: 460px;
+      margin: 0 auto 32px;
+      line-height: 1.7;
+    }
+    .faq-search {
+      max-width: 440px;
+      margin: 0 auto;
+      position: relative;
+    }
+    .faq-search input {
+      width: 100%;
+      background: rgba(8,5,18,0.80);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      padding: 13px 48px 13px 18px;
+      color: #fff;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      backdrop-filter: blur(20px);
+    }
+    .faq-search input:focus {
+      border-color: rgba(255,106,0,0.45);
+      box-shadow: 0 0 0 3px rgba(255,106,0,0.10);
+    }
+    .faq-search input::placeholder { color: rgba(255,255,255,0.25); }
+    .faq-search-icon {
+      position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+      color: rgba(255,255,255,0.25); font-size: 16px; pointer-events: none;
+    }
+
+    /* Layout */
+    .faq-layout {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    /* Category tabs */
+    .faq-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+      justify-content: center;
+    }
+    .faq-tab {
+      padding: 8px 18px;
+      border-radius: 100px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.50);
+    }
+    .faq-tab:hover { border-color: rgba(255,106,0,0.35); color: var(--orange-3); }
+    .faq-tab.active {
+      background: rgba(255,106,0,0.15);
+      border-color: rgba(255,106,0,0.45);
+      color: var(--orange-3);
+    }
+
+    /* FAQ group */
+    .faq-group { margin-bottom: 40px; }
+    .faq-group-title {
+      font-size: 13px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: rgba(255,106,0,0.70);
+      margin-bottom: 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .faq-group-title::after {
+      content: ''; flex: 1; height: 1px;
+      background: rgba(255,106,0,0.15);
+    }
+
+    /* FAQ item */
+    .faq-item {
+      background: rgba(8,5,18,0.75);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      margin-bottom: 8px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+      backdrop-filter: blur(18px);
+    }
+    .faq-item:hover { border-color: rgba(255,106,0,0.20); }
+    .faq-item.open { border-color: rgba(255,106,0,0.35); }
+
+    .faq-question {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 22px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.4;
+      transition: color 0.2s;
+    }
+    .faq-item.open .faq-question { color: #fff; }
+
+    .faq-chevron {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.10);
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.3s, background 0.2s, border-color 0.2s;
+      font-size: 11px;
+      color: rgba(255,255,255,0.40);
+    }
+    .faq-item.open .faq-chevron {
+      transform: rotate(180deg);
+      background: rgba(255,106,0,0.15);
+      border-color: rgba(255,106,0,0.35);
+      color: var(--orange-3);
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+    .faq-item.open .faq-answer { max-height: 400px; }
+    .faq-answer-inner {
+      padding: 0 22px 18px;
+      font-size: 14px;
+      color: rgba(255,255,255,0.50);
+      line-height: 1.75;
+    }
+    .faq-answer-inner a { color: var(--orange-3); text-decoration: none; }
+    .faq-answer-inner a:hover { text-decoration: underline; }
+
+    /* Hidden by search/filter */
+    .faq-item.hidden { display: none; }
+    .faq-group.hidden { display: none; }
+
+    /* CTA */
+    .faq-cta {
+      background: rgba(8,5,18,0.80);
+      border: 1px solid rgba(255,106,0,0.25);
+      border-radius: 24px;
+      padding: 40px;
+      text-align: center;
+      position: relative; overflow: hidden;
+      backdrop-filter: blur(24px);
+    }
+    .faq-cta::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.55), transparent);
+    }
+    .faq-cta h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .faq-cta p { font-size: 14px; color: rgba(255,255,255,0.45); margin-bottom: 24px; }
+    .faq-cta-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .cta-btn-primary {
+      padding: 13px 28px;
+      border-radius: 12px; border: none;
+      background: linear-gradient(135deg, var(--orange-2), var(--orange));
+      color: #fff; font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      box-shadow: 0 0 24px rgba(255,106,0,0.40);
+      transition: all 0.2s; text-decoration: none;
+    }
+    .cta-btn-primary:hover { box-shadow: 0 0 40px rgba(255,106,0,0.60); transform: translateY(-1px); }
+    .cta-btn-ghost {
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: transparent;
+      color: rgba(255,255,255,0.70);
+      font-size: 15px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      transition: all 0.2s; text-decoration: none;
+    }
+    .cta-btn-ghost:hover { border-color: rgba(255,106,0,0.40); color: var(--orange-3); }
+  </style>
 </head>
 <body class="page-dark">
-<header class="site-header">
-    <div class="container header-inner">
-        <a href="{{ url_for('index') }}" class="logo">
-            <span class="logo-mark">TG</span>
-            <span class="logo-text">Lead Wareon</span>
-        </a>
-        <nav class="nav-main">
-            <a href="{{ url_for('index') }}">Главная</a>
-            <a href="{{ url_for('pricing') }}">Тарифы</a>
-            <a href="{{ url_for('cases') }}">Кейсы</a>
-            <a href="{{ url_for('blog') }}">Блог</a>
-            <a href="{{ url_for('faq') }}">FAQ</a>
-            <a href="{{ url_for('support') }}">Поддержка</a>
-        </nav>
-        <div class="header-actions">
-            <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">Войти</a>
-            <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Регистрация</a>
-        </div>
-        <button class="nav-toggle" aria-label="Открыть меню">
-            <span></span><span></span>
-        </button>
+
+<div class="nb">
+  <div class="nb-o nb-1"></div>
+  <div class="nb-o nb-2"></div>
+</div>
+
+<div class="orbital-canvas">
+  <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <defs><filter id="ob"><feGaussianBlur stdDeviation="2.5"/></filter></defs>
+    <g opacity="0.06" stroke="white" stroke-width="1" fill="none" filter="url(#ob)">
+      <ellipse cx="720" cy="950" rx="880" ry="270" transform="rotate(-6 720 950)"/>
+      <ellipse cx="720" cy="950" rx="580" ry="175" transform="rotate(-6 720 950)"/>
+    </g>
+    <g fill="rgba(255,255,255,0.28)">
+      <circle cx="180" cy="180" r="1.5"/><circle cx="1260" cy="120" r="2"/>
+      <circle cx="60"  cy="480" r="1.5"/><circle cx="1380" cy="560" r="2"/>
+    </g>
+  </svg>
+</div>
+
+<header class="site-header" style="position:relative;z-index:10;">
+  <div class="container header-inner">
+    <a href="{{ url_for('index') }}" class="logo">
+      <span class="logo-mark">TG</span>
+      <span class="logo-text">Lead Wareon</span>
+    </a>
+    <nav class="nav-main">
+      <a href="{{ url_for('index') }}">Главная</a>
+      <a href="{{ url_for('pricing') }}">Тарифы</a>
+      <a href="{{ url_for('cases') }}">Кейсы</a>
+      <a href="{{ url_for('blog') }}">Блог</a>
+      <a href="{{ url_for('faq') }}" style="color:var(--orange-3);">FAQ</a>
+      <a href="{{ url_for('support') }}">Поддержка</a>
+    </nav>
+    <div class="header-actions">
+      <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">Войти</a>
+      <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Регистрация</a>
     </div>
+    <button class="nav-toggle" aria-label="Открыть меню"><span></span><span></span></button>
+  </div>
 </header>
 
 <main>
-    <section class="section" id="faq">
-        <div class="container">
-            <div class="section-header">
-                <h2>Часто задаваемые вопросы</h2>
-                <p>Не нашли ответ? Напишите нам, и мы разберём ваш кейс лично.</p>
-            </div>
+  <div class="faq-hero">
+    <div class="eyebrow">Поддержка</div>
+    <h1>Частые вопросы</h1>
+    <p>Быстрые ответы на самое важное. Не нашли — напишите нам, разберём лично.</p>
+    <div class="faq-search">
+      <input type="text" id="faq-search-input" placeholder="Поиск по вопросам..."/>
+      <span class="faq-search-icon">⌕</span>
+    </div>
+  </div>
 
-            <h3>Общие вопросы</h3>
-            <div class="faq-list">
-                <article class="faq-item"><button class="faq-question"><span>Чем TG Lead Wareon отличается от обычных ботов?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Это комплексная платформа с Miner, Sender и AI-чаттингом. Вы управляете всей воронкой из одного кабинета.</p></div></article>
-                <article class="faq-item"><button class="faq-question"><span>Для кого подходит сервис?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Для арбитражников, инфобизнеса, онлайн-школ, агентств, владельцев Telegram-проектов.</p></div></article>
-                <article class="faq-item"><button class="faq-question"><span>Можно ли тестировать сервис бесплатно?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Да, у всех тарифов есть пробный период до 7 дней, без привязки карты.</p></div></article>
-                <article class="faq-item"><button class="faq-question"><span>Нужны ли специальные знания?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Нет, интерфейс интуитивно понятен. В блоге есть гайды и видео-инструкции.</p></div></article>
-                <article class="faq-item"><button class="faq-question"><span>Вы храните наши данные?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Только email для входа и данные аккаунтов, которые вы сами добавляете. Сообщения и контакты не передаются третьим лицам.</p></div></article>
-            </div>
+  <div class="faq-layout">
 
-            <h3 style="margin-top:32px;">Безопасность</h3>
-            <div class="faq-list">
-                <article class="faq-item"><button class="faq-question"><span>Безопасно ли использовать TG Lead Wareon?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Да. Мы используем официальные API, ротацию прокси и аккаунтов, соблюдаем лимиты Telegram.</p></div></article>
-                <article class="faq-item"><button class="faq-question"><span>Могут ли забанить мои аккаунты?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Мы минимизируем риски, но 100% гарантии никто не даст. Используйте отдельные аккаунты для рассылок.</p></div></article>
-                <article class="faq-item"><button class="faq-question"><span>Как защищены мои платёжные данные?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Мы не храним данные карт. Оплата происходит через защищённое соединение. Чеки формируются для самозанятых.</p></div></article>
-            </div>
+    <!-- Category tabs -->
+    <div class="faq-tabs">
+      <button class="faq-tab active" data-cat="all">Все</button>
+      <button class="faq-tab" data-cat="general">Общие</button>
+      <button class="faq-tab" data-cat="security">Безопасность</button>
+      <button class="faq-tab" data-cat="billing">Оплата</button>
+      <button class="faq-tab" data-cat="tech">Технические</button>
+    </div>
 
-            <h3 style="margin-top:32px;">Оплата и тарифы</h3>
-            <div class="faq-list">
-                <article class="faq-item"><button class="faq-question"><span>Какие способы оплаты?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Карта (СБП), USDT (TRC20). Лицензия активируется вручную в течение 5–15 минут.</p></div></article>
-                <article class="faq-item"><button class="faq-question"><span>Можно ли сменить тариф?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Да, в любой момент. Оставшиеся дни пересчитываются.</p></div></article>
-                <article class="faq-item"><button class="faq-question"><span>Есть ли возврат средств?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Нет, возврат не предусмотрен. Используйте пробный период для оценки сервиса.</p></div></article>
-                <article class="faq-item"><button class="faq-question"><span>Как работают доп. модули?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Добавляются к базовому тарифу. Стоимость суммируется. Можно включить/отключить в любой момент.</p></div></article>
-                <article class="faq-item"><button class="faq-question"><span>Вы выдаёте чеки?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Да, электронные чеки для самозанятых доступны в личном кабинете.</p></div></article>
-            </div>
+    <!-- Общие -->
+    <div class="faq-group" data-group="general">
+      <div class="faq-group-title">Общие вопросы</div>
 
-            <h3 style="margin-top:32px;">Технические вопросы</h3>
-            <div class="faq-list">
-                <article class="faq-item"><button class="faq-question"><span>Какие прокси поддерживаются?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>SOCKS5 и HTTP. Можно использовать свои или арендованные.</p></div></article>
-                <article class="faq-item"><button class="faq-question"><span>Сколько аккаунтов можно подключить?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Зависит от тарифа: Start — 1, Pro — 3, Scale — 10.</p></div></article>
-                <article class="faq-item"><button class="faq-question"><span>Можно ли использовать свои аккаунты?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Да, добавляйте свои Telegram-аккаунты через номер или загрузку сессии.</p></div></article>
-                <article class="faq-item"><button class="faq-question"><span>Что делать, если сбор не работает?</span><span class="faq-icon"></span></button><div class="faq-answer"><p>Проверьте, что чат/канал публичный. Если проблема сохраняется — напишите в поддержку.</p></div></article>
-            </div>
+      <div class="faq-item" data-cat="general">
+        <button class="faq-question">
+          <span>Чем TG Lead Wareon отличается от обычных ботов?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Это комплексная платформа с Miner, Sender и AI-чаттингом. Вы управляете всей воронкой из одного кабинета — от сбора аудитории до нейро-переписки и аналитики.</div>
         </div>
-    </section>
+      </div>
+
+      <div class="faq-item" data-cat="general">
+        <button class="faq-question">
+          <span>Для кого подходит сервис?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Для арбитражников, инфобизнеса, онлайн-школ, агентств, владельцев Telegram-проектов и всех, кто хочет автоматизировать работу с аудиторией в Telegram.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-cat="general">
+        <button class="faq-question">
+          <span>Можно ли тестировать сервис бесплатно?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Да — 3 дня бесплатного доступа к Miner после регистрации. Привязка карты не нужна.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-cat="general">
+        <button class="faq-question">
+          <span>Нужны ли специальные знания?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Нет. Интерфейс интуитивно понятен. В блоге есть пошаговые гайды и видео-инструкции для быстрого старта.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-cat="general">
+        <button class="faq-question">
+          <span>Вы храните наши данные?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Только email для входа и данные аккаунтов, которые вы сами добавляете. Сообщения и контакты пользователей не передаются третьим лицам.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Безопасность -->
+    <div class="faq-group" data-group="security">
+      <div class="faq-group-title">Безопасность</div>
+
+      <div class="faq-item" data-cat="security">
+        <button class="faq-question">
+          <span>Безопасно ли использовать TG Lead Wareon?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Да. Мы используем официальные Telegram API, ротацию прокси и аккаунтов, соблюдаем лимиты платформы. Встроенный AI-прогрев дополнительно снижает риск блокировок.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-cat="security">
+        <button class="faq-question">
+          <span>Могут ли забанить мои аккаунты?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Мы минимизируем риски, но 100% гарантии никто не может дать. Рекомендуем использовать отдельные аккаунты для рассылок и включать модуль AI-прогрева.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-cat="security">
+        <button class="faq-question">
+          <span>Как защищены мои платёжные данные?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Мы не храним данные карт — оплата проходит через защищённый платёжный шлюз. Все соединения шифруются по HTTPS/TLS.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Оплата -->
+    <div class="faq-group" data-group="billing">
+      <div class="faq-group-title">Оплата и тарифы</div>
+
+      <div class="faq-item" data-cat="billing">
+        <button class="faq-question">
+          <span>Какие способы оплаты?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Карта (СБП), USDT (TRC20). Лицензия активируется вручную в течение 5–15 минут после подтверждения платежа.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-cat="billing">
+        <button class="faq-question">
+          <span>Можно ли сменить тариф?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Да, в любой момент через личный кабинет. Оставшиеся дни текущего тарифа пересчитываются автоматически.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-cat="billing">
+        <button class="faq-question">
+          <span>Есть ли возврат средств?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Возврат не предусмотрен. Рекомендуем использовать 3-дневный бесплатный период для оценки сервиса перед покупкой.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-cat="billing">
+        <button class="faq-question">
+          <span>Как работают дополнительные модули?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Добавляются к любому базовому тарифу. Стоимость суммируется. Можно подключить или отключить в любой момент в разделе «Тарифы».</div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-cat="billing">
+        <button class="faq-question">
+          <span>Вы выдаёте чеки?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Да, электронные чеки для самозанятых доступны в личном кабинете в разделе «Платежи».</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Технические -->
+    <div class="faq-group" data-group="tech">
+      <div class="faq-group-title">Технические вопросы</div>
+
+      <div class="faq-item" data-cat="tech">
+        <button class="faq-question">
+          <span>Какие прокси поддерживаются?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">SOCKS5 и HTTP. Можно использовать собственные прокси или арендованные. Поддерживается авторотация.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-cat="tech">
+        <button class="faq-question">
+          <span>Сколько аккаунтов можно подключить?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Зависит от тарифа: Start — 1 Miner + 1 Sender, Pro — 2 Miner + 3 Sender, Scale — 5 Miner + 10 Sender.</div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-cat="tech">
+        <button class="faq-question">
+          <span>Можно ли использовать свои аккаунты?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Да. Добавляйте свои Telegram-аккаунты через номер телефона или загрузку .session-файла в разделе «Аккаунты».</div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-cat="tech">
+        <button class="faq-question">
+          <span>Что делать, если сбор не работает?</span>
+          <span class="faq-chevron">▾</span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Убедитесь, что чат или канал публичный и Miner-аккаунт активен. Если проблема сохраняется — напишите в поддержку, разберём ваш кейс.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="faq-cta">
+      <h2>Остались вопросы?</h2>
+      <p>Наша команда ответит в течение 15 минут в Telegram.</p>
+      <div class="faq-cta-btns">
+        <a href="{{ url_for('support') }}" class="cta-btn-primary">Написать в поддержку</a>
+        <a href="{{ url_for('register') }}" class="cta-btn-ghost">Попробовать бесплатно</a>
+      </div>
+    </div>
+
+  </div>
 </main>
 
-<footer class="site-footer">
-    <div class="container footer-inner">
-        <div class="footer-left"><span class="logo-text">TG Lead Wareon</span></div>
-        <div class="footer-links">
-            <a href="{{ url_for('faq') }}">FAQ</a>
-            <a href="{{ url_for('support') }}">Поддержка</a>
-            <a href="{{ url_for('pricing') }}">Тарифы</a>
-        </div>
+<footer class="site-footer" style="position:relative;z-index:1;">
+  <div class="container footer-inner">
+    <div class="footer-left"><span class="logo-text">TG Lead Wareon</span></div>
+    <div class="footer-links">
+      <a href="{{ url_for('faq') }}">FAQ</a>
+      <a href="{{ url_for('support') }}">Поддержка</a>
+      <a href="{{ url_for('pricing') }}">Тарифы</a>
     </div>
+  </div>
 </footer>
 
 <script src="{{ url_for('static', filename='script.js') }}"></script>
+<script>
+  // Accordion
+  document.querySelectorAll('.faq-question').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.closest('.faq-item');
+      const isOpen = item.classList.contains('open');
+      // Close all
+      document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    });
+  });
+
+  // Category filter
+  const tabs = document.querySelectorAll('.faq-tab');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const cat = tab.dataset.cat;
+      document.querySelectorAll('.faq-group').forEach(group => {
+        if (cat === 'all') {
+          group.classList.remove('hidden');
+          group.querySelectorAll('.faq-item').forEach(item => item.classList.remove('hidden'));
+        } else {
+          const groupCat = group.dataset.group;
+          const show = groupCat === cat;
+          group.classList.toggle('hidden', !show);
+        }
+      });
+      // Clear search
+      document.getElementById('faq-search-input').value = '';
+    });
+  });
+
+  // Search
+  document.getElementById('faq-search-input').addEventListener('input', function() {
+    const q = this.value.trim().toLowerCase();
+    // Reset tabs
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.cat === 'all'));
+
+    if (!q) {
+      document.querySelectorAll('.faq-group').forEach(g => g.classList.remove('hidden'));
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('hidden'));
+      return;
+    }
+
+    document.querySelectorAll('.faq-group').forEach(group => {
+      let groupHasVisible = false;
+      group.querySelectorAll('.faq-item').forEach(item => {
+        const text = item.textContent.toLowerCase();
+        const match = text.includes(q);
+        item.classList.toggle('hidden', !match);
+        if (match) groupHasVisible = true;
+      });
+      group.classList.toggle('hidden', !groupHasVisible);
+    });
+  });
+</script>
 </body>
 </html>

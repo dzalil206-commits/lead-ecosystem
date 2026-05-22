@@ -1,127 +1,368 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Регистрация — TG Lead Wareon</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <style>
-    .auth-split { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
-    .auth-form-side { display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: var(--bg); }
-    .auth-info-side { display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: radial-gradient(circle at 30% 30%, rgba(232,201,160,0.12), transparent 60%), var(--bg-elevated); border-left: 1px solid var(--border-subtle); }
-    .auth-form-wrapper { width: 100%; max-width: 400px; }
-    .auth-logo { margin-bottom: 32px; }
-    .auth-form-wrapper h1 { font-size: 26px; margin-bottom: 4px; }
-    .auth-form-wrapper .auth-subtitle { margin-bottom: 24px; color: var(--text-muted); font-size: 14px; }
-    .auth-form .field { margin-bottom: 16px; }
-    .auth-form .field input { width: 100%; }
-    .auth-form .btn { margin-top: 8px; }
-    .agree-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; margin-top: 4px; }
-    .agree-row input[type="checkbox"] { width: 16px; height: 16px; min-width: 16px; margin-top: 2px; accent-color: var(--accent); cursor: pointer; }
-    .agree-row label { font-size: 13px; color: var(--text-muted); line-height: 1.5; cursor: pointer; }
-    .agree-row label a { color: var(--accent-light); text-decoration: underline; text-decoration-color: rgba(232,201,160,0.4); }
-    .auth-meta { margin-top: 16px; text-align: center; font-size: 13px; color: var(--text-muted); }
-    .auth-meta a { color: var(--accent-light); text-decoration: none; }
-    .auth-info-content { max-width: 380px; }
-    .auth-info-content h2 { font-size: 22px; margin-bottom: 12px; }
-    .auth-info-content p { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
-    .auth-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
-    .auth-stat { text-align: center; }
-    .auth-stat-value { font-size: 20px; font-weight: 600; color: var(--accent-light); }
-    .auth-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-    .auth-features { list-style: none; padding: 0; }
-    .auth-features li { padding: 6px 0; font-size: 13px; color: var(--text-muted); }
-    .auth-features li::before { content: "✓ "; color: var(--accent-light); }
-    @media (max-width: 768px) {
-      .auth-split { grid-template-columns: 1fr; }
-      .auth-info-side { display: none; }
+    body { min-height: 100vh; overflow-x: hidden; }
+
+    .nb { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+    .nb-o {
+      position: absolute; border-radius: 50%; filter: blur(150px); pointer-events: none;
+    }
+    .nb-1 {
+      width: 1000px; height: 1000px;
+      background: radial-gradient(circle, rgba(255,80,0,0.30) 0%, rgba(255,120,0,0.10) 40%, transparent 70%);
+      bottom: -450px; left: -250px;
+    }
+    .nb-2 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(255,120,0,0.08) 0%, transparent 60%);
+      top: -100px; right: -100px;
+    }
+
+    .auth-split {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
+    @media (min-width: 900px) {
+      .auth-split { grid-template-columns: 1fr 1fr; }
+    }
+
+    .auth-form-side {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 28px;
+    }
+    .auth-form-wrapper { width: 100%; max-width: 420px; }
+
+    .auth-logo { margin-bottom: 36px; display: block; }
+
+    .auth-card-inner {
+      background: rgba(8,5,18,0.85);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 24px;
+      padding: 36px 32px;
+      backdrop-filter: blur(28px);
+      position: relative;
+      overflow: hidden;
+    }
+    .auth-card-inner::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.55), transparent);
+    }
+
+    .auth-card-inner h1 {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 6px;
+    }
+    .auth-card-inner .sub {
+      font-size: 14px;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-field label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.07em; }
+    .form-field input {
+      background: rgba(0,0,8,0.8);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 11px;
+      padding: 11px 14px;
+      color: #fff;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+    .form-field input:focus {
+      border-color: rgba(255,106,0,0.55);
+      box-shadow: 0 0 0 3px rgba(255,106,0,0.10);
+    }
+    .form-field input::placeholder { color: rgba(255,255,255,0.2); }
+
+    .agree-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 18px;
+      margin-top: 4px;
+    }
+    .agree-row input[type="checkbox"] {
+      width: 16px; height: 16px; min-width: 16px;
+      margin-top: 3px;
+      accent-color: var(--orange);
+      cursor: pointer;
+    }
+    .agree-row label {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      line-height: 1.6;
+      cursor: pointer;
+    }
+    .agree-row label a {
+      color: var(--orange-3);
+      text-decoration: underline;
+      text-decoration-color: rgba(255,170,68,0.3);
+      transition: color 0.2s;
+    }
+    .agree-row label a:hover { color: var(--orange-2); }
+
+    .submit-btn {
+      width: 100%;
+      padding: 13px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, var(--orange-2), var(--orange));
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 0 28px rgba(255,106,0,0.40), inset 0 1px 0 rgba(255,255,255,0.15);
+      transition: box-shadow 0.2s, transform 0.15s;
+      font-family: inherit;
+    }
+    .submit-btn:hover {
+      box-shadow: 0 0 44px rgba(255,106,0,0.60);
+      transform: translateY(-1px);
+    }
+    .submit-btn:active { transform: scale(0.98); }
+
+    .auth-links {
+      margin-top: 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .auth-links a, .auth-links span { font-size: 13px; color: rgba(255,255,255,0.38); }
+    .auth-links a { color: var(--orange-3); transition: color 0.2s; }
+    .auth-links a:hover { color: var(--orange-2); }
+
+    .flash-msg {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      border: 1px solid;
+    }
+    .flash-error { background: rgba(255,70,70,0.08); border-color: rgba(255,70,70,0.25); color: #ff8080; }
+    .flash-success { background: rgba(255,170,68,0.08); border-color: rgba(255,170,68,0.25); color: var(--orange-3); }
+
+    .auth-info-side {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 40px;
+      border-left: 1px solid rgba(255,255,255,0.06);
+      position: relative;
+      overflow: hidden;
+    }
+    @media (min-width: 900px) { .auth-info-side { display: flex; } }
+
+    .info-orbital { position: absolute; inset: 0; pointer-events: none; }
+    .info-orbital svg { width: 100%; height: 100%; }
+
+    .info-content { position: relative; z-index: 1; max-width: 380px; }
+    .info-content h2 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 12px;
+      line-height: 1.15;
+    }
+    .info-content p {
+      font-size: 14px;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 28px;
+      line-height: 1.7;
+    }
+
+    .free-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,106,0,0.12);
+      border: 1px solid rgba(255,106,0,0.30);
+      border-radius: 100px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--orange-3);
+      margin-bottom: 28px;
+    }
+    .free-badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--orange);
+      box-shadow: 0 0 8px rgba(255,106,0,0.8);
+      animation: pulse-dot 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.7); }
+    }
+
+    .info-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .info-stat {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+    .info-stat-val { font-size: 18px; font-weight: 800; color: var(--orange-3); margin-bottom: 4px; }
+    .info-stat-lbl { font-size: 11px; color: rgba(255,255,255,0.35); }
+
+    .info-features { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .info-features li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+    }
+    .info-features li::before {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--orange);
+      flex-shrink: 0;
+      box-shadow: 0 0 6px rgba(255,106,0,0.6);
     }
   </style>
 </head>
 <body class="page-dark">
+
+<div class="nb">
+  <div class="nb-o nb-1"></div>
+  <div class="nb-o nb-2"></div>
+</div>
+
 <div class="auth-split">
-    <!-- Форма регистрации -->
-    <div class="auth-form-side">
-        <div class="auth-form-wrapper">
-            <a href="{{ url_for('index') }}" class="logo auth-logo">
-                <span class="logo-mark">TG</span>
-                <span class="logo-text">Lead Wareon</span>
-            </a>
-            <h1>Создать аккаунт</h1>
-            <p class="auth-subtitle">Подключите Miner и Sender, чтобы автоматизировать Telegram‑связки.</p>
 
-            <form method="POST" action="{{ url_for('register') }}" class="auth-form">
-                <div class="field">
-                    <label for="full_name">Имя и фамилия</label>
-                    <input id="full_name" name="full_name" type="text" required placeholder="Иван Иванов">
-                </div>
-                <div class="field">
-                    <label for="email">Рабочий email</label>
-                    <input id="email" name="email" type="email" required placeholder="you@example.com">
-                </div>
-                <div class="field">
-                    <label for="password">Пароль</label>
-                    <input id="password" name="password" type="password" required placeholder="Минимум 8 символов" minlength="8">
-                </div>
-                <div class="agree-row">
-                    <input type="checkbox" id="agree" name="agree" required>
-                    <label for="agree">
-                        Я принимаю
-                        <a href="{{ url_for('terms') }}" target="_blank">Пользовательское соглашение</a>
-                        и
-                        <a href="{{ url_for('privacy') }}" target="_blank">Политику конфиденциальности</a>,
-                        а также даю согласие на обработку персональных данных
-                    </label>
-                </div>
-                <button type="submit" class="btn btn-primary btn-full">Зарегистрироваться</button>
-            </form>
+  <div class="auth-form-side">
+    <div class="auth-form-wrapper">
+      <a href="{{ url_for('index') }}" class="logo auth-logo">
+        <span class="logo-mark">TG</span>
+        <span class="logo-text">Lead Wareon</span>
+      </a>
 
-            {% with messages = get_flashed_messages(with_categories=true) %}
-              {% if messages %}
-                {% for category, message in messages %}
-                  <div style="margin-top:12px;padding:10px 14px;border-radius:8px;font-size:13px;background:{% if category == 'error' %}rgba(255,107,107,0.1){% else %}rgba(59,232,140,0.1){% endif %};color:{% if category == 'error' %}#ff6b6b{% else %}#3be88c{% endif %};">{{ message }}</div>
-                {% endfor %}
-              {% endif %}
-            {% endwith %}
+      <div class="auth-card-inner">
+        <h1>Создать аккаунт</h1>
+        <p class="sub">3 дня бесплатного доступа к Miner. Без привязки карты.</p>
 
-            <p class="auth-meta">
-                Уже есть аккаунт?
-                <a href="{{ url_for('login') }}">Войти</a>
-            </p>
-            <p class="auth-meta" style="margin-top:8px;">
-                <a href="{{ url_for('index') }}">← Вернуться на главную</a>
-            </p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('register') }}">
+          <div class="form-field">
+            <label>Имя и фамилия</label>
+            <input name="full_name" type="text" required placeholder="Иван Иванов" autocomplete="name"/>
+          </div>
+          <div class="form-field">
+            <label>Email</label>
+            <input name="email" type="email" required placeholder="you@example.com" autocomplete="email"/>
+          </div>
+          <div class="form-field">
+            <label>Пароль</label>
+            <input name="password" type="password" required placeholder="Минимум 8 символов" minlength="8" autocomplete="new-password"/>
+          </div>
+          <div class="agree-row">
+            <input type="checkbox" id="agree" name="agree" required/>
+            <label for="agree">
+              Я принимаю
+              <a href="{{ url_for('terms') }}" target="_blank">Пользовательское соглашение</a>
+              и
+              <a href="{{ url_for('privacy') }}" target="_blank">Политику конфиденциальности</a>,
+              а также даю согласие на обработку персональных данных
+            </label>
+          </div>
+          <button type="submit" class="submit-btn">Зарегистрироваться →</button>
+        </form>
+
+        <div class="auth-links">
+          <span>Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a></span>
+          <a href="{{ url_for('index') }}">← На главную</a>
         </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Информационная панель -->
-    <div class="auth-info-side">
-        <div class="auth-info-content">
-            <h2>Начните бесплатно прямо сейчас</h2>
-            <p>3 дня бесплатного доступа к Miner. Без привязки карты. Отмените в любой момент.</p>
-            <div class="auth-stats">
-                <div class="auth-stat">
-                    <div class="auth-stat-value">3 дня</div>
-                    <div class="auth-stat-label">бесплатного теста</div>
-                </div>
-                <div class="auth-stat">
-                    <div class="auth-stat-value">15 мин</div>
-                    <div class="auth-stat-label">на запуск</div>
-                </div>
-                <div class="auth-stat">
-                    <div class="auth-stat-value">24/7</div>
-                    <div class="auth-stat-label">поддержка</div>
-                </div>
-            </div>
-            <ul class="auth-features">
-                <li>Все функции доступны сразу после регистрации</li>
-                <li>Никаких скрытых платежей</li>
-                <li>Мгновенная активация аккаунта</li>
-                <li>Поддержка ответит на любой вопрос</li>
-            </ul>
-        </div>
+  <div class="auth-info-side">
+    <div class="info-orbital">
+      <svg viewBox="0 0 600 700" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="ob2"><feGaussianBlur stdDeviation="2"/></filter>
+        </defs>
+        <g opacity="0.09" stroke="white" stroke-width="1" fill="none" filter="url(#ob2)">
+          <ellipse cx="300" cy="380" rx="400" ry="130" transform="rotate(-20 300 380)"/>
+          <ellipse cx="300" cy="380" rx="260" ry="85"  transform="rotate(-20 300 380)"/>
+          <ellipse cx="300" cy="380" rx="150" ry="50"  transform="rotate(-20 300 380)"/>
+          <ellipse cx="300" cy="380" rx="480" ry="160" transform="rotate(-10 300 380)"/>
+        </g>
+        <g fill="rgba(255,255,255,0.45)">
+          <circle cx="150" cy="260" r="2"/>
+          <circle cx="500" cy="160" r="2.5"/>
+          <circle cx="70"  cy="460" r="1.5"/>
+          <circle cx="440" cy="520" r="2"/>
+          <circle cx="320" cy="120" r="1.5"/>
+        </g>
+      </svg>
     </div>
+    <div class="info-content">
+      <div class="free-badge">
+        <span class="free-badge-dot"></span>
+        3 дня бесплатно — без карты
+      </div>
+      <h2>Начните автоматизировать Telegram прямо сейчас</h2>
+      <p>Настройте первую связку Miner + Sender за 15 минут. Уже сотни арбитражников работают с нами каждый день.</p>
+      <div class="info-stats">
+        <div class="info-stat">
+          <div class="info-stat-val">3 дня</div>
+          <div class="info-stat-lbl">бесплатно</div>
+        </div>
+        <div class="info-stat">
+          <div class="info-stat-val">15 мин</div>
+          <div class="info-stat-lbl">на запуск</div>
+        </div>
+        <div class="info-stat">
+          <div class="info-stat-val">24/7</div>
+          <div class="info-stat-lbl">поддержка</div>
+        </div>
+      </div>
+      <ul class="info-features">
+        <li>Все функции доступны сразу после регистрации</li>
+        <li>Никаких скрытых платежей и привязки карты</li>
+        <li>Мгновенная активация аккаунта</li>
+        <li>Поддержка ответит на любой вопрос в Telegram</li>
+      </ul>
+    </div>
+  </div>
+
 </div>
 </body>
 </html>

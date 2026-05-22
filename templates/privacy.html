@@ -5,26 +5,70 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Политика конфиденциальности — TG Lead Wareon</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
-    .legal-wrap { max-width: 800px; margin: 0 auto; padding: 0 16px; }
-    .legal-section { background: rgba(20,20,20,0.96); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 24px; margin-bottom: 14px; }
-    .legal-section h3 { font-size: 15px; font-weight: 600; margin: 0 0 12px; color: var(--accent-light); }
-    .legal-section p, .legal-section li { font-size: 13.5px; color: var(--text-muted); line-height: 1.75; margin: 0 0 8px; }
+    body { overflow-x: hidden; }
+    .nb { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+    .nb-o { position: absolute; border-radius: 50%; filter: blur(150px); pointer-events: none; }
+    .nb-1 { width: 900px; height: 900px; background: radial-gradient(circle, rgba(255,80,0,0.22) 0%, rgba(255,120,0,0.07) 40%, transparent 70%); bottom: -400px; left: -250px; }
+    .nb-2 { width: 550px; height: 550px; background: radial-gradient(circle, rgba(255,120,0,0.06) 0%, transparent 60%); top: -100px; right: -100px; }
+
+    main { position: relative; z-index: 1; }
+
+    .legal-wrap { max-width: 800px; margin: 0 auto; padding: 48px 24px 80px; }
+    .legal-hero { margin-bottom: 36px; }
+    .legal-hero .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,106,0,0.10); border: 1px solid rgba(255,106,0,0.25);
+      border-radius: 100px; padding: 5px 13px;
+      font-size: 11px; font-weight: 600; color: var(--orange-3);
+      letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 14px;
+    }
+    .legal-hero h1 { font-size: 30px; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 6px; }
+    .legal-hero .meta { font-size: 13px; color: rgba(255,255,255,0.35); }
+    .legal-hero .meta a { color: var(--orange-3); text-decoration: none; }
+
+    .toc {
+      background: rgba(255,106,0,0.05);
+      border: 1px solid rgba(255,106,0,0.18);
+      border-radius: 16px; padding: 20px 24px; margin-bottom: 28px;
+      backdrop-filter: blur(16px);
+    }
+    .toc-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.30); margin-bottom: 12px; }
+    .toc a { display: block; font-size: 13px; color: rgba(255,255,255,0.45); text-decoration: none; padding: 3px 0; transition: color 0.2s; }
+    .toc a:hover { color: var(--orange-3); }
+
+    .legal-section {
+      background: rgba(8,5,18,0.75);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px; padding: 24px 26px; margin-bottom: 12px;
+      backdrop-filter: blur(18px); position: relative; overflow: hidden;
+    }
+    .legal-section::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.20), transparent);
+    }
+    .legal-section h3 { font-size: 15px; font-weight: 700; margin: 0 0 14px; color: var(--orange-3); }
+    .legal-section p, .legal-section li { font-size: 14px; color: rgba(255,255,255,0.50); line-height: 1.75; margin: 0 0 8px; }
+    .legal-section strong { color: rgba(255,255,255,0.80); }
     .legal-section ul, .legal-section ol { padding-left: 20px; margin: 8px 0; }
     .legal-section li { margin-bottom: 4px; }
+    .legal-section a { color: var(--orange-3); text-decoration: none; }
+    .legal-section a:hover { text-decoration: underline; }
     .legal-section table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
-    .legal-section th { text-align: left; padding: 8px 12px; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.08); font-weight: 500; }
-    .legal-section td { padding: 8px 12px; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: top; }
-    .highlight-box { background: rgba(59,232,140,0.06); border: 1px solid rgba(59,232,140,0.15); border-radius: 10px; padding: 14px 16px; margin: 12px 0; }
-    .highlight-box p { color: #a8f0c8; margin: 0; }
-    .toc { background: rgba(212,165,116,0.06); border: 1px solid rgba(212,165,116,0.15); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
-    .toc a { display: block; font-size: 13px; color: var(--text-muted); text-decoration: none; padding: 3px 0; }
-    .toc a:hover { color: var(--accent-light); }
+    .legal-section th { text-align: left; padding: 8px 12px; color: rgba(255,255,255,0.35); border-bottom: 1px solid rgba(255,255,255,0.08); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .legal-section td { padding: 8px 12px; color: rgba(255,255,255,0.45); border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: top; font-size: 13px; }
+
+    .highlight-box {
+      background: rgba(255,106,0,0.07); border: 1px solid rgba(255,106,0,0.22);
+      border-radius: 10px; padding: 14px 16px; margin: 12px 0;
+    }
+    .highlight-box p { color: rgba(255,200,120,0.90); margin: 0; font-size: 13px; }
   </style>
 </head>
 <body class="page-dark">
-<header class="site-header slim">
+<div class="nb"><div class="nb-o nb-1"></div><div class="nb-o nb-2"></div></div>
+<header class="site-header" style="position:relative;z-index:10;">
   <div class="container header-inner">
     <a href="{{ url_for('index') }}" class="logo">
       <span class="logo-mark">TG</span>
@@ -37,17 +81,20 @@
   </div>
 </header>
 
-<main class="section">
+<main>
   <div class="legal-wrap">
-    <h1 style="font-size:26px;margin-bottom:6px;">Политика конфиденциальности</h1>
-    <p style="color:var(--text-muted);font-size:13px;margin-bottom:28px;">
-      Последнее обновление: {{ datetime.now().strftime('%d.%m.%Y') }} &nbsp;·&nbsp;
-      Редакция 2.0 &nbsp;·&nbsp;
-      <a href="{{ url_for('terms') }}" style="color:var(--accent-light);">Пользовательское соглашение</a>
-    </p>
+    <div class="legal-hero">
+      <div class="eyebrow">Документы</div>
+      <h1>Политика конфиденциальности</h1>
+      <div class="meta">
+        Последнее обновление: {{ datetime.now().strftime('%d.%m.%Y') }} &nbsp;·&nbsp;
+        Редакция 2.0 &nbsp;·&nbsp;
+        <a href="{{ url_for('terms') }}">Пользовательское соглашение</a>
+      </div>
+    </div>
 
     <div class="toc">
-      <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Содержание</div>
+      <div class="toc-title">Содержание</div>
       <a href="#p1">1. Оператор персональных данных</a>
       <a href="#p2">2. Какие данные мы собираем и зачем</a>
       <a href="#p3">3. Данные, которые мы НЕ собираем</a>
@@ -204,7 +251,7 @@
   </div>
 </main>
 
-<footer class="site-footer">
+<footer class="site-footer" style="position:relative;z-index:1;">
   <div class="container footer-inner">
     <div class="footer-left"><span class="logo-text">TG Lead Wareon</span></div>
     <div class="footer-links">
