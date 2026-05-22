@@ -16,7 +16,8 @@ from telethon.errors import (
     PhoneCodeExpiredError, PasswordHashInvalidError,
     FloodWaitError, PhoneNumberInvalidError,
 )
-import requests
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
 # ---------- НАСТРОЙКИ ----------
 SECRET_KEY       = os.environ.get('SECRET_KEY', 'dev-secret-change-in-production')
@@ -73,23 +74,29 @@ def parse_dt(value):
 def create_lava_payment(amount_rub, user_id, product, days, user_email=''):
     """Создаёт счёт в Lava.top. Возвращает (payment_url, invoice_id) или (None, None)."""
     if not LAVA_API_KEY:
+        logging.warning('LAVA: LAVA_API_KEY не задан')
+        return None, None
+    offer_id = os.environ.get(f'LAVA_OFFER_{product.upper()}', '')
+    if not offer_id:
+        logging.warning(f'LAVA: LAVA_OFFER_{product.upper()} не задан в .env')
         return None, None
     try:
         order_id = f'tglw-{user_id}-{product}-{uuid.uuid4().hex[:8]}'
+        payload = {
+            'email':         user_email or f'user{user_id}@tgleadwareon.ru',
+            'offerId':       offer_id,
+            'currency':      'RUB',
+            'periodicity':   'ONE_TIME',
+            'buyerLanguage': 'RU',
+            'orderId':       order_id,
+            'successUrl':    f'{BASE_URL}/payment/success?product={product}&provider=lava',
+            'failUrl':       f'{BASE_URL}/pricing',
+            'hookUrl':       f'{BASE_URL}/payment/lava/webhook',
+        }
+        logging.info(f'LAVA: создаём счёт order_id={order_id} offer={offer_id} amount={amount_rub}')
         resp = requests.post(
             'https://gate.lava.top/api/v2/invoice',
-            json={
-                'email':        user_email or f'user{user_id}@tgleadwareon.ru',
-                'offerId':      os.environ.get(f'LAVA_OFFER_{product.upper()}', ''),
-                'currency':     'RUB',
-                'periodicity':  'ONE_TIME',
-                'buyerLanguage': 'RU',
-                'orderId':      order_id,
-                'successUrl':   f'{BASE_URL}/payment/success?product={product}&provider=lava',
-                'failUrl':      f'{BASE_URL}/pricing',
-                'hookUrl':      f'{BASE_URL}/payment/lava/webhook',
-                'comment':      f'TG Lead Wareon — {product} подписка',
-            },
+            json=payload,
             headers={
                 'X-Api-Key':    LAVA_API_KEY,
                 'Content-Type': 'application/json',
@@ -97,13 +104,16 @@ def create_lava_payment(amount_rub, user_id, product, days, user_email=''):
             },
             timeout=10,
         )
+        logging.info(f'LAVA: ответ {resp.status_code} — {resp.text[:300]}')
         data = resp.json()
         pay_url = data.get('url') or data.get('URL')
         inv_id  = data.get('id') or data.get('InvoiceId') or order_id
         if not pay_url:
+            logging.error(f'LAVA: нет url в ответе — {data}')
             return None, None
         return pay_url, inv_id
-    except Exception:
+    except Exception as e:
+        logging.error(f'LAVA: исключение — {e}')
         return None, None
 
 
