@@ -280,12 +280,12 @@
       {% elif product == 'pro' %}
         <div class="buy-tagline">
           Профессиональный инструмент для серьёзных объёмов: <strong>до 500 000 лидов в месяц</strong>,
-          AI-защита аккаунтов, нейро-ответчик и приоритетная поддержка 24/7.
+          3 Miner + 5 Sender аккаунтов и приоритетная поддержка.
         </div>
       {% elif product == 'scale' %}
         <div class="buy-tagline">
-          Максимальная мощь для агентств и команд: <strong>безлимитный сбор</strong>, 10 Miner + 20 Sender,
-          API-доступ, White Label и выделенный персональный менеджер.
+          Максимальная мощь для агентств и команд: <strong>безлимитный сбор</strong>, 10 Miner + 20 Sender
+          и выделенный персональный менеджер.
         </div>
       {% endif %}
 
@@ -322,21 +322,20 @@
         {% elif product == 'pro' %}
           <li><span class="fi">✓</span>3 аккаунта Miner + 5 аккаунтов Sender</li>
           <li><span class="fi">✓</span>До 500 000 лидов в месяц</li>
-          <li><span class="fi">✓</span>AI-прогрев аккаунтов — защита от бана</li>
-          <li><span class="fi">✓</span>Нейро-ответчик на входящие сообщения</li>
+          <li><span class="fi">✓</span>Параллельный сбор из нескольких источников</li>
           <li><span class="fi">✓</span>Умная фильтрация по активности аудитории</li>
-          <li><span class="fi">✓</span>Экспорт CSV, JSON, Excel</li>
-          <li><span class="fi">✓</span>Расширенная аналитика и воронка продаж</li>
-          <li><span class="fi">✓</span>Приоритетная поддержка 24/7</li>
+          <li><span class="fi">✓</span>Экспорт CSV и JSON</li>
+          <li><span class="fi">✓</span>Расширенная статистика по сборам</li>
+          <li><span class="fi">✓</span>Приоритетная поддержка в Telegram</li>
+          <li><span class="fi">✓</span>Все функции Start включены</li>
         {% elif product == 'scale' %}
           <li><span class="fi">✓</span>10 аккаунтов Miner + 20 аккаунтов Sender</li>
           <li><span class="fi">✓</span>Безлимитный сбор лидов</li>
           <li><span class="fi">✓</span>Все функции Pro включены</li>
-          <li><span class="fi">✓</span>Нейро-ответчик 2.0 с GPT-интеграцией</li>
-          <li><span class="fi">✓</span>API-доступ для интеграций</li>
-          <li><span class="fi">✓</span>Интеграция с amoCRM / Bitrix24</li>
-          <li><span class="fi">✓</span>White Label — ваш брендинг</li>
+          <li><span class="fi">✓</span>Параллельный запуск до 10 сборов одновременно</li>
+          <li><span class="fi">✓</span>Максимальный приоритет в поддержке</li>
           <li><span class="fi">✓</span>Выделенный персональный менеджер</li>
+          <li><span class="fi">✓</span>Индивидуальная настройка под задачи команды</li>
         {% else %}
           <li><span class="fi">✓</span>Доступ на 30 дней</li>
           <li><span class="fi">✓</span>Поддержка в Telegram</li>
@@ -344,54 +343,6 @@
         {% endif %}
       </ul>
 
-      <!-- Social proof -->
-      <div class="buy-social-proof">
-        <div class="buy-social-item">
-          <div class="buy-social-num">3 400+</div>
-          <div class="buy-social-lbl">клиентов используют</div>
-        </div>
-        <div class="buy-social-item">
-          <div class="buy-social-num">128 млн</div>
-          <div class="buy-social-lbl">лидов собрано</div>
-        </div>
-        <div class="buy-social-item">
-          <div class="buy-social-num">4.9★</div>
-          <div class="buy-social-lbl">средняя оценка</div>
-        </div>
-      </div>
-
-      <!-- Mini-reviews -->
-      <div class="buy-reviews">
-        {% if product in ['miner', 'start'] %}
-        <div class="buy-review">
-          <div class="buy-review-stars">★★★★★</div>
-          <div class="buy-review-text">«За первые 2 часа собрал 12 000 контактов из 4 тематических групп. Из них 340 конверсий в лиды — это лучший результат за всё время работы с Telegram.»</div>
-          <div class="buy-review-author">— Артём К., арбитражник</div>
-        </div>
-        <div class="buy-review">
-          <div class="buy-review-stars">★★★★★</div>
-          <div class="buy-review-text">«Простой интерфейс, работает стабильно. Экспортирует чисто, без мусора. Поддержка ответила за 10 минут.»</div>
-          <div class="buy-review-author">— Юлия М., маркетолог</div>
-        </div>
-        {% elif product in ['sender', 'pro'] %}
-        <div class="buy-review">
-          <div class="buy-review-stars">★★★★★</div>
-          <div class="buy-review-text">«Разослал 8 000 сообщений за ночь, ни один аккаунт не заблокировали. Задержки работают отлично. Конверсия по рассылке — 4.2%.»</div>
-          <div class="buy-review-author">— Максим П., таргетолог</div>
-        </div>
-        <div class="buy-review">
-          <div class="buy-review-stars">★★★★★</div>
-          <div class="buy-review-text">«Купил Pro, пользуюсь уже 3 месяца. Нейро-ответчик сам квалифицирует лиды — менеджеры обрабатывают только горячих.»</div>
-          <div class="buy-review-author">— Дарья С., руководитель отдела продаж</div>
-        </div>
-        {% else %}
-        <div class="buy-review">
-          <div class="buy-review-stars">★★★★★</div>
-          <div class="buy-review-text">«Наша команда из 5 человек работает на Scale уже полгода. Безлимит лидов + API = полная автоматизация воронки. ROI x14.»</div>
-          <div class="buy-review-author">— Игорь В., CEO агентства</div>
-        </div>
-        {% endif %}
-      </div>
     </div>
 
     <!-- RIGHT: payment card -->
