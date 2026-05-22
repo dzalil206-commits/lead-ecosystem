@@ -264,13 +264,13 @@
       <!-- Tagline -->
       {% if product == 'miner' %}
         <div class="buy-tagline">
-          Собирайте <strong>тысячи целевых контактов</strong> из Telegram-групп и каналов за минуты.
-          Не нужно вручную копировать профили — Miner делает это автоматически и экспортирует базу в CSV.
+          Экспортируйте и анализируйте аудиторию <strong>ваших Telegram-каналов и групп</strong>.
+          Выгружайте участников в CSV, фильтруйте неактивных — стройте маркетинговую стратегию на реальных данных.
         </div>
       {% elif product == 'sender' %}
         <div class="buy-tagline">
-          Отправляйте <strong>персонализированные сообщения</strong> тысячам лидов без ручной работы.
-          Sender имитирует живое поведение, защищая ваш аккаунт от блокировок.
+          Автоматизируйте коммуникацию с <strong>вашей клиентской базой</strong>.
+          Рассылайте персонализированные сообщения контактам, которые дали согласие на получение информации.
         </div>
       {% elif product == 'start' %}
         <div class="buy-tagline">
@@ -293,23 +293,23 @@
       <div class="buy-features-title">Что вы получаете</div>
       <ul class="buy-features">
         {% if product == 'miner' %}
-          <li><span class="fi">✓</span>Сбор участников чатов и каналов по ссылке</li>
-          <li><span class="fi">✓</span>До 5 000 контактов за один запуск</li>
-          <li><span class="fi">✓</span>Автофильтрация ботов и удалённых аккаунтов</li>
-          <li><span class="fi">✓</span>Экспорт в CSV с именем, username, ID</li>
-          <li><span class="fi">✓</span>История сборов в личном кабинете</li>
+          <li><span class="fi">✓</span>Экспорт участников ваших каналов и групп</li>
+          <li><span class="fi">✓</span>Анализ аудитории тематических сообществ</li>
+          <li><span class="fi">✓</span>Фильтрация ботов и неактивных аккаунтов</li>
+          <li><span class="fi">✓</span>Выгрузка в CSV: имя, username, Telegram ID</li>
+          <li><span class="fi">✓</span>История всех выгрузок в личном кабинете</li>
           <li><span class="fi">✓</span>Поддержка SOCKS5-прокси</li>
-          <li><span class="fi">✓</span>Десктоп-приложение для Windows (скачать сразу)</li>
+          <li><span class="fi">✓</span>Десктоп-приложение для Windows</li>
           <li><span class="fi">✓</span>Обновления и поддержка на весь срок лицензии</li>
         {% elif product == 'sender' %}
-          <li><span class="fi">✓</span>Загрузка базы из CSV (из Miner или своей)</li>
-          <li><span class="fi">✓</span>Персонализация {имя} и {username} в тексте</li>
-          <li><span class="fi">✓</span>Настройка задержек между сообщениями</li>
-          <li><span class="fi">✓</span>Имитация живого пользователя — защита от FloodWait</li>
-          <li><span class="fi">✓</span>Пауза и остановка рассылки в один клик</li>
-          <li><span class="fi">✓</span>Детальный лог: доставлено / ошибки / заблокированы</li>
+          <li><span class="fi">✓</span>Рассылка по вашей клиентской базе (CSV)</li>
+          <li><span class="fi">✓</span>Персонализация сообщений: {имя}, {username}</li>
+          <li><span class="fi">✓</span>Настройка интервалов между сообщениями</li>
           <li><span class="fi">✓</span>Поддержка нескольких шаблонов сообщений</li>
-          <li><span class="fi">✓</span>Десктоп-приложение для Windows (скачать сразу)</li>
+          <li><span class="fi">✓</span>Пауза и остановка рассылки в один клик</li>
+          <li><span class="fi">✓</span>Детальный отчёт: доставлено / ошибки</li>
+          <li><span class="fi">✓</span>Десктоп-приложение для Windows</li>
+          <li><span class="fi">✓</span>Обновления и поддержка на весь срок лицензии</li>
         {% elif product == 'start' %}
           <li><span class="fi">✓</span>1 аккаунт Miner + 1 аккаунт Sender</li>
           <li><span class="fi">✓</span>До 50 000 лидов в месяц</li>
@@ -412,7 +412,8 @@
         <p class="buy-note">
           Нажимая кнопку, вы принимаете
           <a href="{{ url_for('terms') }}">Пользовательское соглашение</a>.<br/>
-          Платёж обрабатывается через Lava.top — данные карты на наш сайт не передаются.
+          Платёж обрабатывается через Lava.top — данные карты на наш сайт не передаются.<br/>
+          Используйте сервис только в соответствии с законодательством РФ и правилами Telegram.
         </p>
 
 
