@@ -81,12 +81,13 @@ def create_lava_payment(amount_rub, user_id, product, days, user_email=''):
                 'email':        user_email or f'user{user_id}@tgleadwareon.ru',
                 'offerId':      os.environ.get(f'LAVA_OFFER_{product.upper()}', ''),
                 'currency':     'RUB',
+                'periodicity':  'MONTHLY',
                 'buyerLanguage': 'RU',
                 'orderId':      order_id,
                 'successUrl':   f'{BASE_URL}/payment/success?product={product}&provider=lava',
                 'failUrl':      f'{BASE_URL}/pricing',
                 'hookUrl':      f'{BASE_URL}/payment/lava/webhook',
-                'comment':      f'TG Lead Wareon — {product} на {days} дней',
+                'comment':      f'TG Lead Wareon — {product} подписка',
             },
             headers={
                 'X-Api-Key':    LAVA_API_KEY,
@@ -879,21 +880,21 @@ def payment_webhook():
 
 @app.route('/payment/lava/webhook', methods=['POST'])
 def lava_webhook():
-    """Вебхук от Lava.top — вызывается после успешной оплаты."""
+    """Вебхук от Lava.top для подписок."""
     data = request.get_json(silent=True) or {}
+    event = data.get('event', '') or data.get('status', '')
 
-    # Lava.top шлёт событие PAYMENT_SUCCESS
-    event   = data.get('event', '') or data.get('status', '')
-    if event not in ('PAYMENT_SUCCESS', 'payment.succeeded', 'success'):
-        return jsonify({'ok': True})
-
-    order_id   = data.get('orderId') or data.get('order_id', '')
-    invoice_id = data.get('id') or data.get('contractId') or data.get('invoiceId', '')
-    amount     = data.get('amount', 0)
+    # Достаём orderId из разных возможных полей
+    order_id = (
+        data.get('orderId') or
+        data.get('order_id') or
+        (data.get('payload') or {}).get('orderId') or ''
+    )
+    invoice_id = data.get('id') or data.get('contractId') or data.get('invoiceId') or ''
 
     # orderId формата: tglw-{user_id}-{product}-{hex}
     if not order_id or not order_id.startswith('tglw-'):
-        return jsonify({'error': 'unknown order'}), 400
+        return jsonify({'ok': True})  # чужой вебхук, игнорируем
 
     parts = order_id.split('-')
     if len(parts) < 3:
@@ -907,29 +908,51 @@ def lava_webhook():
 
     db = get_db()
 
-    # Защита от двойного начисления
-    already = db.execute(
-        "SELECT id FROM licenses WHERE user_id=? AND product=? AND created_at >= datetime('now','-2 minutes')",
-        (user_id, product)
-    ).fetchone()
-    if already:
-        return jsonify({'ok': True})
+    # Новая подписка или ежемесячное продление
+    if event in ('SUBSCRIPTION_ACTIVE', 'PAYMENT_SUCCESS', 'payment.succeeded',
+                 'SUBSCRIPTION_RENEWED', 'subscription.renewed', 'success'):
 
-    days        = PRODUCT_PRICES.get(product.lower(), {}).get('days', 30)
-    price       = PRODUCT_PRICES.get(product.lower(), {}).get('rub', 0)
-    license_key = generate_license_key()
-    expires_at  = datetime.now() + timedelta(days=days)
+        days  = PRODUCT_PRICES.get(product.lower(), {}).get('days', 30)
+        price = PRODUCT_PRICES.get(product.lower(), {}).get('rub', 0)
 
-    db.execute(
-        "INSERT INTO licenses (user_id, license_key, product, price, expires_at, is_active) VALUES (?,?,?,?,?,1)",
-        (user_id, license_key, product, price, expires_at)
-    )
-    db.execute(
-        "UPDATE payments SET status='succeeded' WHERE user_id=? AND product=? AND status='pending'",
-        (user_id, product.lower())
-    )
-    db.commit()
-    log_action(user_id, 'payment_succeeded', f'{product}:{price}rub:lava:{invoice_id}')
+        existing = db.execute(
+            "SELECT id, expires_at FROM licenses WHERE user_id=? AND product=? AND is_active=1",
+            (user_id, product)
+        ).fetchone()
+
+        if existing:
+            # Продление — добавляем 30 дней к текущей дате истечения
+            db.execute(
+                "UPDATE licenses SET expires_at = datetime(expires_at, '+30 days') WHERE id=?",
+                (existing['id'],)
+            )
+            log_action(user_id, 'subscription_renewed', f'{product}:lava:{invoice_id}')
+        else:
+            # Новая подписка — создаём лицензию
+            license_key = generate_license_key()
+            expires_at  = datetime.now() + timedelta(days=days)
+            db.execute(
+                "INSERT INTO licenses (user_id, license_key, product, price, expires_at, is_active) VALUES (?,?,?,?,?,1)",
+                (user_id, license_key, product, price, expires_at)
+            )
+            db.execute(
+                "UPDATE payments SET status='succeeded' WHERE user_id=? AND product=? AND status='pending'",
+                (user_id, product.lower())
+            )
+            log_action(user_id, 'subscription_activated', f'{product}:{price}rub:lava:{invoice_id}')
+
+        db.commit()
+
+    # Отмена или истечение подписки — деактивируем лицензию
+    elif event in ('SUBSCRIPTION_CANCELLED', 'SUBSCRIPTION_EXPIRED',
+                   'subscription.cancelled', 'subscription.expired'):
+        db.execute(
+            "UPDATE licenses SET is_active=0 WHERE user_id=? AND product=? AND is_active=1",
+            (user_id, product)
+        )
+        db.commit()
+        log_action(user_id, f'subscription_{event.lower()}', f'{product}:lava:{invoice_id}')
+
     return jsonify({'ok': True})
 
 
