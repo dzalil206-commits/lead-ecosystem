@@ -87,7 +87,7 @@ def create_lava_payment(amount_rub, user_id, product, days, user_email=''):
             'email':         user_email or f'user{user_id}@tgleadwareon.ru',
             'offerId':       offer_id,
             'currency':      'RUB',
-            'periodicity':   'ONE_TIME',
+            'periodicity':   'MONTHLY',
             'buyerLanguage': 'RU',
             'orderId':       order_id,
             'successUrl':    f'{BASE_URL}/payment/success?product={product}&provider=lava',
@@ -107,7 +107,7 @@ def create_lava_payment(amount_rub, user_id, product, days, user_email=''):
         )
         logging.info(f'LAVA: ответ {resp.status_code} — {resp.text[:300]}')
         data = resp.json()
-        pay_url = data.get('url') or data.get('URL')
+        pay_url = data.get('paymentUrl') or data.get('url') or data.get('URL')
         inv_id  = data.get('id') or data.get('InvoiceId') or order_id
         if not pay_url:
             logging.error(f'LAVA: нет url в ответе — {data}')
