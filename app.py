@@ -1007,10 +1007,13 @@ def sender_verify_code_api():
     code     = (data.get('code') or '').strip()
     password = (data.get('password') or '').strip()
 
+    db    = get_db()
+    proxy = _get_user_proxy(db, current_user.id)
+
     async def _verify():
-        client = TelegramClient(auth['session_path'], auth['api_id'], auth['api_hash'])
+        client = TelegramClient(auth['session_path'], auth['api_id'], auth['api_hash'], proxy=proxy)
         try:
-            await client.connect()
+            await asyncio.wait_for(client.connect(), timeout=15)
             if password:
                 await client.sign_in(password=password)
             else:
@@ -1020,6 +1023,8 @@ def sender_verify_code_api():
                     phone_code_hash=auth['phone_code_hash'],
                 )
             return 'success', None
+        except asyncio.TimeoutError:
+            return 'timeout', None
         except SessionPasswordNeededError:
             return 'need_2fa', None
         except PhoneCodeInvalidError:
@@ -1053,6 +1058,8 @@ def sender_verify_code_api():
         session.pop('tg_auth', None)
         return jsonify({'success': True, 'phone': auth['phone']})
 
+    if status == 'timeout':
+        return jsonify({'error': 'Таймаут подключения к Telegram. Проверьте прокси.'})
     if status == 'need_2fa':
         return jsonify({'need_2fa': True})
     if status == 'invalid_code':

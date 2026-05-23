@@ -393,7 +393,14 @@ async function tgVerifyCode() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
         });
-        const data = await res.json();
+        let data;
+        try {
+            data = await res.json();
+        } catch {
+            // Сервер вернул не JSON (HTML-ошибка Flask)
+            tgShowStatus(`Ошибка сервера (${res.status}). Проверьте логи.`, 'error');
+            return;
+        }
 
         if (data.need_2fa) {
             // Показать поле 2FA вместо поля кода
