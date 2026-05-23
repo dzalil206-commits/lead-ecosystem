@@ -30,12 +30,29 @@ except ImportError:
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
 # ─────────────────────────── Настройки ───────────────────────────
-BOT_TOKEN        = os.environ.get('BOT_MAIN_TOKEN', '')
+# Пробуем все варианты названия переменной токена (Bothost может использовать любое)
+BOT_TOKEN = (
+    os.environ.get('BOT_MAIN_TOKEN') or
+    os.environ.get('TOKEN') or
+    os.environ.get('BOT_TOKEN') or
+    os.environ.get('TELEGRAM_TOKEN') or
+    os.environ.get('TELEGRAM_BOT_TOKEN') or
+    ''
+)
 API_BASE         = os.environ.get('SITE_API_BASE', 'https://tgleadwareon.ru')
 BOT_SECRET       = os.environ.get('BOT_MAIN_SECRET', '')
 REVIEW_BOT_TOKEN = os.environ.get('REVIEW_BOT_TOKEN', '')
 SITE_URL         = 'https://tgleadwareon.ru'
 SUPPORT_URL      = 'https://t.me/TGLeadSupportBot'
+
+# Вывод доступных переменных для диагностики
+logging.info(f'ENV vars: TOKEN={bool(BOT_TOKEN)} API_BASE={API_BASE} SECRET={bool(BOT_SECRET)}')
+logging.info(f'All env keys: {[k for k in os.environ.keys()]}')
+
+if not BOT_TOKEN:
+    raise RuntimeError(
+        'Токен бота не найден! Задайте переменную окружения BOT_MAIN_TOKEN (или TOKEN) на Bothost.'
+    )
 
 bot = Bot(token=BOT_TOKEN, parse_mode='HTML')
 dp  = Dispatcher(storage=MemoryStorage())
