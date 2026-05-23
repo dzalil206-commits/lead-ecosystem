@@ -906,48 +906,53 @@ def sender_test_proxy_api():
     except Exception as e:
         return jsonify({'ok': False, 'msg': f'❌ Прокси недоступен: {e}'})
 
-    # Шаг 2: Проверка через Telethon — попытка дойти до Telegram
-    proxy = _get_user_proxy(db, current_user.id)
-    session_path = os.path.join('sessions', f'test_u{current_user.id}')
+    # Шаг 2: Прямой TCP-тест через SOCKS5 к реальным IP Telegram
+    # Telegram DCs: 149.154.167.51:443 (DC2), 91.108.4.1:443 (DC4)
+    TELEGRAM_TEST_HOSTS = [
+        ('149.154.167.51', 443),
+        ('149.154.175.50', 443),
+        ('91.108.4.1',     443),
+    ]
+    proxy_type = (row['type'] or 'socks5').lower()
+    username   = row['username'] or None
+    password   = row['password'] or None
 
-    async def _test_tg():
-        # Используем минимальный api_id/hash только для проверки соединения
-        # (api_id=1, api_hash='...' — тест-клиент не авторизуется, только коннектится)
-        client = TelegramClient(session_path + '_probe', 1, 'aabbccddaabbccddaabbccddaabbccdd', proxy=proxy)
+    async def _test_via_socks():
         try:
-            await asyncio.wait_for(client.connect(), timeout=10)
-            return True, None
-        except asyncio.TimeoutError:
-            return False, 'Прокси не пропускает соединение с Telegram (таймаут 10с)'
-        except Exception as e:
-            err = str(e)
-            # Если получили ответ от Telegram (даже ошибку авторизации) — прокси РАБОТАЕТ
-            if any(x in err.lower() for x in ['auth', 'api_id', 'dc', 'flood', 'invalid']):
-                return True, None
-            return False, err
-        finally:
-            try:
-                await client.disconnect()
-            except Exception:
-                pass
-            # Убираем тестовый .session файл
-            for ext in ['', '.session']:
-                p = session_path + '_probe' + ext
+            from python_socks.async_.asyncio import Proxy
+            type_map = {'socks5': 'socks5', 'socks4': 'socks4', 'http': 'http'}
+            proxy_url = f"{type_map.get(proxy_type, 'socks5')}://"
+            if username:
+                proxy_url += f"{username}:{password}@"
+            proxy_url += f"{host}:{port}"
+            p = Proxy.from_url(proxy_url)
+            for tg_host, tg_port in TELEGRAM_TEST_HOSTS:
                 try:
-                    if os.path.exists(p):
-                        os.remove(p)
+                    sock = await asyncio.wait_for(
+                        p.connect(dest_host=tg_host, dest_port=tg_port),
+                        timeout=10
+                    )
+                    sock.close()
+                    return True, tg_host
+                except asyncio.TimeoutError:
+                    continue
                 except Exception:
-                    pass
+                    continue
+            return False, 'Все DC Telegram недостижимы через этот прокси'
+        except ImportError:
+            return None, 'python-socks не установлен'
 
     try:
-        ok, err = run_async(_test_tg())
+        ok, detail = run_async(_test_via_socks())
     except Exception as e:
-        ok, err = False, str(e)
+        ok, detail = False, str(e)
 
+    if ok is None:
+        return jsonify({'ok': False, 'msg': f'⚠️ python-socks не установлен на сервере. Выполните: pip3 install "python-socks[asyncio]"'})
     if ok:
-        return jsonify({'ok': True, 'msg': f'✅ Прокси работает — соединение с Telegram установлено через {host}:{port}'})
+        return jsonify({'ok': True, 'msg': f'✅ Прокси работает! Telegram DC {detail} доступен через {host}:{port}'})
     else:
-        return jsonify({'ok': False, 'msg': f'⚠️ Прокси TCP-доступен, но Telegram недостижим: {err}'})
+        return jsonify({'ok': False, 'msg': f'❌ Прокси не пропускает Telegram: {detail}. Нужен SOCKS5-прокси без блокировки Telegram (не Россия).'})
 
 
 @app.route('/sender/delete_proxy', methods=['POST'])
