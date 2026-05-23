@@ -168,6 +168,104 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ═══════════════════════════════════════════════════════════
+// PROXY MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+
+function proxyShowStatus(msg, type) {
+    const el = document.getElementById('proxyStatusMsg');
+    if (!el) return;
+    const colors = {
+        error:   { bg: 'rgba(224,85,85,0.12)',   border: 'rgba(224,85,85,0.3)',   color: '#e05555' },
+        success: { bg: 'rgba(59,232,140,0.08)',   border: 'rgba(59,232,140,0.2)', color: '#3be88c' },
+    };
+    const c = colors[type] || colors.error;
+    Object.assign(el.style, { background: c.bg, border: `1px solid ${c.border}`, color: c.color, display: 'block' });
+    el.textContent = msg;
+}
+
+async function proxyAdd() {
+    const type     = document.getElementById('proxyType')?.value || 'socks5';
+    const host     = (document.getElementById('proxyHost')?.value || '').trim();
+    const port     = (document.getElementById('proxyPort')?.value || '').trim();
+    const username = (document.getElementById('proxyUsername')?.value || '').trim();
+    const password = (document.getElementById('proxyPassword')?.value || '').trim();
+
+    if (!host || !port) { proxyShowStatus('Укажите хост и порт', 'error'); return; }
+
+    const btn = document.getElementById('btnAddProxy');
+    if (btn) { btn.dataset.orig = btn.textContent; btn.textContent = '⏳ Добавление...'; btn.disabled = true; }
+
+    try {
+        const res  = await fetch('/sender/add_proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type, host, port, username, password }),
+        });
+        const data = await res.json();
+
+        if (data.error) { proxyShowStatus(data.error, 'error'); return; }
+
+        // Добавить строку в таблицу
+        const body = document.getElementById('proxiesTableBody');
+        if (body) {
+            document.getElementById('proxiesEmptyRow')?.remove();
+            const tr = document.createElement('tr');
+            tr.dataset.proxyId = data.id;
+            tr.innerHTML = `
+                <td><span style="font-family:monospace;font-size:12px;background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:5px;">${data.type}</span></td>
+                <td style="font-weight:500;">${data.host}</td>
+                <td style="color:var(--text-muted);">${data.port}</td>
+                <td style="color:var(--text-muted);font-size:13px;">${username || '—'}</td>
+                <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3be88c;margin-right:5px;"></span>Активен</td>
+                <td style="text-align:right;">
+                    <button class="btn btn-ghost btn-sm delete-proxy-btn" data-proxy-id="${data.id}" title="Удалить" style="color:#e05555;opacity:0.7;">✕</button>
+                </td>`;
+            body.appendChild(tr);
+        }
+
+        proxyShowStatus('✅ Прокси добавлен!', 'success');
+        // Очистить форму и закрыть через 1.2с
+        setTimeout(() => {
+            document.getElementById('modalAddProxy').classList.remove('open');
+            document.getElementById('proxyStatusMsg').style.display = 'none';
+            ['proxyHost','proxyPort','proxyUsername','proxyPassword'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+        }, 1200);
+    } catch { proxyShowStatus('Ошибка сети', 'error'); }
+    finally {
+        if (btn) { btn.textContent = btn.dataset.orig || 'Добавить прокси'; btn.disabled = false; }
+    }
+}
+
+// Удаление прокси
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.delete-proxy-btn');
+    if (!btn) return;
+    const proxyId = btn.dataset.proxyId;
+    if (!confirm('Удалить этот прокси?')) return;
+    btn.disabled = true; btn.textContent = '...';
+    try {
+        const res  = await fetch('/sender/delete_proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ proxy_id: proxyId }),
+        });
+        const data = await res.json();
+        if (data.success) {
+            btn.closest('tr')?.remove();
+            const body = document.getElementById('proxiesTableBody');
+            if (body && !body.querySelector('tr')) {
+                body.innerHTML = `<tr id="proxiesEmptyRow"><td colspan="6" style="text-align:center;color:var(--text-muted);padding:16px;">Прокси не добавлены</td></tr>`;
+            }
+        } else {
+            alert(data.error || 'Ошибка'); btn.disabled = false; btn.textContent = '✕';
+        }
+    } catch { alert('Ошибка сети'); btn.disabled = false; btn.textContent = '✕'; }
+});
+
+// ═══════════════════════════════════════════════════════════
 // TG ACCOUNT ACTIVATION — многошаговый диалог
 // ═══════════════════════════════════════════════════════════
 

@@ -843,6 +843,56 @@ def sender_add_proxy():
     return redirect(url_for('dashboard'))
 
 
+@app.route('/sender/add_proxy', methods=['POST'])
+@login_required
+def sender_add_proxy_api():
+    """JSON API: добавить прокси."""
+    data = request.get_json(force=True) or {}
+    proxy_type = (data.get('type') or 'socks5').strip().lower()
+    host       = (data.get('host') or '').strip()
+    port       = data.get('port')
+    username   = (data.get('username') or '').strip()
+    password   = (data.get('password') or '').strip()
+
+    if not host or not port:
+        return jsonify({'error': 'Укажите хост и порт'})
+    try:
+        port_int = int(port)
+        if not (1 <= port_int <= 65535):
+            raise ValueError
+    except ValueError:
+        return jsonify({'error': 'Порт должен быть числом от 1 до 65535'})
+    if proxy_type not in ('socks5', 'http', 'socks4'):
+        return jsonify({'error': 'Тип прокси: socks5, socks4 или http'})
+
+    db = get_db()
+    db.execute(
+        "INSERT INTO proxies (user_id, type, host, port, username, password, is_active) VALUES (?,?,?,?,?,?,1)",
+        (current_user.id, proxy_type, host, port_int, username, password)
+    )
+    db.commit()
+    row = db.execute("SELECT last_insert_rowid() as id").fetchone()
+    return jsonify({'success': True, 'id': row['id'], 'type': proxy_type, 'host': host, 'port': port_int})
+
+
+@app.route('/sender/delete_proxy', methods=['POST'])
+@login_required
+def sender_delete_proxy_api():
+    """JSON API: удалить прокси."""
+    data     = request.get_json(force=True) or {}
+    proxy_id = data.get('proxy_id')
+    db       = get_db()
+    row      = db.execute(
+        "SELECT id FROM proxies WHERE id=? AND user_id=?",
+        (proxy_id, current_user.id)
+    ).fetchone()
+    if not row:
+        return jsonify({'error': 'Прокси не найден'})
+    db.execute("DELETE FROM proxies WHERE id=?", (proxy_id,))
+    db.commit()
+    return jsonify({'success': True})
+
+
 # ---------- JSON API: Telegram account activation ----------
 
 @app.route('/sender/send_code', methods=['POST'])
