@@ -36,6 +36,7 @@ LAVA_API_KEY        = os.environ.get('LAVA_API_KEY', '')
 REVIEW_BOT_TOKEN    = os.environ.get('REVIEW_BOT_TOKEN', '')
 NOTIFY_BOT_TOKEN    = os.environ.get('NOTIFY_BOT_TOKEN', '')
 BASE_URL            = os.environ.get('BASE_URL', 'http://localhost:5000')
+BOT_MAIN_SECRET     = os.environ.get('BOT_MAIN_SECRET', '')
 SMTP_HOST           = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
 SMTP_PORT           = int(os.environ.get('SMTP_PORT', '587'))
 SMTP_USER           = os.environ.get('SMTP_USER', '')
@@ -1496,6 +1497,162 @@ def cron_expiry_check():
             f'Тариф: {row["product"]} · через {days_left} дн.')
 
     return jsonify({'checked': len(expiring), 'notified': notified})
+
+
+# ══════════════════════════════════════════════════════════
+# ---------- API ГЛАВНОГО БОТА (@TGLeadWareonBot) ----------
+# ══════════════════════════════════════════════════════════
+
+def _bot_auth():
+    """Проверяет X-Bot-Secret. Возвращает True если запрос от бота."""
+    secret = request.headers.get('X-Bot-Secret', '')
+    return bool(BOT_MAIN_SECRET and secret == BOT_MAIN_SECRET)
+
+
+@app.route('/api/bot/user_info', methods=['GET'])
+def bot_user_info():
+    """Возвращает данные пользователя по tg_id или email + список лицензий."""
+    if not _bot_auth():
+        return jsonify({'error': 'Forbidden'}), 403
+
+    tg_id = request.args.get('tg_id', '').strip()
+    email = request.args.get('email', '').strip().lower()
+
+    db = get_db()
+    if tg_id:
+        user = db.execute("SELECT * FROM users WHERE telegram_id=?", (tg_id,)).fetchone()
+    elif email:
+        user = db.execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
+    else:
+        return jsonify({'found': False})
+
+    if not user:
+        return jsonify({'found': False})
+
+    licenses = db.execute(
+        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 ORDER BY expires_at DESC",
+        (user['id'],)
+    ).fetchall()
+
+    license_list = []
+    for lic in licenses:
+        try:
+            expires   = parse_dt(lic['expires_at'])
+            days_left = (expires - datetime.now()).days
+        except Exception:
+            days_left = 0
+        license_list.append({
+            'product':     lic['product'],
+            'license_key': lic['license_key'],
+            'expires_at':  lic['expires_at'],
+            'days_left':   max(0, days_left),
+            'is_expired':  days_left < 0,
+        })
+
+    referral_count = db.execute(
+        "SELECT COUNT(*) FROM users WHERE referral_id=?", (user['id'],)
+    ).fetchone()[0]
+
+    return jsonify({
+        'found': True,
+        'user': {
+            'id':          user['id'],
+            'name':        user['full_name'] or user['email'].split('@')[0],
+            'email':       user['email'],
+            'telegram_id': user['telegram_id'],
+        },
+        'licenses':       license_list,
+        'referral_count': referral_count,
+        'ref_link':       f"{BASE_URL}/?ref={user['id']}",
+    })
+
+
+@app.route('/api/bot/link', methods=['POST'])
+def bot_link_account():
+    """Привязывает telegram_id к аккаунту по email."""
+    if not _bot_auth():
+        return jsonify({'error': 'Forbidden'}), 403
+
+    data        = request.get_json() or {}
+    email       = data.get('email', '').strip().lower()
+    tg_id       = str(data.get('tg_id', '')).strip()
+    tg_username = data.get('tg_username', '').strip()
+
+    if not email or not tg_id:
+        return jsonify({'ok': False, 'error': 'Нужны email и tg_id'})
+
+    db   = get_db()
+    user = db.execute("SELECT id FROM users WHERE email=?", (email,)).fetchone()
+
+    if not user:
+        return jsonify({'ok': False, 'error': 'Пользователь не найден'})
+
+    db.execute("UPDATE users SET telegram_id=? WHERE id=?", (tg_id, user['id']))
+    db.commit()
+    log_action(user['id'], 'bot_linked', f'tg:{tg_id}:{tg_username}')
+    return jsonify({'ok': True})
+
+
+@app.route('/api/bot/link_code', methods=['POST'])
+def bot_link_code():
+    """Привязка через 6-значный код с сайта (для QR-кода в будущем).
+    Сайт генерирует код, сохраняет в БД, бот проверяет его здесь."""
+    if not _bot_auth():
+        return jsonify({'error': 'Forbidden'}), 403
+
+    data  = request.get_json() or {}
+    code  = data.get('code', '').strip().upper()
+    tg_id = str(data.get('tg_id', '')).strip()
+
+    if not code or not tg_id:
+        return jsonify({'ok': False, 'error': 'Нужны code и tg_id'})
+
+    db  = get_db()
+    row = db.execute(
+        "SELECT user_id FROM link_codes WHERE code=? AND expires_at > datetime('now') AND used=0",
+        (code,)
+    ).fetchone()
+
+    if not row:
+        return jsonify({'ok': False, 'error': 'Код неверный или истёк'})
+
+    user_id = row['user_id']
+    db.execute("UPDATE users SET telegram_id=? WHERE id=?", (tg_id, user_id))
+    db.execute("UPDATE link_codes SET used=1 WHERE code=?", (code,))
+    db.commit()
+    log_action(user_id, 'bot_linked_qr', f'tg:{tg_id}')
+    return jsonify({'ok': True})
+
+
+@app.route('/api/bot/expiring_licenses', methods=['GET'])
+def bot_expiring_licenses():
+    """Список пользователей с лицензиями, истекающими ровно через N дней.
+    Используется ботом для отправки уведомлений."""
+    if not _bot_auth():
+        return jsonify({'error': 'Forbidden'}), 403
+
+    days = int(request.args.get('days', 3))
+    db   = get_db()
+
+    rows = db.execute("""
+        SELECT l.product, l.expires_at, u.telegram_id, u.email, u.full_name
+        FROM licenses l
+        JOIN users u ON u.id = l.user_id
+        WHERE l.is_active = 1
+          AND u.telegram_id IS NOT NULL AND u.telegram_id != ''
+          AND date(l.expires_at) = date('now', '+' || ? || ' days')
+    """, (days,)).fetchall()
+
+    result = [{
+        'telegram_id': r['telegram_id'],
+        'email':       r['email'],
+        'name':        r['full_name'] or r['email'].split('@')[0],
+        'product':     r['product'],
+        'expires_at':  r['expires_at'],
+        'days_left':   days,
+    } for r in rows]
+
+    return jsonify({'users': result})
 
 
 # ---------- ЗАПУСК ----------
