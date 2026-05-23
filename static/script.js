@@ -239,6 +239,43 @@ async function proxyAdd() {
     }
 }
 
+// Проверка прокси
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.test-proxy-btn');
+    if (!btn) return;
+    const proxyId = btn.dataset.proxyId;
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '⏳ Проверка...';
+
+    // Найти строку и показать результат под ней
+    const row  = btn.closest('tr');
+    let msgRow = row?.nextElementSibling;
+    if (msgRow?.dataset.testRow) {
+        msgRow.remove();
+    }
+
+    try {
+        const res  = await fetch('/sender/test_proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ proxy_id: proxyId }),
+        });
+        const data = await res.json();
+        const color = data.ok ? '#3be88c' : '#e0a055';
+        const newRow = document.createElement('tr');
+        newRow.dataset.testRow = '1';
+        newRow.innerHTML = `<td colspan="6" style="padding:8px 14px;font-size:12px;color:${color};background:rgba(255,255,255,0.02);">${data.msg || data.error}</td>`;
+        row.after(newRow);
+        setTimeout(() => newRow.remove(), 8000);
+    } catch {
+        alert('Ошибка сети при проверке прокси');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+    }
+});
+
 // Удаление прокси
 document.addEventListener('click', async (e) => {
     const btn = e.target.closest('.delete-proxy-btn');

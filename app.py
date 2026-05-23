@@ -879,6 +879,77 @@ def sender_add_proxy_api():
     return jsonify({'success': True, 'id': row['id'], 'type': proxy_type, 'host': host, 'port': port_int})
 
 
+@app.route('/sender/test_proxy', methods=['POST'])
+@login_required
+def sender_test_proxy_api():
+    """JSON API: проверить прокси — TCP-доступность и соединение с Telegram."""
+    import socket
+    data     = request.get_json(force=True) or {}
+    proxy_id = data.get('proxy_id')
+    db       = get_db()
+    row      = db.execute(
+        "SELECT * FROM proxies WHERE id=? AND user_id=?",
+        (proxy_id, current_user.id)
+    ).fetchone()
+    if not row:
+        return jsonify({'error': 'Прокси не найден'})
+
+    host = row['host']
+    port = int(row['port'])
+
+    # Шаг 1: TCP-проверка (доступен ли прокси-сервер)
+    try:
+        sock = socket.create_connection((host, port), timeout=5)
+        sock.close()
+    except socket.timeout:
+        return jsonify({'ok': False, 'msg': f'❌ Прокси {host}:{port} не отвечает (таймаут 5с)'})
+    except Exception as e:
+        return jsonify({'ok': False, 'msg': f'❌ Прокси недоступен: {e}'})
+
+    # Шаг 2: Проверка через Telethon — попытка дойти до Telegram
+    proxy = _get_user_proxy(db, current_user.id)
+    session_path = os.path.join('sessions', f'test_u{current_user.id}')
+
+    async def _test_tg():
+        # Используем минимальный api_id/hash только для проверки соединения
+        # (api_id=1, api_hash='...' — тест-клиент не авторизуется, только коннектится)
+        client = TelegramClient(session_path + '_probe', 1, 'aabbccddaabbccddaabbccddaabbccdd', proxy=proxy)
+        try:
+            await asyncio.wait_for(client.connect(), timeout=10)
+            return True, None
+        except asyncio.TimeoutError:
+            return False, 'Прокси не пропускает соединение с Telegram (таймаут 10с)'
+        except Exception as e:
+            err = str(e)
+            # Если получили ответ от Telegram (даже ошибку авторизации) — прокси РАБОТАЕТ
+            if any(x in err.lower() for x in ['auth', 'api_id', 'dc', 'flood', 'invalid']):
+                return True, None
+            return False, err
+        finally:
+            try:
+                await client.disconnect()
+            except Exception:
+                pass
+            # Убираем тестовый .session файл
+            for ext in ['', '.session']:
+                p = session_path + '_probe' + ext
+                try:
+                    if os.path.exists(p):
+                        os.remove(p)
+                except Exception:
+                    pass
+
+    try:
+        ok, err = run_async(_test_tg())
+    except Exception as e:
+        ok, err = False, str(e)
+
+    if ok:
+        return jsonify({'ok': True, 'msg': f'✅ Прокси работает — соединение с Telegram установлено через {host}:{port}'})
+    else:
+        return jsonify({'ok': False, 'msg': f'⚠️ Прокси TCP-доступен, но Telegram недостижим: {err}'})
+
+
 @app.route('/sender/delete_proxy', methods=['POST'])
 @login_required
 def sender_delete_proxy_api():

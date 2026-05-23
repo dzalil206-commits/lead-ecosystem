@@ -280,7 +280,11 @@
                                     <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:5px;"></span>Отключён
                                 {% endif %}
                             </td>
-                            <td style="text-align:right;">
+                            <td style="text-align:right;white-space:nowrap;">
+                                <button class="btn btn-ghost btn-sm test-proxy-btn"
+                                        data-proxy-id="{{ proxy.id }}"
+                                        title="Проверить прокси"
+                                        style="font-size:12px;margin-right:4px;">🔍 Проверить</button>
                                 <button class="btn btn-ghost btn-sm delete-proxy-btn"
                                         data-proxy-id="{{ proxy.id }}"
                                         title="Удалить прокси"
