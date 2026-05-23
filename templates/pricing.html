@@ -494,49 +494,64 @@
         <p>Подключите нужные функции к любому тарифу. Можно добавить сейчас или позже в личном кабинете.</p>
       </div>
       <div class="addons-grid" id="addons-grid">
-        <div class="addon-card" data-addon="warmup" data-price="390">
+        <div class="addon-card" data-addon="warmup" data-price="390" data-name="Автопрогрев">
           <div class="addon-icon">🛡️</div>
           <div class="addon-name">Автопрогрев аккаунтов</div>
           <div class="addon-desc">Имитация живой активности: просмотры, реакции, вступления в группы. Повышает траст аккаунта и снижает риск блокировки.</div>
           <div class="addon-footer">
             <div class="addon-price">+390₽/мес</div>
-            <button class="addon-btn">Добавить</button>
+            <div style="display:flex;gap:6px;">
+              <button class="addon-btn toggle-addon-btn">В тариф</button>
+              <a href="/buy/addon_warmup" class="addon-btn" style="text-decoration:none;">Купить отдельно</a>
+            </div>
           </div>
         </div>
-        <div class="addon-card" data-addon="aishield" data-price="390">
+        <div class="addon-card" data-addon="aishield" data-price="390" data-name="AI-Защита">
           <div class="addon-icon">🧠</div>
           <div class="addon-name">AI-Защита аккаунта</div>
           <div class="addon-desc">Умная ротация прокси, система безопасности аккаунтов, детектор аномалий. Ваш аккаунт работает стабильно.</div>
           <div class="addon-footer">
             <div class="addon-price">+390₽/мес</div>
-            <button class="addon-btn">Добавить</button>
+            <div style="display:flex;gap:6px;">
+              <button class="addon-btn toggle-addon-btn">В тариф</button>
+              <a href="/buy/addon_aishield" class="addon-btn" style="text-decoration:none;">Купить отдельно</a>
+            </div>
           </div>
         </div>
-        <div class="addon-card" data-addon="analytics" data-price="290">
+        <div class="addon-card" data-addon="analytics" data-price="290" data-name="Аналитика Pro">
           <div class="addon-icon">📊</div>
           <div class="addon-name">Расширенная аналитика</div>
           <div class="addon-desc">Детальная воронка по каждой рассылке, когортный анализ аудитории, экспорт отчётов в PDF.</div>
           <div class="addon-footer">
             <div class="addon-price">+290₽/мес</div>
-            <button class="addon-btn">Добавить</button>
+            <div style="display:flex;gap:6px;">
+              <button class="addon-btn toggle-addon-btn">В тариф</button>
+              <a href="/buy/addon_analytics" class="addon-btn" style="text-decoration:none;">Купить отдельно</a>
+            </div>
           </div>
         </div>
-        <div class="addon-card" data-addon="neuro" data-price="590">
+        <div class="addon-card" data-addon="neuro" data-price="590" data-name="Нейро-ответчик">
           <div class="addon-icon">🤖</div>
           <div class="addon-name">Нейро-ответчик 2.0</div>
           <div class="addon-desc">GPT-powered автоответы на входящие: A/B-тесты посылов, персонализация, встроенная воронка квалификации лида.</div>
           <div class="addon-footer">
             <div class="addon-price">+590₽/мес</div>
-            <button class="addon-btn">Добавить</button>
+            <div style="display:flex;gap:6px;">
+              <button class="addon-btn toggle-addon-btn">В тариф</button>
+              <a href="/buy/addon_neuro" class="addon-btn" style="text-decoration:none;">Купить отдельно</a>
+            </div>
           </div>
         </div>
-        <div class="addon-card" data-addon="crm" data-price="490">
+        <div class="addon-card" data-addon="crm" data-price="490" data-name="CRM-интеграция">
           <div class="addon-icon">🔗</div>
           <div class="addon-name">Интеграция с CRM</div>
           <div class="addon-desc">Прямая выгрузка контактов в amoCRM, HubSpot, Bitrix24 по webhook. Без ручного копирования таблиц.</div>
           <div class="addon-footer">
             <div class="addon-price">+490₽/мес</div>
-            <button class="addon-btn">Добавить</button>
+            <div style="display:flex;gap:6px;">
+              <button class="addon-btn toggle-addon-btn">В тариф</button>
+              <a href="/buy/addon_crm" class="addon-btn" style="text-decoration:none;">Купить отдельно</a>
+            </div>
           </div>
         </div>
       </div>
@@ -664,6 +679,15 @@
     document.getElementById('sticky-addons').textContent = addonNames.length ? '+ ' + addonNames.join(', ') : '';
   }
 
+  function updateCtaHref() {
+    const cta = document.getElementById('sticky-cta');
+    if (!selectedPlan) return;
+    const addonKeys = Object.keys(selectedAddons);
+    let href = '/buy/' + selectedPlan;
+    if (addonKeys.length) href += '?addons=' + addonKeys.join(',');
+    cta.href = href;
+  }
+
   document.querySelectorAll('.select-plan-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const plan = btn.dataset.plan;
@@ -678,23 +702,24 @@
       const card = btn.closest('.plan-card');
       document.getElementById('sticky-plan-name').textContent = 'Тариф ' + card.querySelector('.plan-name').textContent;
       recalcTotal();
+      updateCtaHref();
       const stickyBar = document.getElementById('sticky-bar');
       stickyBar.classList.add('visible');
       const cta = document.getElementById('sticky-cta');
-      cta.href = '/buy/' + plan;
       cta.style.pointerEvents = 'auto';
       cta.style.opacity = '1';
     });
   });
 
-  document.querySelectorAll('.addon-card').forEach(card => {
-    const btn = card.querySelector('.addon-btn');
+  document.querySelectorAll('.toggle-addon-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+      const card = btn.closest('.addon-card');
       const addon = card.dataset.addon;
       const price = parseInt(card.dataset.price);
+      const name  = card.dataset.name;
       if (selectedAddons[addon]) {
         delete selectedAddons[addon];
-        btn.textContent = 'Добавить';
+        btn.textContent = 'В тариф';
         btn.classList.remove('added');
         card.classList.remove('active-addon');
       } else {
@@ -702,8 +727,21 @@
         btn.textContent = 'Добавлено ✓';
         btn.classList.add('added');
         card.classList.add('active-addon');
+        // Show sticky bar if no plan selected yet
+        if (!selectedPlan) {
+          const stickyBar = document.getElementById('sticky-bar');
+          stickyBar.classList.add('visible');
+          document.getElementById('sticky-plan-name').textContent = 'Модули без тарифа';
+        }
       }
       if (selectedPlan) recalcTotal();
+      else {
+        // show just addon total
+        const addonsTotal = Object.values(selectedAddons).reduce((s,v)=>s+v,0);
+        document.getElementById('sticky-total').textContent = addonsTotal.toLocaleString('ru-RU') + '₽';
+        document.getElementById('sticky-addons').textContent = Object.keys(selectedAddons).length + ' модул(ей)';
+      }
+      updateCtaHref();
     });
   });
 

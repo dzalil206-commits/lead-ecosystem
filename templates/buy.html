@@ -376,13 +376,22 @@
             <span class="buy-summary-val">
               {% if product == 'miner' %}TG Lead Miner
               {% elif product == 'sender' %}TG Lead Sender
-              {% elif product == 'start' %}Тариф Start (Miner + Sender)
-              {% elif product == 'pro' %}Тариф Pro (3+5 аккаунтов)
-              {% elif product == 'scale' %}Тариф Scale (10+20 аккаунтов)
-              {% else %}{{ product.capitalize() }}
+              {% elif product == 'start' %}Тариф Start
+              {% elif product == 'pro' %}Тариф Pro
+              {% elif product == 'scale' %}Тариф Scale
+              {% elif product.startswith('addon_') %}{{ product_label }}
+              {% else %}{{ product_label or product.capitalize() }}
               {% endif %}
             </span>
           </div>
+          {% if addon_details %}
+          {% for ad in addon_details %}
+          <div class="buy-summary-row">
+            <span class="buy-summary-label">+ {{ ad.label }}</span>
+            <span class="buy-summary-val" style="color:var(--orange-3);">+{{ ad.rub }} ₽</span>
+          </div>
+          {% endfor %}
+          {% endif %}
           <div class="buy-summary-row">
             <span class="buy-summary-label">Период доступа</span>
             <span class="buy-summary-val">30 дней</span>
@@ -403,7 +412,7 @@
           <div class="buy-trust-item"><span class="ti">💬</span>Поддержка в Telegram — ответим за 10 мин</div>
         </div>
 
-        <form method="POST" action="{{ url_for('buy', product=product) }}" id="buy-form">
+        <form method="POST" action="{{ url_for('buy', product=product) }}{% if addons_param %}?addons={{ addons_param }}{% endif %}" id="buy-form">
           <button type="submit" class="buy-btn" id="buy-btn">
             Оплатить {{ amount_rub }} ₽ →
           </button>

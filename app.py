@@ -553,6 +553,8 @@ def dashboard():
     miner_license = db.execute("SELECT * FROM licenses WHERE user_id = ? AND is_active = 1 AND product = 'Miner' ORDER BY expires_at DESC LIMIT 1", (current_user.id,)).fetchone()
     sender_license = db.execute("SELECT * FROM licenses WHERE user_id = ? AND is_active = 1 AND product = 'Sender' ORDER BY expires_at DESC LIMIT 1", (current_user.id,)).fetchone()
     sender_accounts = db.execute("SELECT * FROM sender_accounts WHERE user_id = ?", (current_user.id,)).fetchall()
+    active_accounts_count   = db.execute("SELECT COUNT(*) FROM sender_accounts WHERE user_id=? AND is_active=1", (current_user.id,)).fetchone()[0]
+    inactive_accounts_count = db.execute("SELECT COUNT(*) FROM sender_accounts WHERE user_id=? AND is_active=0", (current_user.id,)).fetchone()[0]
     proxies = db.execute("SELECT * FROM proxies WHERE user_id = ?", (current_user.id,)).fetchall()
     licenses = db.execute("SELECT * FROM licenses WHERE user_id = ? AND is_active = 1", (current_user.id,)).fetchall()
     user_licenses = []
@@ -598,6 +600,8 @@ def dashboard():
                            miner_license=miner_license,
                            sender_license=sender_license,
                            sender_accounts=sender_accounts,
+                           active_accounts_count=active_accounts_count,
+                           inactive_accounts_count=inactive_accounts_count,
                            proxies=proxies,
                            user_licenses=user_licenses,
                            days_left=days_left,
@@ -1183,11 +1187,24 @@ def sender_delete_account_api():
 
 # ---------- ПОКУПКА ----------
 PRODUCT_PRICES = {
-    'miner':  {'rub': 490,   'usdt': 8,  'days': 30},
-    'sender': {'rub': 990,   'usdt': 15, 'days': 30},
-    'start':  {'rub': 990,   'usdt': 15, 'days': 30},
-    'pro':    {'rub': 2490,  'usdt': 38, 'days': 30},
-    'scale':  {'rub': 6990,  'usdt': 108, 'days': 30},
+    'miner':           {'rub': 490,   'usdt': 8,   'days': 30, 'label': 'TG Lead Miner'},
+    'sender':          {'rub': 990,   'usdt': 15,  'days': 30, 'label': 'TG Lead Sender'},
+    'start':           {'rub': 990,   'usdt': 15,  'days': 30, 'label': 'Start'},
+    'pro':             {'rub': 2490,  'usdt': 38,  'days': 30, 'label': 'Pro'},
+    'scale':           {'rub': 6990,  'usdt': 108, 'days': 30, 'label': 'Scale'},
+    'addon_warmup':    {'rub': 390,   'usdt': 6,   'days': 30, 'label': 'Автопрогрев аккаунтов'},
+    'addon_aishield':  {'rub': 390,   'usdt': 6,   'days': 30, 'label': 'AI-Защита аккаунта'},
+    'addon_analytics': {'rub': 290,   'usdt': 5,   'days': 30, 'label': 'Расширенная аналитика'},
+    'addon_neuro':     {'rub': 590,   'usdt': 9,   'days': 30, 'label': 'Нейро-ответчик 2.0'},
+    'addon_crm':       {'rub': 490,   'usdt': 8,   'days': 30, 'label': 'Интеграция с CRM'},
+}
+
+ADDON_NAMES = {
+    'warmup':    'addon_warmup',
+    'aishield':  'addon_aishield',
+    'analytics': 'addon_analytics',
+    'neuro':     'addon_neuro',
+    'crm':       'addon_crm',
 }
 
 @app.route('/buy/<product>', methods=['GET', 'POST'])
@@ -1198,43 +1215,58 @@ def buy(product='start'):
         product = 'start'
     info = PRODUCT_PRICES[product]
 
+    # Обрабатываем дополнительные модули из URL: ?addons=warmup,analytics
+    addons_param  = request.args.get('addons', '') or request.form.get('addons', '')
+    addon_keys    = [k.strip() for k in addons_param.split(',') if k.strip() and k.strip() in ADDON_NAMES]
+    addon_details = [{'key': k, **PRODUCT_PRICES[ADDON_NAMES[k]]} for k in addon_keys]
+    addon_total   = sum(PRODUCT_PRICES[ADDON_NAMES[k]]['rub'] for k in addon_keys)
+    total_rub     = info['rub'] + addon_total
+
     if request.method == 'POST':
         db = get_db()
         user_row = db.execute("SELECT email FROM users WHERE id=?", (current_user.id,)).fetchone()
         user_email = user_row['email'] if user_row else ''
 
+        # Описание заказа с учётом аддонов
+        product_label = info.get('label', product.capitalize())
+        if addon_keys:
+            product_label += ' + ' + ', '.join(PRODUCT_PRICES[ADDON_NAMES[k]]['label'] for k in addon_keys)
+
         # 1. Пробуем Lava.top
         confirm_url, payment_id = create_lava_payment(
-            info['rub'], current_user.id, product, info['days'], user_email
+            total_rub, current_user.id, product, info['days'], user_email
         )
         provider = 'lava'
 
         # 2. Фолбэк на ЮKassa
         if not confirm_url:
             confirm_url, payment_id = create_yookassa_payment(
-                info['rub'], current_user.id, product, info['days']
+                total_rub, current_user.id, product, info['days']
             )
             provider = 'yookassa'
 
         if confirm_url:
             db.execute(
                 "INSERT INTO payments (user_id, product, amount, status) VALUES (?, ?, ?, ?)",
-                (current_user.id, product, info['rub'], payment_id)
+                (current_user.id, product_label, total_rub, payment_id)
             )
             db.commit()
-            log_action(current_user.id, 'payment_initiated', f'{product}:{info["rub"]}rub:{provider}')
+            log_action(current_user.id, 'payment_initiated', f'{product_label}:{total_rub}rub:{provider}')
             return redirect(confirm_url)
 
         # 3. Ни одна система не настроена — фиксируем вручную
         db.execute(
             "INSERT INTO payments (user_id, product, amount, status) VALUES (?, ?, ?, 'pending')",
-            (current_user.id, product, info['rub'])
+            (current_user.id, product_label, total_rub)
         )
         db.commit()
         flash('Платёж зафиксирован. Лицензия будет выдана после подтверждения оплаты.', 'info')
         return redirect(url_for('dashboard'))
 
-    return render_template('buy.html', product=product, amount_rub=info['rub'])
+    return render_template('buy.html', product=product, amount_rub=total_rub,
+                           base_rub=info['rub'], addon_details=addon_details,
+                           addon_total=addon_total, addons_param=addons_param,
+                           product_label=info.get('label', product.capitalize()))
 
 
 @app.route('/payment/webhook', methods=['POST'])
