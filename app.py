@@ -612,20 +612,24 @@ def _make_session_path(user_id, phone):
     return os.path.join('sessions', f'u{user_id}_{safe_phone}')
 
 def _get_user_proxy(db, user_id):
-    """Вернуть первый SOCKS5-прокси пользователя для Telethon, или None."""
+    """Вернуть первый активный прокси пользователя для Telethon, или None.
+    Приоритет: socks5 → socks4 → http.
+    """
     row = db.execute(
-        "SELECT * FROM proxies WHERE user_id=? AND type='socks5' AND is_active=1 LIMIT 1",
+        "SELECT * FROM proxies WHERE user_id=? AND is_active=1 ORDER BY CASE type WHEN 'socks5' THEN 1 WHEN 'socks4' THEN 2 ELSE 3 END, id ASC LIMIT 1",
         (user_id,)
     ).fetchone()
     if not row:
         return None
+    proxy_type = (row['type'] or 'socks5').lower()
+    # Telethon принимает proxy как dict (python-socks) или tuple (socks)
     return {
-        'proxy_type': 'socks5',
-        'addr': row['host'],
-        'port': row['port'],
-        'username': row['username'] or None,
-        'password': row['password'] or None,
-        'rdns': True,
+        'proxy_type': proxy_type,
+        'addr':       row['host'],
+        'port':       int(row['port']),
+        'username':   row['username'] or None,
+        'password':   row['password'] or None,
+        'rdns':       True,
     }
 
 @app.route('/sender_add_account', methods=['POST'])

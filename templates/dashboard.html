@@ -249,57 +249,59 @@
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
 
-        <!-- Секция: Прокси -->
-        <div class="content-section" id="section-proxies" style="margin-top:0;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <div>
-                    <h2 style="font-size:17px;margin:0;">Прокси</h2>
-                    <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0;">Первый активный SOCKS5 используется автоматически при подключении аккаунтов</p>
+            <!-- Таблица прокси — внутри того же раздела "Менеджер аккаунтов" -->
+            <div style="margin-top:28px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <div>
+                        <h2 style="font-size:16px;margin:0;font-weight:600;">Прокси</h2>
+                        <p style="font-size:12px;color:var(--text-muted);margin:3px 0 0;">
+                            Активный прокси используется автоматически при подключении аккаунтов
+                        </p>
+                    </div>
+                    <button class="btn btn-outline btn-sm" data-modal-open="modalAddProxy">+ Добавить прокси</button>
                 </div>
-                <button class="btn btn-outline btn-sm" data-modal-open="modalAddProxy">+ Добавить прокси</button>
-            </div>
 
-            <table class="data-table" id="proxiesTable">
-                <thead>
-                    <tr><th>Тип</th><th>Адрес</th><th>Порт</th><th>Логин</th><th>Статус</th><th></th></tr>
-                </thead>
-                <tbody id="proxiesTableBody">
-                    {% for proxy in proxies or [] %}
-                    <tr data-proxy-id="{{ proxy.id }}">
-                        <td><span style="font-family:monospace;font-size:12px;background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:5px;">{{ proxy.type }}</span></td>
-                        <td style="font-weight:500;">{{ proxy.host }}</td>
-                        <td style="color:var(--text-muted);">{{ proxy.port }}</td>
-                        <td style="color:var(--text-muted);font-size:13px;">{{ proxy.username or '—' }}</td>
-                        <td>
-                            {% if proxy.is_active %}
-                                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3be88c;margin-right:5px;"></span>Активен
-                            {% else %}
-                                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:5px;"></span>Отключён
-                            {% endif %}
-                        </td>
-                        <td style="text-align:right;">
-                            <button class="btn btn-ghost btn-sm delete-proxy-btn"
-                                    data-proxy-id="{{ proxy.id }}"
-                                    title="Удалить прокси"
-                                    style="color:#e05555;opacity:0.7;">✕</button>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr id="proxiesEmptyRow">
-                        <td colspan="6" style="text-align:center;color:var(--text-muted);padding:16px;">
-                            Прокси не добавлены · <a href="https://my.telegram.org/apps" target="_blank" style="color:var(--accent-light);font-size:12px;">Зачем нужен прокси?</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                <table class="data-table" id="proxiesTable">
+                    <thead>
+                        <tr><th>Тип</th><th>Адрес</th><th>Порт</th><th>Логин</th><th>Статус</th><th></th></tr>
+                    </thead>
+                    <tbody id="proxiesTableBody">
+                        {% for proxy in proxies or [] %}
+                        <tr data-proxy-id="{{ proxy.id }}">
+                            <td><span style="font-family:monospace;font-size:12px;background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:5px;">{{ proxy.type }}</span></td>
+                            <td style="font-weight:500;">{{ proxy.host }}</td>
+                            <td style="color:var(--text-muted);">{{ proxy.port }}</td>
+                            <td style="color:var(--text-muted);font-size:13px;">{{ proxy.username or '—' }}</td>
+                            <td>
+                                {% if proxy.is_active %}
+                                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3be88c;margin-right:5px;"></span>Активен
+                                {% else %}
+                                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:5px;"></span>Отключён
+                                {% endif %}
+                            </td>
+                            <td style="text-align:right;">
+                                <button class="btn btn-ghost btn-sm delete-proxy-btn"
+                                        data-proxy-id="{{ proxy.id }}"
+                                        title="Удалить прокси"
+                                        style="color:#e05555;opacity:0.7;">✕</button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr id="proxiesEmptyRow">
+                            <td colspan="6" style="text-align:center;color:var(--text-muted);padding:14px;font-size:13px;">
+                                Прокси не добавлены
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
 
-            <div style="margin-top:10px;padding:10px 14px;background:rgba(212,165,116,0.07);border-radius:8px;font-size:12px;color:var(--text-muted);">
-                💡 <strong style="color:var(--accent-light);">Как подключить аккаунт:</strong>
-                добавьте прокси → нажмите «+ Добавить» в таблице аккаунтов → введите телефон, API ID, API Hash → получите код в Telegram.
-                API ID и Hash: <a href="https://my.telegram.org/apps" target="_blank" style="color:var(--accent-light);">my.telegram.org/apps</a>
+                <div style="margin-top:10px;padding:10px 14px;background:rgba(212,165,116,0.07);border-radius:8px;font-size:12px;color:var(--text-muted);">
+                    💡 <strong style="color:var(--accent-light);">Порядок подключения:</strong>
+                    сначала добавьте прокси → затем нажмите «+ Добавить» аккаунт → введите телефон, API ID, API Hash → получите код в Telegram.
+                    Получить API ID / Hash: <a href="https://my.telegram.org/apps" target="_blank" style="color:var(--accent-light);">my.telegram.org/apps</a>
+                </div>
             </div>
         </div>
       
