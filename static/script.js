@@ -167,6 +167,265 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// ═══════════════════════════════════════════════════════════
+// TG ACCOUNT ACTIVATION — многошаговый диалог
+// ═══════════════════════════════════════════════════════════
+
+function tgShowStatus(msg, type) {
+    // type: 'error' | 'info' | 'success'
+    const el = document.getElementById('accountStatusMsg');
+    if (!el) return;
+    const colors = {
+        error:   { bg: 'rgba(224,85,85,0.12)', border: 'rgba(224,85,85,0.3)', color: '#e05555' },
+        info:    { bg: 'rgba(212,165,116,0.1)', border: 'rgba(212,165,116,0.3)', color: 'var(--accent-light)' },
+        success: { bg: 'rgba(59,232,140,0.08)', border: 'rgba(59,232,140,0.2)', color: '#3be88c' },
+    };
+    const c = colors[type] || colors.info;
+    el.style.background = c.bg;
+    el.style.border = `1px solid ${c.border}`;
+    el.style.color = c.color;
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+
+function tgHideStatus() {
+    const el = document.getElementById('accountStatusMsg');
+    if (el) el.style.display = 'none';
+}
+
+function tgSetStep(n) {
+    document.getElementById('accountStep1').style.display = n === 1 ? '' : 'none';
+    document.getElementById('accountStep2').style.display = n === 2 ? '' : 'none';
+    document.getElementById('accountStep3').style.display = n === 3 ? '' : 'none';
+    // Индикатор
+    [1, 2, 3].forEach(i => {
+        const dot = document.getElementById('stepDot' + i);
+        if (dot) dot.style.background = i <= n ? 'var(--accent)' : 'rgba(255,255,255,0.1)';
+    });
+    tgHideStatus();
+}
+
+function tgSetLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    if (loading) {
+        btn.dataset.origText = btn.textContent;
+        btn.textContent = '⏳ Загрузка...';
+        btn.disabled = true;
+    } else {
+        btn.textContent = btn.dataset.origText || btn.textContent;
+        btn.disabled = false;
+    }
+}
+
+function tgRestart() {
+    tgSetStep(1);
+    document.getElementById('tgCode').value = '';
+    document.getElementById('tgPassword').value = '';
+    document.getElementById('passwordFieldWrap').style.display = 'none';
+    document.getElementById('codeFieldWrap').style.display = '';
+}
+
+async function tgSendCode() {
+    const phone   = (document.getElementById('tgPhone')?.value || '').trim();
+    const api_id  = (document.getElementById('tgApiId')?.value || '').trim();
+    const api_hash = (document.getElementById('tgApiHash')?.value || '').trim();
+
+    if (!phone || !api_id || !api_hash) {
+        tgShowStatus('Заполните все три поля', 'error');
+        return;
+    }
+
+    tgSetLoading('btnSendCode', true);
+    tgHideStatus();
+
+    try {
+        const res  = await fetch('/sender/send_code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone, api_id, api_hash }),
+        });
+        const data = await res.json();
+
+        if (data.error) {
+            tgShowStatus(data.error, 'error');
+            return;
+        }
+        if (data.already_authed) {
+            tgShowStatus(`✅ Аккаунт ${data.phone} уже авторизован!`, 'success');
+            tgAddAccountRow(data.phone);
+            setTimeout(() => {
+                document.getElementById('modalAddAccount').classList.remove('open');
+                tgSetStep(1);
+            }, 2000);
+            return;
+        }
+        // Успешно отправили код → шаг 2
+        const subtitle = document.getElementById('accountStep2Subtitle');
+        if (subtitle) subtitle.textContent = `Код отправлен на ${phone}. Введите его ниже.`;
+        tgSetStep(2);
+    } catch (e) {
+        tgShowStatus('Ошибка сети. Попробуйте ещё раз.', 'error');
+    } finally {
+        tgSetLoading('btnSendCode', false);
+    }
+}
+
+async function tgVerifyCode() {
+    const code     = (document.getElementById('tgCode')?.value || '').trim();
+    const password = (document.getElementById('tgPassword')?.value || '').trim();
+    const show2fa  = document.getElementById('passwordFieldWrap')?.style.display !== 'none';
+
+    if (!show2fa && !code) {
+        tgShowStatus('Введите код из Telegram', 'error');
+        return;
+    }
+    if (show2fa && !password) {
+        tgShowStatus('Введите пароль 2FA', 'error');
+        return;
+    }
+
+    tgSetLoading('btnVerifyCode', true);
+    tgHideStatus();
+
+    try {
+        const body = show2fa ? { password } : { code };
+        const res  = await fetch('/sender/verify_code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        const data = await res.json();
+
+        if (data.need_2fa) {
+            // Показать поле 2FA вместо поля кода
+            document.getElementById('codeFieldWrap').style.display = 'none';
+            document.getElementById('passwordFieldWrap').style.display = '';
+            const sub = document.getElementById('accountStep2Subtitle');
+            if (sub) sub.textContent = 'Требуется двухфакторная аутентификация.';
+            tgShowStatus('🔐 Введите пароль облачного хранилища Telegram', 'info');
+            return;
+        }
+        if (data.error) {
+            tgShowStatus(data.error, 'error');
+            return;
+        }
+        if (data.success) {
+            // Успех → шаг 3
+            const phone = data.phone || '';
+            const txt = document.getElementById('accountSuccessText');
+            if (txt) txt.textContent = `Аккаунт ${phone} успешно активирован!`;
+            tgSetStep(3);
+            tgAddAccountRow(phone);
+        }
+    } catch (e) {
+        tgShowStatus('Ошибка сети. Попробуйте ещё раз.', 'error');
+    } finally {
+        tgSetLoading('btnVerifyCode', false);
+    }
+}
+
+function tgAddAccountRow(phone) {
+    // Добавить строку в таблицу аккаунтов без перезагрузки страницы
+    const body = document.getElementById('accountsTableBody');
+    if (!body) return;
+    // Убрать строку "пусто"
+    const emptyRow = document.getElementById('accountsEmptyRow');
+    if (emptyRow) emptyRow.remove();
+
+    // Проверить, нет ли уже строки с таким номером
+    const existing = [...body.querySelectorAll('td')].find(td => td.textContent.trim() === phone);
+    if (existing) {
+        // Обновить статус
+        const row = existing.closest('tr');
+        const statusTd = row?.querySelectorAll('td')[1];
+        if (statusTd) statusTd.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3be88c;margin-right:6px;"></span>Активен';
+        return;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td style="font-weight:500;">${phone}</td>
+        <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3be88c;margin-right:6px;"></span>Активен</td>
+        <td>—</td>
+        <td style="color:var(--text-muted);font-size:13px;">${today}</td>
+        <td style="text-align:right;">
+            <button class="btn btn-ghost btn-sm delete-account-btn"
+                    data-phone="${phone}"
+                    title="Удалить аккаунт"
+                    style="color:#e05555;opacity:0.7;">✕</button>
+        </td>
+    `;
+    body.appendChild(tr);
+
+    // Сбросить модал после закрытия
+    document.getElementById('modalAddAccount').addEventListener('click', function onClose(e) {
+        if (e.target.dataset.modalClose !== undefined || e.target.closest('[data-modal-close]')) {
+            tgSetStep(1);
+            document.getElementById('tgPhone').value = '';
+            document.getElementById('tgApiId').value = '';
+            document.getElementById('tgApiHash').value = '';
+            document.getElementById('tgCode').value = '';
+            document.getElementById('tgPassword').value = '';
+            this.removeEventListener('click', onClose);
+        }
+    });
+}
+
+// Сброс модала при закрытии
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('modalAddAccount');
+    if (!modal) return;
+    modal.querySelectorAll('[data-modal-close]').forEach(el => {
+        el.addEventListener('click', () => {
+            setTimeout(() => tgSetStep(1), 300);
+        });
+    });
+});
+
+// ─── Удаление аккаунта ───────────────────────────────────────────
+
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.delete-account-btn');
+    if (!btn) return;
+
+    const phone     = btn.dataset.phone || '';
+    const accountId = btn.dataset.accountId;
+
+    if (!confirm(`Удалить аккаунт ${phone}? Сессионный файл будет удалён.`)) return;
+
+    btn.disabled = true;
+    btn.textContent = '...';
+
+    try {
+        const res  = await fetch('/sender/delete_account', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ account_id: accountId }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            const row = btn.closest('tr');
+            row?.remove();
+            // Если строк не осталось — показать заглушку
+            const body = document.getElementById('accountsTableBody');
+            if (body && !body.querySelector('tr')) {
+                body.innerHTML = `<tr id="accountsEmptyRow"><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Аккаунты ещё не добавлены</td></tr>`;
+            }
+        } else {
+            alert(data.error || 'Ошибка удаления');
+            btn.disabled = false;
+            btn.textContent = '✕';
+        }
+    } catch {
+        alert('Ошибка сети');
+        btn.disabled = false;
+        btn.textContent = '✕';
+    }
+});
+
 // Мобильное меню
 const navToggle = document.querySelector('.nav-toggle');
 const navMain = document.querySelector('.nav-main');

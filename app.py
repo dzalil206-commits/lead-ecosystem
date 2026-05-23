@@ -842,6 +842,208 @@ def sender_add_proxy():
     flash('Прокси добавлен.', 'success')
     return redirect(url_for('dashboard'))
 
+
+# ---------- JSON API: Telegram account activation ----------
+
+@app.route('/sender/send_code', methods=['POST'])
+@login_required
+def sender_send_code_api():
+    """JSON API: отправить код подтверждения на номер Telegram."""
+    data     = request.get_json(force=True) or {}
+    phone    = (data.get('phone') or '').strip()
+    api_id   = (data.get('api_id') or '').strip()
+    api_hash = (data.get('api_hash') or '').strip()
+
+    if not phone or not api_id or not api_hash:
+        return jsonify({'error': 'Заполните все поля'})
+    try:
+        api_id_int = int(api_id)
+    except ValueError:
+        return jsonify({'error': 'API ID должен быть числом'})
+    if not rate_limit_user(current_user.id, 'send_code', 5, 300):
+        return jsonify({'error': 'Слишком много попыток. Подождите 5 минут.'})
+
+    db           = get_db()
+    proxy        = _get_user_proxy(db, current_user.id)
+    session_path = _make_session_path(current_user.id, phone)
+    os.makedirs('sessions', exist_ok=True)
+
+    async def _send():
+        client = TelegramClient(session_path, api_id_int, api_hash, proxy=proxy)
+        try:
+            await asyncio.wait_for(client.connect(), timeout=15)
+            if await client.is_user_authorized():
+                return 'already_authed', None
+            result = await client.send_code_request(phone)
+            return 'ok', result.phone_code_hash
+        except asyncio.TimeoutError:
+            return 'timeout', None
+        except PhoneNumberInvalidError:
+            return 'invalid_phone', None
+        except FloodWaitError as e:
+            return 'flood', e.seconds
+        except Exception as e:
+            return 'error', str(e)
+        finally:
+            try:
+                await client.disconnect()
+            except Exception:
+                pass
+
+    try:
+        status, payload = run_async(_send())
+    except Exception as e:
+        return jsonify({'error': f'Ошибка подключения: {e}'})
+
+    if status == 'timeout':
+        return jsonify({'error': 'Таймаут подключения к Telegram. Добавьте прокси в настройках.'})
+    if status == 'invalid_phone':
+        return jsonify({'error': 'Неверный формат номера телефона'})
+    if status == 'flood':
+        return jsonify({'error': f'Слишком много попыток. Подождите {payload} сек.'})
+    if status == 'error':
+        return jsonify({'error': f'Ошибка: {payload}'})
+
+    # Сохранить/обновить запись в БД (is_active=0 до подтверждения)
+    session_name = os.path.basename(session_path)
+    existing = db.execute(
+        "SELECT id FROM sender_accounts WHERE user_id=? AND phone=?",
+        (current_user.id, phone)
+    ).fetchone()
+    if existing:
+        db.execute(
+            "UPDATE sender_accounts SET api_id=?, api_hash=?, session_file=?, is_active=0 WHERE id=?",
+            (api_id_int, api_hash, session_name, existing['id'])
+        )
+    else:
+        db.execute(
+            "INSERT INTO sender_accounts (user_id, phone, api_id, api_hash, session_file, is_active) VALUES (?,?,?,?,?,0)",
+            (current_user.id, phone, api_id_int, api_hash, session_name)
+        )
+    db.commit()
+
+    if status == 'already_authed':
+        db.execute(
+            "UPDATE sender_accounts SET is_active=1 WHERE user_id=? AND phone=?",
+            (current_user.id, phone)
+        )
+        db.commit()
+        return jsonify({'success': True, 'already_authed': True, 'phone': phone})
+
+    # Хранить phone_code_hash во Flask-сессии (не в БД)
+    session['tg_auth'] = {
+        'phone':           phone,
+        'api_id':          api_id_int,
+        'api_hash':        api_hash,
+        'phone_code_hash': payload,
+        'session_path':    session_path,
+    }
+    return jsonify({'success': True})
+
+
+@app.route('/sender/verify_code', methods=['POST'])
+@login_required
+def sender_verify_code_api():
+    """JSON API: подтвердить код (и 2FA-пароль, если требуется)."""
+    auth = session.get('tg_auth')
+    if not auth:
+        return jsonify({'error': 'Сессия истекла. Начните процедуру заново.'})
+
+    data     = request.get_json(force=True) or {}
+    code     = (data.get('code') or '').strip()
+    password = (data.get('password') or '').strip()
+
+    async def _verify():
+        client = TelegramClient(auth['session_path'], auth['api_id'], auth['api_hash'])
+        try:
+            await client.connect()
+            if password:
+                await client.sign_in(password=password)
+            else:
+                await client.sign_in(
+                    phone=auth['phone'],
+                    code=code,
+                    phone_code_hash=auth['phone_code_hash'],
+                )
+            return 'success', None
+        except SessionPasswordNeededError:
+            return 'need_2fa', None
+        except PhoneCodeInvalidError:
+            return 'invalid_code', None
+        except PhoneCodeExpiredError:
+            return 'expired_code', None
+        except PasswordHashInvalidError:
+            return 'invalid_password', None
+        except FloodWaitError as e:
+            return 'flood', e.seconds
+        except Exception as e:
+            return 'error', str(e)
+        finally:
+            try:
+                await client.disconnect()
+            except Exception:
+                pass
+
+    try:
+        status, payload = run_async(_verify())
+    except Exception as e:
+        return jsonify({'error': f'Ошибка: {e}'})
+
+    if status == 'success':
+        db = get_db()
+        db.execute(
+            "UPDATE sender_accounts SET is_active=1 WHERE user_id=? AND phone=?",
+            (current_user.id, auth['phone'])
+        )
+        db.commit()
+        session.pop('tg_auth', None)
+        return jsonify({'success': True, 'phone': auth['phone']})
+
+    if status == 'need_2fa':
+        return jsonify({'need_2fa': True})
+    if status == 'invalid_code':
+        return jsonify({'error': 'Неверный код. Попробуйте ещё раз.'})
+    if status == 'expired_code':
+        session.pop('tg_auth', None)
+        return jsonify({'error': 'Код устарел. Начните процедуру заново.'})
+    if status == 'invalid_password':
+        return jsonify({'error': 'Неверный пароль 2FA.'})
+    if status == 'flood':
+        session.pop('tg_auth', None)
+        return jsonify({'error': f'Слишком много попыток. Подождите {payload} сек.'})
+    return jsonify({'error': f'Ошибка: {payload}'})
+
+
+@app.route('/sender/delete_account', methods=['POST'])
+@login_required
+def sender_delete_account_api():
+    """JSON API: удалить аккаунт из БД и сессионный файл."""
+    data       = request.get_json(force=True) or {}
+    account_id = data.get('account_id')
+    db         = get_db()
+    acc        = db.execute(
+        "SELECT * FROM sender_accounts WHERE id=? AND user_id=?",
+        (account_id, current_user.id)
+    ).fetchone()
+    if not acc:
+        return jsonify({'error': 'Аккаунт не найден'})
+
+    # Удалить файл сессии (с расширением и без)
+    sf = acc['session_file'] or ''
+    if sf:
+        for suffix in ['', '.session']:
+            path = os.path.join('sessions', sf + suffix)
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+            except Exception:
+                pass
+
+    db.execute("DELETE FROM sender_accounts WHERE id=?", (account_id,))
+    db.commit()
+    return jsonify({'success': True})
+
+
 # ---------- ПОКУПКА ----------
 PRODUCT_PRICES = {
     'miner':  {'rub': 490,   'usdt': 8,  'days': 30},

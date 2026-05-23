@@ -215,21 +215,37 @@
                 <div class="summary-card danger"><div class="label">Невалидные</div><div class="value">0</div></div>
             </div>
             
-            <table class="data-table">
+            <table class="data-table" id="accountsTable">
                 <thead>
-                    <tr><th>Телефон</th><th>Статус</th><th>Прокси</th><th>Создан</th><th></th></tr>
+                    <tr><th>Телефон</th><th>Статус</th><th>Прокси</th><th>Добавлен</th><th></th></tr>
                 </thead>
-                <tbody>
+                <tbody id="accountsTableBody">
                     {% for acc in sender_accounts or [] %}
-                    <tr>
-                        <td>{{ acc.phone }}</td>
-                        <td><span class="status-dot green"></span> {{ "Активен" if acc.is_active else "Отключен" }}</td>
+                    <tr data-account-id="{{ acc.id }}">
+                        <td style="font-weight:500;">{{ acc.phone }}</td>
+                        <td>
+                            {% if acc.is_active %}
+                                <span class="status-dot green" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3be88c;margin-right:6px;"></span>Активен
+                            {% else %}
+                                <span class="status-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:6px;"></span>Не активен
+                            {% endif %}
+                        </td>
                         <td>{{ acc.proxy_id or '—' }}</td>
-                        <td>{{ acc.created_at[:10] }}</td>
-                        <td><button class="btn btn-ghost btn-sm">⋮</button></td>
+                        <td style="color:var(--text-muted);font-size:13px;">{{ acc.created_at[:10] }}</td>
+                        <td style="text-align:right;">
+                            <button class="btn btn-ghost btn-sm delete-account-btn"
+                                    data-account-id="{{ acc.id }}"
+                                    data-phone="{{ acc.phone }}"
+                                    title="Удалить аккаунт"
+                                    style="color:#e05555;opacity:0.7;">✕</button>
+                        </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Аккаунты ещё не добавлены</td></tr>
+                    <tr id="accountsEmptyRow">
+                        <td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">
+                            Аккаунты ещё не добавлены
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -332,16 +348,77 @@
 <!-- Модальные окна (те же, что были) -->
 <div class="modal" id="modalAddAccount">
     <div class="modal-backdrop" data-modal-close></div>
-    <div class="modal-dialog">
-        <button class="modal-close" data-modal-close>&times;</button>
-        <h2>Добавить Sender‑аккаунт</h2>
-        <p class="modal-subtitle">Укажите параметры Telegram‑клиента для авторассылки.</p>
-        <form method="POST" action="{{ url_for('sender_add_account') }}" class="modal-form">
-            <div class="field"><label for="phone">Телефон аккаунта</label><input id="phone" name="phone" type="tel" required placeholder="+7 900 000‑00‑00"></div>
-            <div class="field"><label for="api_id">API ID</label><input id="api_id" name="api_id" type="text" required></div>
-            <div class="field"><label for="api_hash">API Hash</label><input id="api_hash" name="api_hash" type="text" required></div>
-            <button type="submit" class="btn btn-primary btn-full">Добавить аккаунт</button>
-        </form>
+    <div class="modal-dialog" style="max-width:420px;">
+        <button class="modal-close" id="accountModalClose" data-modal-close>&times;</button>
+
+        <!-- Индикатор шагов -->
+        <div style="display:flex;gap:6px;margin-bottom:20px;" id="accountStepsIndicator">
+            <div id="stepDot1" style="flex:1;height:3px;border-radius:3px;background:var(--accent);transition:background 0.3s;"></div>
+            <div id="stepDot2" style="flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,0.1);transition:background 0.3s;"></div>
+            <div id="stepDot3" style="flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,0.1);transition:background 0.3s;"></div>
+        </div>
+
+        <!-- Блок статуса / ошибки -->
+        <div id="accountStatusMsg" style="display:none;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px;"></div>
+
+        <!-- ШАГ 1: Данные аккаунта -->
+        <div id="accountStep1">
+            <h2 style="margin-bottom:4px;">Добавить аккаунт</h2>
+            <p class="modal-subtitle">Введите данные Telegram-клиента для рассылок.</p>
+            <div class="modal-form">
+                <div class="field">
+                    <label for="tgPhone">Телефон</label>
+                    <input id="tgPhone" type="tel" placeholder="+7 900 000-00-00" autocomplete="off">
+                </div>
+                <div class="field">
+                    <label for="tgApiId">API ID</label>
+                    <input id="tgApiId" type="text" placeholder="12345678" autocomplete="off">
+                </div>
+                <div class="field">
+                    <label for="tgApiHash">API Hash</label>
+                    <input id="tgApiHash" type="text" placeholder="0a1b2c3d4e5f..." autocomplete="off">
+                </div>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">
+                    Получить API ID и Hash: <a href="https://my.telegram.org/apps" target="_blank" style="color:var(--accent-light);">my.telegram.org/apps</a>
+                </div>
+                <button id="btnSendCode" class="btn btn-primary btn-full" onclick="tgSendCode()">
+                    Отправить код в Telegram
+                </button>
+            </div>
+        </div>
+
+        <!-- ШАГ 2: Ввод кода -->
+        <div id="accountStep2" style="display:none;">
+            <h2 style="margin-bottom:4px;">Введите код</h2>
+            <p class="modal-subtitle" id="accountStep2Subtitle">Telegram отправил вам код подтверждения.</p>
+            <div class="modal-form">
+                <div class="field" id="codeFieldWrap">
+                    <label for="tgCode">Код из Telegram</label>
+                    <input id="tgCode" type="text" placeholder="12345" maxlength="6"
+                           autocomplete="one-time-code" inputmode="numeric"
+                           style="font-size:22px;letter-spacing:6px;text-align:center;">
+                </div>
+                <div class="field" id="passwordFieldWrap" style="display:none;">
+                    <label for="tgPassword">Пароль 2FA</label>
+                    <input id="tgPassword" type="password" placeholder="Пароль облачного хранилища">
+                </div>
+                <button id="btnVerifyCode" class="btn btn-primary btn-full" onclick="tgVerifyCode()">
+                    Подтвердить
+                </button>
+                <button class="btn btn-ghost btn-full" style="margin-top:6px;font-size:13px;"
+                        onclick="tgRestart()">← Ввести другой номер</button>
+            </div>
+        </div>
+
+        <!-- ШАГ 3: Успех -->
+        <div id="accountStep3" style="display:none;text-align:center;padding:20px 0;">
+            <div style="font-size:48px;margin-bottom:16px;">✅</div>
+            <h2 style="margin-bottom:8px;">Аккаунт подключён!</h2>
+            <p class="modal-subtitle" id="accountSuccessText">Аккаунт успешно активирован и добавлен в систему.</p>
+            <button class="btn btn-primary btn-full" style="margin-top:20px;" data-modal-close onclick="document.getElementById('modalAddAccount').classList.remove('open')">
+                Закрыть
+            </button>
+        </div>
     </div>
 </div>
 
