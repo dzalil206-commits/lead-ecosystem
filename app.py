@@ -1716,11 +1716,16 @@ def _apply_miner_filters(member, filters):
 
 # ---------- MINER: ФОНОВЫЙ СБОР ----------
 
-def run_miner_job(job_id, session_path, api_id, api_hash, links, user_id, proxy, limit, filters=None):
-    """Фоновый сбор лидов. links — список строк. filters — dict с параметрами."""
+def run_miner_job(job_id, session_path, api_id, api_hash, links, user_id, proxy, limit,
+                  filters=None, source_type='members', auto_join=False):
+    """Фоновый сбор лидов.
+    source_type: 'members' — iter_participants, 'messages' — по авторам сообщений.
+    auto_join: автоматически вступить в чат перед сбором и выйти после.
+    filters: None или {} — фильтры отключены полностью.
+    """
     if isinstance(links, str):
         links = [links]
-    filters = filters or {}
+    filters = filters  # None = без фильтров
 
     def _set_progress(conn, pct, msg):
         try:
@@ -1739,65 +1744,118 @@ def run_miner_job(job_id, session_path, api_id, api_hash, links, user_id, proxy,
         except Exception:
             return False
 
+    def _make_lead(member, job_id, user_id):
+        return {
+            'job_id':        job_id,
+            'user_id':       user_id,
+            'tg_id':         str(member.id),
+            'username':      member.username or '',
+            'first_name':    member.first_name or '',
+            'last_name':     member.last_name or '',
+            'premium':       1 if getattr(member, 'premium', False) else 0,
+            'has_photo':     1 if member.photo else 0,
+            'is_bot':        1 if getattr(member, 'bot', False) else 0,
+            'verified':      1 if getattr(member, 'verified', False) else 0,
+            'gender':        _guess_gender(member.first_name or ''),
+            'last_seen_cat': _last_seen_cat(getattr(member, 'status', None)),
+            'language':      getattr(member, 'lang_code', '') or '',
+        }
+
     async def _collect():
+        from telethon.tl.types import User as TLUser
         conn = sqlite3.connect(DATABASE)
         conn.row_factory = sqlite3.Row
         client = None
+        joined_entities = []   # чаты куда зашли — выйдем после
         try:
-            conn.execute("UPDATE miner_jobs SET status='running', progress=2, progress_msg='Подключение к Telegram...' WHERE id=?", (job_id,))
+            conn.execute(
+                "UPDATE miner_jobs SET status='running', progress=2, progress_msg='Подключение к Telegram...' WHERE id=?",
+                (job_id,),
+            )
             conn.commit()
 
             client = _make_tg_client(session_path, api_id, api_hash, proxy)
             await client.connect()
 
             all_leads = {}   # tg_id → dict  (дедупликация по всем источникам)
-            total = len(links)
+            total      = len(links)
             link_errors = []
 
             for idx, link in enumerate(links):
                 if _is_cancelled(conn):
                     break
                 base_pct = int(5 + (idx / total) * 85)
-                _set_progress(conn, base_pct, f'[{idx+1}/{total}] Получаю участников: {link[:50]}')
+                _set_progress(conn, base_pct, f'[{idx+1}/{total}] Получаю: {link[:50]}')
 
                 try:
                     entity = await client.get_entity(link)
+
+                    # ── Автовход ──────────────────────────────────────────
+                    if auto_join:
+                        from telethon.tl.functions.channels import JoinChannelRequest
+                        from telethon.errors import UserAlreadyParticipantError
+                        try:
+                            _set_progress(conn, base_pct, f'[{idx+1}/{total}] Вхожу в чат: {link[:40]}')
+                            await client(JoinChannelRequest(entity))
+                            joined_entities.append(entity)
+                        except UserAlreadyParticipantError:
+                            pass   # уже участник
+                        except Exception as je:
+                            _set_progress(conn, base_pct, f'Автовход не удался ({str(je)[:60]}), продолжаю...')
+
                     count_fetched = 0
 
-                    async for member in client.iter_participants(entity, limit=limit):
-                        if count_fetched % 100 == 0 and _is_cancelled(conn):
-                            break
-                        if not _apply_miner_filters(member, filters):
+                    # ── Метод: по сообщениям ───────────────────────────────
+                    if source_type == 'messages':
+                        _set_progress(conn, base_pct, f'[{idx+1}/{total}] Читаю сообщения: {link[:40]}')
+                        async for msg in client.iter_messages(entity, limit=limit or 5000):
+                            if count_fetched % 100 == 0 and _is_cancelled(conn):
+                                break
+                            sender = getattr(msg, 'sender', None)
+                            if not isinstance(sender, TLUser):
+                                continue
+                            if filters is not None and not _apply_miner_filters(sender, filters):
+                                count_fetched += 1
+                                continue
+                            tid = str(sender.id)
+                            if tid not in all_leads:
+                                all_leads[tid] = _make_lead(sender, job_id, user_id)
                             count_fetched += 1
-                            continue
+                            if count_fetched % 200 == 0:
+                                pct = min(base_pct + int((count_fetched / (limit or 5000)) * (85 / total)), 90)
+                                _set_progress(conn, pct,
+                                    f'[{idx+1}/{total}] {link[:30]}: {len(all_leads)} уник. авторов...')
 
-                        tid = str(member.id)
-                        if tid not in all_leads:
-                            all_leads[tid] = {
-                                'job_id':       job_id,
-                                'user_id':      user_id,
-                                'tg_id':        tid,
-                                'username':     member.username or '',
-                                'first_name':   member.first_name or '',
-                                'last_name':    member.last_name or '',
-                                'premium':      1 if getattr(member, 'premium', False) else 0,
-                                'has_photo':    1 if member.photo else 0,
-                                'is_bot':       1 if member.bot else 0,
-                                'verified':     1 if getattr(member, 'verified', False) else 0,
-                                'gender':       _guess_gender(member.first_name or ''),
-                                'last_seen_cat': _last_seen_cat(member.status),
-                                'language':     getattr(member, 'lang_code', '') or '',
-                            }
-                        count_fetched += 1
-
-                        if count_fetched % 200 == 0:
-                            pct = min(base_pct + int((count_fetched / (limit or 5000)) * (85 / total)), 90)
-                            _set_progress(conn, pct,
-                                f'[{idx+1}/{total}] {link[:30]}: {len(all_leads)} лидов...')
+                    # ── Метод: по участникам ───────────────────────────────
+                    else:
+                        _set_progress(conn, base_pct, f'[{idx+1}/{total}] Читаю участников: {link[:40]}')
+                        async for member in client.iter_participants(entity, limit=limit or 5000):
+                            if count_fetched % 100 == 0 and _is_cancelled(conn):
+                                break
+                            if filters is not None and not _apply_miner_filters(member, filters):
+                                count_fetched += 1
+                                continue
+                            tid = str(member.id)
+                            if tid not in all_leads:
+                                all_leads[tid] = _make_lead(member, job_id, user_id)
+                            count_fetched += 1
+                            if count_fetched % 200 == 0:
+                                pct = min(base_pct + int((count_fetched / (limit or 5000)) * (85 / total)), 90)
+                                _set_progress(conn, pct,
+                                    f'[{idx+1}/{total}] {link[:30]}: {len(all_leads)} лидов...')
 
                 except Exception as e:
                     link_errors.append(f'{link[:40]}: {str(e)[:80]}')
                     _set_progress(conn, base_pct, f'Ошибка в {link[:40]}: {str(e)[:80]}')
+
+            # ── Автовыход из вступивших чатов ─────────────────────────
+            if joined_entities:
+                from telethon.tl.functions.channels import LeaveChannelRequest
+                for ent in joined_entities:
+                    try:
+                        await client(LeaveChannelRequest(ent))
+                    except Exception:
+                        pass
 
             _set_progress(conn, 95, f'Сохраняю {len(all_leads)} лидов в базу...')
 
@@ -1815,12 +1873,13 @@ def run_miner_job(job_id, session_path, api_id, api_hash, links, user_id, proxy,
             cancelled = _is_cancelled(conn)
             final_status = 'cancelled' if cancelled else 'done'
             err_summary = '; '.join(link_errors[:3]) if link_errors else None
+            method_label = 'сообщений' if source_type == 'messages' else 'участников'
 
             conn.execute(
                 '''UPDATE miner_jobs SET status=?, leads_count=?, progress=100,
                    progress_msg=?, error_msg=? WHERE id=?''',
                 (final_status, len(leads_list),
-                 f'{"Отменено" if cancelled else "Готово"}! Собрано {len(leads_list)} лидов',
+                 f'{"Отменено" if cancelled else "Готово"}! Собрано {len(leads_list)} лидов из {method_label}',
                  err_summary, job_id),
             )
             conn.commit()
@@ -1851,9 +1910,15 @@ def run_miner_job(job_id, session_path, api_id, api_hash, links, user_id, proxy,
 @login_required
 def miner_start():
     """JSON API: запустить сбор лидов."""
-    data     = request.get_json(force=True) or {}
-    links_raw = data.get('links', '').strip()
-    filters  = data.get('filters', {})
+    data        = request.get_json(force=True) or {}
+    links_raw   = data.get('links', '').strip()
+    raw_filters = data.get('filters', {})
+    source_type = data.get('source_type', 'members')   # 'members' | 'messages'
+    auto_join   = bool(data.get('auto_join', False))
+    no_filters  = bool(data.get('no_filters', False))
+
+    # None = фильтры полностью отключены (пропускать всех)
+    filters = None if no_filters else (raw_filters or {})
 
     links = [l.strip() for l in links_raw.replace('\n', ',').split(',') if l.strip()]
     if not links:
@@ -1901,7 +1966,8 @@ def miner_start():
     threading.Thread(
         target=run_miner_job,
         args=(job_id, session_path, account['api_id'], account['api_hash'],
-              links, current_user.id, proxy, collect_limit, filters),
+              links, current_user.id, proxy, collect_limit,
+              filters, source_type, auto_join),
         daemon=True,
     ).start()
 

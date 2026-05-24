@@ -342,56 +342,89 @@
               {% if not is_trial %}<div class="form-hint">Несколько источников = автодедупликация по tg_id</div>{% endif %}
             </div>
 
-            <div class="panel-hd" style="margin-bottom:10px">
+            <!-- ── Метод парсинга + Автовход ─────────────── -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+              <div class="form-group" style="margin:0">
+                <label class="form-label">📡 Метод парсинга</label>
+                <select class="form-select" id="sourceTypeSel" {% if not lic %}disabled{% endif %}>
+                  <option value="members">По участникам (список)</option>
+                  <option value="messages">По сообщениям (авторы)</option>
+                </select>
+                <div class="form-hint" id="sourceTypeHint">Парсит список участников группы</div>
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">🚪 Автовход в чат</label>
+                <label class="filter-toggle" id="autoJoinToggle" data-key="auto_join"
+                       style="height:38px;margin-top:0" {% if not lic %}style="opacity:.5;pointer-events:none"{% endif %}>
+                  <input type="checkbox" id="autoJoinChk"><div class="filter-dot"></div>
+                  Войти автоматически
+                </label>
+                <div class="form-hint">Аккаунт вступит и выйдет после</div>
+              </div>
+            </div>
+
+            <!-- ── Фильтры ────────────────────────────────── -->
+            <div class="panel-hd" style="margin-bottom:8px">
               <div class="panel-title" style="font-size:12.5px">🔧 Фильтры</div>
+              <button type="button" class="btn btn-ghost btn-xs" id="noFiltersBtn"
+                      onclick="toggleNoFilters()" {% if not lic %}disabled{% endif %}
+                      style="font-size:11px">✕ Без фильтров</button>
             </div>
 
-            <div class="filters-grid">
-              <label class="filter-toggle active" data-key="no_bots">
-                <input type="checkbox" checked><div class="filter-dot"></div>Исключить ботов
-              </label>
-              <label class="filter-toggle" data-key="premium_only">
-                <input type="checkbox"><div class="filter-dot"></div>Только Premium ⭐
-              </label>
-              <label class="filter-toggle" data-key="has_photo">
-                <input type="checkbox"><div class="filter-dot"></div>Только с фото 📸
-              </label>
-              <label class="filter-toggle" data-key="verified_only">
-                <input type="checkbox"><div class="filter-dot"></div>Верифицированные ✓
-              </label>
+            <div id="filtersBlock">
+              <div class="filters-grid">
+                <label class="filter-toggle active" data-key="no_bots">
+                  <input type="checkbox" checked><div class="filter-dot"></div>Исключить ботов
+                </label>
+                <label class="filter-toggle" data-key="premium_only">
+                  <input type="checkbox"><div class="filter-dot"></div>Только Premium ⭐
+                </label>
+                <label class="filter-toggle" data-key="has_photo">
+                  <input type="checkbox"><div class="filter-dot"></div>Только с фото 📸
+                </label>
+                <label class="filter-toggle" data-key="verified_only">
+                  <input type="checkbox"><div class="filter-dot"></div>Верифицированные ✓
+                </label>
+              </div>
+
+              <div class="two-col" style="margin-bottom:10px">
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Активность</label>
+                  <select class="form-select" id="lastSeenSel">
+                    <option value="any">Любая</option>
+                    <option value="recently">Был недавно</option>
+                    <option value="week">За неделю</option>
+                  </select>
+                </div>
+                <div class="form-group locked-feature" style="margin:0;position:relative">
+                  <label class="form-label">Пол {% if is_trial %}🔒{% endif %}</label>
+                  <select class="form-select" id="genderSel" {% if is_trial %}disabled{% endif %}>
+                    <option value="any">Любой</option>
+                    <option value="male">Мужской ♂</option>
+                    <option value="female">Женский ♀</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="two-col">
+                <div class="form-group locked-feature" style="margin:0;position:relative">
+                  <label class="form-label">Язык {% if is_trial %}🔒{% endif %}</label>
+                  <input class="form-input" id="langInput" type="text" placeholder="ru, en…" maxlength="5" {% if is_trial %}disabled{% endif %}>
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Лимит участников</label>
+                  <input class="form-input" id="limitInput" type="number"
+                    value="{% if is_trial %}200{% else %}5000{% endif %}"
+                    min="10" max="{% if is_trial %}200{% else %}50000{% endif %}"
+                    {% if is_trial %}disabled title="Триал: макс 200"{% endif %}>
+                </div>
+              </div>
             </div>
 
-            <div class="two-col" style="margin-bottom:10px">
-              <div class="form-group" style="margin:0">
-                <label class="form-label">Активность</label>
-                <select class="form-select" id="lastSeenSel">
-                  <option value="any">Любая</option>
-                  <option value="recently">Был недавно</option>
-                  <option value="week">За неделю</option>
-                </select>
-              </div>
-              <div class="form-group locked-feature" style="margin:0;position:relative">
-                <label class="form-label">Пол {% if is_trial %}🔒{% endif %}</label>
-                <select class="form-select" id="genderSel" {% if is_trial %}disabled{% endif %}>
-                  <option value="any">Любой</option>
-                  <option value="male">Мужской ♂</option>
-                  <option value="female">Женский ♀</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="two-col">
-              <div class="form-group locked-feature" style="margin:0;position:relative">
-                <label class="form-label">Язык {% if is_trial %}🔒{% endif %}</label>
-                <input class="form-input" id="langInput" type="text" placeholder="ru, en…" maxlength="5" {% if is_trial %}disabled{% endif %}>
-              </div>
-              <div class="form-group" style="margin:0">
-                <label class="form-label">Лимит участников</label>
-                <input class="form-input" id="limitInput" type="number"
-                  value="{% if is_trial %}200{% else %}5000{% endif %}"
-                  min="10" max="{% if is_trial %}200{% else %}50000{% endif %}"
-                  {% if is_trial %}disabled title="Триал: макс 200"{% endif %}>
-              </div>
+            <!-- Без фильтров — активный режим -->
+            <div id="noFiltersActive" style="display:none;padding:10px 14px;border-radius:8px;background:rgba(59,232,140,.07);border:1px solid rgba(59,232,140,.2);font-size:12.5px;color:#3be88c;margin-bottom:8px">
+              ✅ Фильтры отключены — будут собраны все пользователи без ограничений
+              <button type="button" onclick="toggleNoFilters()" style="margin-left:10px;background:none;border:none;color:#3be88c;cursor:pointer;font-size:12px;text-decoration:underline">Включить фильтры</button>
             </div>
 
             <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
@@ -565,9 +598,40 @@ if (IS_TRIAL && TRIAL_SECS > 0) {
   const _timerInterval = setInterval(updateTimer, 1000);
 }
 
+/* ── SOURCE TYPE HINT ─────────────────────────────── */
+document.getElementById('sourceTypeSel').addEventListener('change', function() {
+  const hints = {
+    members: 'Парсит список участников группы/чата',
+    messages: 'Извлекает уникальных авторов сообщений (работает и для каналов)'
+  };
+  document.getElementById('sourceTypeHint').textContent = hints[this.value] || '';
+});
+
+/* ── AUTO JOIN TOGGLE ─────────────────────────────── */
+const autoJoinToggle = document.getElementById('autoJoinToggle');
+if (autoJoinToggle) {
+  const cb = autoJoinToggle.querySelector('input');
+  autoJoinToggle.addEventListener('click', e => {
+    if (e.target === cb) return;
+    e.preventDefault();
+    cb.checked = !cb.checked;
+    autoJoinToggle.classList.toggle('active', cb.checked);
+  });
+}
+
+/* ── NO FILTERS TOGGLE ────────────────────────────── */
+let _noFilters = false;
+function toggleNoFilters() {
+  _noFilters = !_noFilters;
+  document.getElementById('filtersBlock').style.display    = _noFilters ? 'none' : '';
+  document.getElementById('noFiltersActive').style.display = _noFilters ? '' : 'none';
+  document.getElementById('noFiltersBtn').style.display    = _noFilters ? 'none' : '';
+}
+
 /* ── FILTER TOGGLES ───────────────────────────────── */
-document.querySelectorAll('.filter-toggle').forEach(lbl => {
+document.querySelectorAll('.filter-toggle[data-key]').forEach(lbl => {
   const cb = lbl.querySelector('input');
+  if (!cb) return;
   lbl.addEventListener('click', e => {
     if (e.target === cb) return;
     e.preventDefault();
@@ -578,9 +642,9 @@ document.querySelectorAll('.filter-toggle').forEach(lbl => {
 
 function getFilters() {
   const f = {};
-  document.querySelectorAll('.filter-toggle').forEach(lbl => {
+  document.querySelectorAll('.filter-toggle[data-key]').forEach(lbl => {
     const cb = lbl.querySelector('input');
-    if (cb.checked) f[lbl.dataset.key] = true;
+    if (cb && cb.checked && lbl.dataset.key !== 'auto_join') f[lbl.dataset.key] = true;
   });
   const ls = document.getElementById('lastSeenSel').value;
   if (ls !== 'any') f.last_seen = ls;
@@ -593,8 +657,9 @@ function getFilters() {
 }
 
 function setFilters(f) {
-  document.querySelectorAll('.filter-toggle').forEach(lbl => {
+  document.querySelectorAll('.filter-toggle[data-key]').forEach(lbl => {
     const cb = lbl.querySelector('input');
+    if (!cb || lbl.dataset.key === 'auto_join') return;
     const v = !!f[lbl.dataset.key];
     cb.checked = v;
     lbl.classList.toggle('active', v);
@@ -617,13 +682,23 @@ async function startCollect() {
     ? linksRaw.split(/[\n,]/)[0].trim()
     : linksRaw;
 
+  const sourceType = document.getElementById('sourceTypeSel').value;
+  const autoJoinCb = document.getElementById('autoJoinChk');
+  const autoJoin   = autoJoinCb ? autoJoinCb.checked : false;
+
   const btn = document.getElementById('startBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Запуск...';
   showProgress(2, 'Отправка задачи...');
   try {
     const r = await fetch('/miner/start', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({links, filters: getFilters()})
+      body: JSON.stringify({
+        links,
+        filters:     _noFilters ? {} : getFilters(),
+        no_filters:  _noFilters,
+        source_type: sourceType,
+        auto_join:   autoJoin,
+      })
     });
     const d = await r.json();
     if (d.error) { alert('Ошибка: ' + d.error); resetBtn(); return; }
