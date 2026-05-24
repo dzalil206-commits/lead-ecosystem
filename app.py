@@ -647,13 +647,18 @@ def _get_user_proxy(db, user_id):
         }
 
     # SOCKS / HTTP — dict для python-socks / Telethon
+    # python-socks на некоторых версиях делает bytearray += username,
+    # что падает с "can't concat str to bytes" если username — str.
+    # Кодируем в bytes заранее.
+    uname = row['username'] or None
+    pword = row['password'] or None
     return {
         '_type':      'socks',
         'proxy_type': proxy_type,
         'addr':       row['host'],
         'port':       int(row['port']),
-        'username':   row['username'] or None,
-        'password':   row['password'] or None,
+        'username':   uname.encode('utf-8') if isinstance(uname, str) else uname,
+        'password':   pword.encode('utf-8') if isinstance(pword, str) else pword,
         'rdns':       True,
     }
 
