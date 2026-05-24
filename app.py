@@ -2076,6 +2076,37 @@ def api_activate_account():
     db.commit()
     return jsonify({'success': True})
 
+# ---------- ДИАГНОСТИКА ЛИЦЕНЗИЙ (авторизованный пользователь) ----------
+@app.route('/api/my_licenses')
+@login_required
+def api_my_licenses():
+    """Показывает все лицензии текущего пользователя — для диагностики."""
+    db = get_db()
+    rows = db.execute(
+        "SELECT id, product, price, is_active, expires_at, created_at FROM licenses WHERE user_id=? ORDER BY id DESC",
+        (current_user.id,),
+    ).fetchall()
+    result = []
+    for r in rows:
+        exp = None
+        try:
+            exp = parse_dt(str(r['expires_at'])[:19])
+            days_left = (exp - datetime.now()).days
+        except Exception:
+            days_left = None
+        result.append({
+            'id':         r['id'],
+            'product':    r['product'],
+            'price':      r['price'],
+            'is_active':  r['is_active'],
+            'expires_at': str(r['expires_at']),
+            'created_at': str(r['created_at']),
+            'days_left':  days_left,
+            'expired':    days_left is not None and days_left < 0,
+        })
+    return jsonify({'user_id': current_user.id, 'email': current_user.email, 'licenses': result})
+
+
 # ---------- АДМИН-ПАНЕЛЬ ----------
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
