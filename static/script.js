@@ -183,14 +183,38 @@ function proxyShowStatus(msg, type) {
     el.textContent = msg;
 }
 
+// Переключение полей формы при смене типа прокси
+function proxyTypeChange(type) {
+    const isMtp = type === 'mtproto';
+    const secretWrap   = document.getElementById('proxySecretWrap');
+    const userWrap     = document.getElementById('proxyUsernameWrap');
+    const passWrap     = document.getElementById('proxyPasswordWrap');
+    const subtitle     = document.getElementById('proxyModalSubtitle');
+
+    if (secretWrap)  secretWrap.style.display  = isMtp ? '' : 'none';
+    if (userWrap)    userWrap.style.display     = isMtp ? 'none' : '';
+    if (passWrap)    passWrap.style.display     = isMtp ? 'none' : '';
+    if (subtitle) {
+        subtitle.textContent = isMtp
+            ? 'MTProto — нативный прокси Telegram. Работает только с TG, не требует SOCKS.'
+            : 'SOCKS5 используется автоматически при подключении аккаунтов.';
+    }
+    // Сброс placeholder порта
+    const portEl = document.getElementById('proxyPort');
+    if (portEl) portEl.placeholder = isMtp ? '443' : '1080';
+}
+
 async function proxyAdd() {
     const type     = document.getElementById('proxyType')?.value || 'socks5';
     const host     = (document.getElementById('proxyHost')?.value || '').trim();
     const port     = (document.getElementById('proxyPort')?.value || '').trim();
     const username = (document.getElementById('proxyUsername')?.value || '').trim();
     const password = (document.getElementById('proxyPassword')?.value || '').trim();
+    const secret   = (document.getElementById('proxySecret')?.value || '').trim();
+    const isMtp    = type === 'mtproto';
 
     if (!host || !port) { proxyShowStatus('Укажите хост и порт', 'error'); return; }
+    if (isMtp && !secret) { proxyShowStatus('Для MTProto необходимо указать Secret', 'error'); return; }
 
     const btn = document.getElementById('btnAddProxy');
     if (btn) { btn.dataset.orig = btn.textContent; btn.textContent = '⏳ Добавление...'; btn.disabled = true; }
@@ -199,7 +223,7 @@ async function proxyAdd() {
         const res  = await fetch('/sender/add_proxy', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type, host, port, username, password }),
+            body: JSON.stringify({ type, host, port, username, password, secret }),
         });
         const data = await res.json();
 
@@ -211,14 +235,21 @@ async function proxyAdd() {
             document.getElementById('proxiesEmptyRow')?.remove();
             const tr = document.createElement('tr');
             tr.dataset.proxyId = data.id;
+            const typeCell = isMtp
+                ? `<span class="spill" style="background:rgba(255,155,0,0.15);color:#ffaa44;border:1px solid rgba(255,155,0,0.3);">🔐 MTProto</span>`
+                : `<span style="font-family:monospace;font-size:12px;background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:5px;">${data.type}</span>`;
+            const credCell = isMtp
+                ? `<span style="font-family:monospace;font-size:12px;" title="${secret}">${secret.slice(0,10)}…</span>`
+                : (username || '—');
             tr.innerHTML = `
-                <td><span style="font-family:monospace;font-size:12px;background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:5px;">${data.type}</span></td>
+                <td>${typeCell}</td>
                 <td style="font-weight:500;">${data.host}</td>
                 <td style="color:var(--text-muted);">${data.port}</td>
-                <td style="color:var(--text-muted);font-size:13px;">${username || '—'}</td>
-                <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3be88c;margin-right:5px;"></span>Активен</td>
-                <td style="text-align:right;">
-                    <button class="btn btn-ghost btn-sm delete-proxy-btn" data-proxy-id="${data.id}" title="Удалить" style="color:#e05555;opacity:0.7;">✕</button>
+                <td style="color:var(--text-muted);font-size:12px;">${credCell}</td>
+                <td><span class="spill sp-active">Активен</span></td>
+                <td style="text-align:right;padding-right:16px;white-space:nowrap;">
+                    <button class="db-btn db-btn-ghost test-proxy-btn" data-proxy-id="${data.id}" style="font-size:11.5px;margin-right:4px;">🔍 Тест</button>
+                    <button class="db-btn db-btn-danger delete-proxy-btn" data-proxy-id="${data.id}" style="font-size:11.5px;padding:5px 10px;">✕</button>
                 </td>`;
             body.appendChild(tr);
         }
@@ -228,10 +259,13 @@ async function proxyAdd() {
         setTimeout(() => {
             document.getElementById('modalAddProxy').classList.remove('open');
             document.getElementById('proxyStatusMsg').style.display = 'none';
-            ['proxyHost','proxyPort','proxyUsername','proxyPassword'].forEach(id => {
+            ['proxyHost','proxyPort','proxyUsername','proxyPassword','proxySecret'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.value = '';
             });
+            // Сбросить тип обратно на socks5
+            const sel = document.getElementById('proxyType');
+            if (sel) { sel.value = 'socks5'; proxyTypeChange('socks5'); }
         }, 1200);
     } catch { proxyShowStatus('Ошибка сети', 'error'); }
     finally {

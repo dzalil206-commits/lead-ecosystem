@@ -769,10 +769,24 @@
               <tbody id="proxiesTableBody">
                 {% for proxy in proxies or [] %}
                 <tr data-proxy-id="{{ proxy.id }}">
-                  <td><span class="spill sp-type">{{ proxy.type }}</span></td>
+                  <td>
+                    {% if proxy.type == 'mtproto' %}
+                      <span class="spill" style="background:rgba(255,155,0,0.15);color:#ffaa44;border:1px solid rgba(255,155,0,0.3);">🔐 MTProto</span>
+                    {% else %}
+                      <span class="spill sp-type">{{ proxy.type }}</span>
+                    {% endif %}
+                  </td>
                   <td style="font-weight:500;">{{ proxy.host }}</td>
                   <td style="color:rgba(255,255,255,0.4);">{{ proxy.port }}</td>
-                  <td style="color:rgba(255,255,255,0.35);font-size:12px;">{{ proxy.username or '—' }}</td>
+                  <td style="color:rgba(255,255,255,0.35);font-size:12px;font-family:monospace;">
+                    {% if proxy.type == 'mtproto' %}
+                      {% if proxy.secret %}
+                        <span title="{{ proxy.secret }}">{{ proxy.secret[:10] }}…</span>
+                      {% else %}—{% endif %}
+                    {% else %}
+                      {{ proxy.username or '—' }}
+                    {% endif %}
+                  </td>
                   <td>
                     {% if proxy.is_active %}
                       <span class="spill sp-active">Активен</span>
@@ -1116,28 +1130,58 @@
 ══════════════════════════════════════════ -->
 <div class="modal" id="modalAddProxy">
   <div class="modal-backdrop" data-modal-close></div>
-  <div class="modal-dialog" style="max-width:400px;">
+  <div class="modal-dialog" style="max-width:420px;">
     <button class="modal-close" data-modal-close>&times;</button>
     <h2>Добавить прокси</h2>
-    <p class="modal-subtitle">SOCKS5 используется автоматически при подключении аккаунтов.</p>
+    <p class="modal-subtitle" id="proxyModalSubtitle">SOCKS5 используется автоматически при подключении аккаунтов.</p>
 
     <div id="proxyStatusMsg" style="display:none;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px;"></div>
 
     <div class="modal-form">
       <div class="field">
-        <label>Тип</label>
-        <select id="proxyType" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text);font-size:14px;">
+        <label>Тип прокси</label>
+        <select id="proxyType" onchange="proxyTypeChange(this.value)" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text);font-size:14px;">
           <option value="socks5">SOCKS5 (рекомендуется)</option>
           <option value="socks4">SOCKS4</option>
           <option value="http">HTTP</option>
+          <option value="mtproto">🔐 MTProto (специально для Telegram)</option>
         </select>
       </div>
-      <div class="field"><label>Хост</label><input id="proxyHost" type="text" placeholder="1.2.3.4 или proxy.example.com"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="field"><label>Порт</label><input id="proxyPort" type="number" placeholder="1080"></div>
-        <div class="field"><label>Логин</label><input id="proxyUsername" type="text" placeholder="(опц.)"></div>
+
+      <div class="field">
+        <label>Хост / IP</label>
+        <input id="proxyHost" type="text" placeholder="1.2.3.4 или proxy.example.com">
       </div>
-      <div class="field"><label>Пароль</label><input id="proxyPassword" type="password" placeholder="(опционально)"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label>Порт</label>
+          <input id="proxyPort" type="number" placeholder="1080" min="1" max="65535">
+        </div>
+        <div class="field" id="proxyUsernameWrap">
+          <label>Логин</label>
+          <input id="proxyUsername" type="text" placeholder="(опционально)">
+        </div>
+      </div>
+
+      <div class="field" id="proxyPasswordWrap">
+        <label>Пароль</label>
+        <input id="proxyPassword" type="password" placeholder="(опционально)">
+      </div>
+
+      <div class="field" id="proxySecretWrap" style="display:none;">
+        <label style="display:flex;align-items:center;gap:6px;">
+          Secret
+          <span style="font-size:11px;color:var(--text-muted);font-weight:400;background:rgba(255,155,0,0.12);padding:2px 7px;border-radius:5px;border:1px solid rgba(255,155,0,0.25);">hex-строка</span>
+        </label>
+        <input id="proxySecret" type="text" placeholder="dd…  или  ee…  (из Telegram / @MTProxybot)" style="font-family:monospace;font-size:13px;letter-spacing:0.3px;">
+        <div style="margin-top:6px;font-size:11.5px;color:var(--text-muted);line-height:1.6;">
+          Формат: <code style="background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:4px;">ee&lt;64 hex&gt;</code> (fake-TLS)
+          или <code style="background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:4px;">dd&lt;32 hex&gt;</code> (random-padding).
+          Получить у бота: <a href="https://t.me/MTProxybot" target="_blank" style="color:var(--orange);">@MTProxybot</a>
+        </div>
+      </div>
+
       <button id="btnAddProxy" class="btn btn-primary btn-full" onclick="proxyAdd()">Добавить прокси</button>
     </div>
   </div>

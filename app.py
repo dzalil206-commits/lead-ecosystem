@@ -349,6 +349,7 @@ def init_db():
         "ALTER TABLE users ADD COLUMN referral_id INTEGER",
         "ALTER TABLE miner_jobs ADD COLUMN error_msg TEXT",
         "ALTER TABLE users ADD COLUMN telegram_id TEXT",
+        "ALTER TABLE proxies ADD COLUMN secret TEXT",
     ]:
         try:
             db.execute(sql)
@@ -617,16 +618,35 @@ def _make_session_path(user_id, phone):
 
 def _get_user_proxy(db, user_id):
     """Вернуть первый активный прокси пользователя для Telethon, или None.
-    Приоритет: socks5 → socks4 → http.
+    Приоритет: mtproto → socks5 → socks4 → http.
     """
     row = db.execute(
-        "SELECT * FROM proxies WHERE user_id=? AND is_active=1 ORDER BY CASE type WHEN 'socks5' THEN 1 WHEN 'socks4' THEN 2 ELSE 3 END, id ASC LIMIT 1",
+        "SELECT * FROM proxies WHERE user_id=? AND is_active=1 ORDER BY CASE type WHEN 'mtproto' THEN 0 WHEN 'socks5' THEN 1 WHEN 'socks4' THEN 2 ELSE 3 END, id ASC LIMIT 1",
         (user_id,)
     ).fetchone()
     if not row:
         return None
     proxy_type = (row['type'] or 'socks5').lower()
-    # Telethon принимает proxy как dict (python-socks) или tuple (socks)
+
+    if proxy_type == 'mtproto':
+        # MTProto proxy — Telethon принимает tuple:
+        # (ConnectionClass, host, port, dc_id, secret_bytes)
+        # dc_id можно передать True (авто) или None
+        from telethon.network.connection import ConnectionTcpMTProxyRandomizedIntermediate
+        raw_secret = (row['secret'] or '').strip()
+        # Secret может быть hex-строкой (32/34/96+ символов) или base64
+        try:
+            secret_bytes = bytes.fromhex(raw_secret)
+        except (ValueError, AttributeError):
+            # Попытка base64 или просто байты
+            try:
+                import base64
+                secret_bytes = base64.b64decode(raw_secret)
+            except Exception:
+                secret_bytes = raw_secret.encode('utf-8')
+        return (ConnectionTcpMTProxyRandomizedIntermediate, row['host'], int(row['port']), True, secret_bytes)
+
+    # SOCKS / HTTP — dict для python-socks/Telethon
     return {
         'proxy_type': proxy_type,
         'addr':       row['host'],
@@ -854,13 +874,14 @@ def sender_add_proxy():
 @app.route('/sender/add_proxy', methods=['POST'])
 @login_required
 def sender_add_proxy_api():
-    """JSON API: добавить прокси."""
+    """JSON API: добавить прокси (socks5 / socks4 / http / mtproto)."""
     data = request.get_json(force=True) or {}
     proxy_type = (data.get('type') or 'socks5').strip().lower()
     host       = (data.get('host') or '').strip()
     port       = data.get('port')
     username   = (data.get('username') or '').strip()
     password   = (data.get('password') or '').strip()
+    secret     = (data.get('secret') or '').strip()
 
     if not host or not port:
         return jsonify({'error': 'Укажите хост и порт'})
@@ -870,17 +891,28 @@ def sender_add_proxy_api():
             raise ValueError
     except ValueError:
         return jsonify({'error': 'Порт должен быть числом от 1 до 65535'})
-    if proxy_type not in ('socks5', 'http', 'socks4'):
-        return jsonify({'error': 'Тип прокси: socks5, socks4 или http'})
+    if proxy_type not in ('socks5', 'http', 'socks4', 'mtproto'):
+        return jsonify({'error': 'Тип прокси: socks5, socks4, http или mtproto'})
+
+    if proxy_type == 'mtproto':
+        secret_clean = secret.lstrip('ee').lstrip('dd') if False else secret  # сохраняем как есть
+        if not secret_clean:
+            return jsonify({'error': 'Для MTProto прокси необходимо указать Secret'})
+        # Проверяем что это валидный hex
+        try:
+            bytes.fromhex(secret_clean)
+        except ValueError:
+            # Может быть base64 или другой формат — принимаем
+            pass
 
     db = get_db()
     db.execute(
-        "INSERT INTO proxies (user_id, type, host, port, username, password, is_active) VALUES (?,?,?,?,?,?,1)",
-        (current_user.id, proxy_type, host, port_int, username, password)
+        "INSERT INTO proxies (user_id, type, host, port, username, password, secret, is_active) VALUES (?,?,?,?,?,?,?,1)",
+        (current_user.id, proxy_type, host, port_int, username, password, secret if proxy_type == 'mtproto' else None)
     )
     db.commit()
     row = db.execute("SELECT last_insert_rowid() as id").fetchone()
-    return jsonify({'success': True, 'id': row['id'], 'type': proxy_type, 'host': host, 'port': port_int})
+    return jsonify({'success': True, 'id': row['id'], 'type': proxy_type, 'host': host, 'port': port_int, 'secret': secret})
 
 
 @app.route('/sender/test_proxy', methods=['POST'])
@@ -910,16 +942,63 @@ def sender_test_proxy_api():
     except Exception as e:
         return jsonify({'ok': False, 'msg': f'❌ Прокси недоступен: {e}'})
 
-    # Шаг 2: Прямой TCP-тест через SOCKS5 к реальным IP Telegram
+    proxy_type = (row['type'] or 'socks5').lower()
+    username   = row['username'] or None
+    password   = row['password'] or None
+    secret     = row['secret'] or None
+
+    # ── MTProto proxy: проверяем через Telethon connect ──────────────────────
+    if proxy_type == 'mtproto':
+        async def _test_mtproto():
+            try:
+                from telethon.network.connection import ConnectionTcpMTProxyRandomizedIntermediate
+                raw_secret = (secret or '').strip()
+                try:
+                    secret_bytes = bytes.fromhex(raw_secret)
+                except (ValueError, AttributeError):
+                    import base64
+                    try:
+                        secret_bytes = base64.b64decode(raw_secret)
+                    except Exception:
+                        secret_bytes = raw_secret.encode('utf-8')
+
+                proxy_tuple = (ConnectionTcpMTProxyRandomizedIntermediate, host, port, True, secret_bytes)
+                # Временный клиент без аккаунта — пробуем подключиться
+                import tempfile, os
+                tmp_session = os.path.join(tempfile.gettempdir(), f'tg_proxy_test_{row["id"]}')
+                client = TelegramClient(tmp_session, 2040, 'b18441a1ff607e10a989891a5462e627', proxy=proxy_tuple)
+                await asyncio.wait_for(client.connect(), timeout=12)
+                connected = client.is_connected()
+                await client.disconnect()
+                # Удалить временный файл сессии
+                for ext in ('', '.session', '.session-journal'):
+                    try:
+                        os.remove(tmp_session + ext)
+                    except Exception:
+                        pass
+                return connected, None
+            except asyncio.TimeoutError:
+                return False, 'Таймаут подключения (12с) — MTProto прокси не отвечает'
+            except Exception as ex:
+                return False, str(ex)
+
+        try:
+            ok, err = run_async(_test_mtproto())
+        except Exception as e:
+            ok, err = False, str(e)
+
+        if ok:
+            return jsonify({'ok': True, 'msg': f'✅ MTProto прокси работает! Telegram DC доступен через {host}:{port}'})
+        else:
+            return jsonify({'ok': False, 'msg': f'❌ MTProto прокси не работает: {err or "нет соединения"}'})
+
+    # ── SOCKS / HTTP: TCP → Telethon DC тест ──────────────────────────────────
     # Telegram DCs: 149.154.167.51:443 (DC2), 91.108.4.1:443 (DC4)
     TELEGRAM_TEST_HOSTS = [
         ('149.154.167.51', 443),
         ('149.154.175.50', 443),
         ('91.108.4.1',     443),
     ]
-    proxy_type = (row['type'] or 'socks5').lower()
-    username   = row['username'] or None
-    password   = row['password'] or None
 
     async def _test_via_socks():
         try:
