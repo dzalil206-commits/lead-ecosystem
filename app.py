@@ -1566,9 +1566,12 @@ def payment_success():
 @login_required
 def miner():
     db = get_db()
+    # Miner доступен при любой активной лицензии: Miner, Start, Pro, Scale
+    MINER_PRODUCTS = ('Miner', 'Start', 'Pro', 'Scale')
     lic = db.execute(
-        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND product='Miner' ORDER BY expires_at DESC LIMIT 1",
-        (current_user.id,),
+        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND product IN ({}) ORDER BY price DESC, expires_at DESC LIMIT 1".format(
+            ','.join('?' * len(MINER_PRODUCTS))),
+        (current_user.id, *MINER_PRODUCTS),
     ).fetchone()
     miner_jobs = db.execute(
         "SELECT * FROM miner_jobs WHERE user_id=? ORDER BY created_at DESC LIMIT 10",
@@ -1590,7 +1593,15 @@ def miner():
         "SELECT COUNT(*) FROM miner_jobs WHERE user_id=? AND date(created_at)=date('now')",
         (current_user.id,),
     ).fetchone()[0]
-    is_trial = (lic['price'] == 0) if lic else True
+    is_trial = bool(lic and lic['price'] == 0)
+    # Считаем секунды до конца триала для JS-таймера
+    trial_seconds_left = 0
+    if is_trial and lic and lic['expires_at']:
+        try:
+            exp = datetime.strptime(str(lic['expires_at'])[:19], '%Y-%m-%d %H:%M:%S')
+            trial_seconds_left = max(0, int((exp - datetime.now()).total_seconds()))
+        except Exception:
+            pass
     return render_template('miner.html',
         lic=lic,
         miner_jobs=miner_jobs,
@@ -1599,6 +1610,7 @@ def miner():
         total_collected=total_collected,
         today_count=today_count,
         is_trial=is_trial,
+        trial_seconds_left=trial_seconds_left,
     )
 
 # ---------- MINER: HELPERS ----------
@@ -1832,12 +1844,13 @@ def miner_start():
         return jsonify({'error': 'Введите хотя бы одну ссылку'})
 
     db = get_db()
+    _MP = ('Miner','Start','Pro','Scale')
     lic = db.execute(
-        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND product='Miner' ORDER BY expires_at DESC LIMIT 1",
-        (current_user.id,),
+        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND product IN ({}) ORDER BY price DESC, expires_at DESC LIMIT 1".format(','.join('?'*len(_MP))),
+        (current_user.id, *_MP),
     ).fetchone()
     if not lic:
-        return jsonify({'error': 'Нужна активная лицензия Miner'})
+        return jsonify({'error': 'Нужна активная лицензия (Miner / Start / Pro / Scale)'})
 
     if not rate_limit_user(current_user.id, 'miner_start', max_calls=1, window_seconds=60):
         return jsonify({'error': 'Подождите 1 минуту перед запуском нового сбора'})
