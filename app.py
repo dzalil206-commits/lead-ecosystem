@@ -575,13 +575,23 @@ def dashboard():
     active_licenses_count = db.execute("SELECT COUNT(*) FROM licenses WHERE user_id = ? AND is_active = 1", (current_user.id,)).fetchone()[0]
     total_leads_collected = db.execute("SELECT COALESCE(SUM(leads_count), 0) FROM miner_jobs WHERE user_id = ?", (current_user.id,)).fetchone()[0]
     total_messages_sent = db.execute("SELECT COALESCE(total_sent, 0) FROM users WHERE id = ?", (current_user.id,)).fetchone()[0]
-    miner_license = db.execute("SELECT * FROM licenses WHERE user_id = ? AND is_active = 1 AND product = 'Miner' ORDER BY expires_at DESC LIMIT 1", (current_user.id,)).fetchone()
+    # Miner доступен по любому из этих тарифов
+    _MINER_PRODUCTS = ('Miner', 'Start', 'Pro', 'Scale')
+    miner_license = db.execute(
+        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND product IN ({}) ORDER BY price DESC, expires_at DESC LIMIT 1".format(
+            ','.join('?' * len(_MINER_PRODUCTS))),
+        (current_user.id, *_MINER_PRODUCTS),
+    ).fetchone()
     sender_license = db.execute("SELECT * FROM licenses WHERE user_id = ? AND is_active = 1 AND product = 'Sender' ORDER BY expires_at DESC LIMIT 1", (current_user.id,)).fetchone()
     sender_accounts = db.execute("SELECT * FROM sender_accounts WHERE user_id = ?", (current_user.id,)).fetchall()
     active_accounts_count   = db.execute("SELECT COUNT(*) FROM sender_accounts WHERE user_id=? AND is_active=1", (current_user.id,)).fetchone()[0]
     inactive_accounts_count = db.execute("SELECT COUNT(*) FROM sender_accounts WHERE user_id=? AND is_active=0", (current_user.id,)).fetchone()[0]
     proxies = db.execute("SELECT * FROM proxies WHERE user_id = ?", (current_user.id,)).fetchall()
-    licenses = db.execute("SELECT * FROM licenses WHERE user_id = ? AND is_active = 1", (current_user.id,)).fetchall()
+    # Сортируем по цене убыванию — платные планы идут первыми (в sidebar показывается [0])
+    licenses = db.execute(
+        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 ORDER BY price DESC, expires_at DESC",
+        (current_user.id,),
+    ).fetchall()
     user_licenses = []
     for lic in licenses:
         days_left = (parse_dt(lic['expires_at']) - datetime.now()).days
