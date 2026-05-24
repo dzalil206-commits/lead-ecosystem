@@ -1944,7 +1944,7 @@ def miner_start():
         if count_today >= 2:
             return jsonify({'error': 'Лимит пробного тарифа — 2 сбора в день. Купите лицензию.'})
 
-    collect_limit = 200 if is_trial else int(filters.get('limit', 5000))
+    collect_limit = 200 if is_trial else int((filters or {}).get('limit', 5000))
 
     account = db.execute(
         "SELECT * FROM sender_accounts WHERE user_id=? AND is_active=1 LIMIT 1",
