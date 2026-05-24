@@ -1117,10 +1117,10 @@ def sender_send_code_api():
     async def _send():
         client = _make_tg_client(session_path, api_id_int, api_hash, proxy)
         try:
-            await asyncio.wait_for(client.connect(), timeout=15)
+            await asyncio.wait_for(client.connect(), timeout=30)
             if await client.is_user_authorized():
                 return 'already_authed', None
-            result = await client.send_code_request(phone)
+            result = await asyncio.wait_for(client.send_code_request(phone), timeout=30)
             return 'ok', result.phone_code_hash
         except asyncio.TimeoutError:
             return 'timeout', None
@@ -1147,7 +1147,8 @@ def sender_send_code_api():
         return jsonify({'error': f'Ошибка: {e}', 'trace': _trace})
 
     if status == 'timeout':
-        return jsonify({'error': 'Таймаут подключения к Telegram. Добавьте прокси в настройках.'})
+        proxy_hint = ' Проверьте прокси или попробуйте другой.' if proxy else ' Добавьте прокси в настройках.'
+        return jsonify({'error': f'Таймаут подключения к Telegram (30с).{proxy_hint}'})
     if status == 'invalid_phone':
         return jsonify({'error': 'Неверный формат номера телефона'})
     if status == 'flood':
@@ -1210,15 +1211,15 @@ def sender_verify_code_api():
     async def _verify():
         client = _make_tg_client(auth['session_path'], auth['api_id'], auth['api_hash'], proxy)
         try:
-            await asyncio.wait_for(client.connect(), timeout=15)
+            await asyncio.wait_for(client.connect(), timeout=30)
             if password:
-                await client.sign_in(password=password)
+                await asyncio.wait_for(client.sign_in(password=password), timeout=30)
             else:
-                await client.sign_in(
+                await asyncio.wait_for(client.sign_in(
                     phone=auth['phone'],
                     code=code,
                     phone_code_hash=auth['phone_code_hash'],
-                )
+                ), timeout=30)
             return 'success', None
         except asyncio.TimeoutError:
             return 'timeout', None
