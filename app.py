@@ -1807,24 +1807,24 @@ def run_miner_job(job_id, session_path, api_id, api_hash, links, user_id, proxy,
 
                     # ── Метод: по сообщениям ───────────────────────────────
                     if source_type == 'messages':
+                        msg_limit = limit or 1000  # разумный дефолт для сообщений
                         _set_progress(conn, base_pct, f'[{idx+1}/{total}] Читаю сообщения: {link[:40]}')
-                        async for msg in client.iter_messages(entity, limit=limit or 5000):
+                        async for msg in client.iter_messages(entity, limit=msg_limit):
+                            count_fetched += 1  # считаем все сообщения, не только с юзерами
                             if count_fetched % 100 == 0 and _is_cancelled(conn):
                                 break
                             sender = getattr(msg, 'sender', None)
                             if not isinstance(sender, TLUser):
                                 continue
                             if filters is not None and not _apply_miner_filters(sender, filters):
-                                count_fetched += 1
                                 continue
                             tid = str(sender.id)
                             if tid not in all_leads:
                                 all_leads[tid] = _make_lead(sender, job_id, user_id)
-                            count_fetched += 1
                             if count_fetched % 200 == 0:
-                                pct = min(base_pct + int((count_fetched / (limit or 5000)) * (85 / total)), 90)
+                                pct = min(base_pct + int((count_fetched / msg_limit) * (85 / total)), 90)
                                 _set_progress(conn, pct,
-                                    f'[{idx+1}/{total}] {link[:30]}: {len(all_leads)} уник. авторов...')
+                                    f'[{idx+1}/{total}] {link[:30]}: {count_fetched} сообщ., {len(all_leads)} авторов...')
 
                     # ── Метод: по участникам ───────────────────────────────
                     else:
