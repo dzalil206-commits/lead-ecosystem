@@ -1130,6 +1130,8 @@ def sender_send_code_api():
         except FloodWaitError as e:
             return 'flood', e.seconds
         except Exception as e:
+            import traceback as _tb
+            print(f'[SEND_CODE ERROR]\n{_tb.format_exc()}', flush=True)
             return 'error', str(e)
         finally:
             try:
