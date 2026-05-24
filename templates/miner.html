@@ -407,6 +407,17 @@
               </div>
             </div>
 
+            {% if not is_trial %}
+            <!-- ── Глобальная дедупликация ─────────────────── -->
+            <div class="form-group" style="margin-bottom:12px">
+              <label class="filter-toggle" id="dedupToggle" style="display:flex">
+                <input type="checkbox" id="dedupChk"><div class="filter-dot"></div>
+                ♻️ Пропускать уже собранных ранее
+              </label>
+              <div class="form-hint">Не дублирует лиды между разными заданиями</div>
+            </div>
+            {% endif %}
+
             <!-- ── Фильтры ────────────────────────────────── -->
             <div class="panel-hd" style="margin-bottom:8px">
               <div class="panel-title" style="font-size:12.5px">🔧 Фильтры</div>
@@ -540,7 +551,7 @@
           <div class="panel" style="margin-top:0">
             <div class="panel-hd">
               <div class="panel-title">📜 История заданий</div>
-              <div class="panel-hint">последние 10</div>
+              <div class="panel-hint">{% if jobs_total %}{{ jobs_total }} всего · стр. {{ jobs_page }} из {{ jobs_pages }}{% else %}пусто{% endif %}</div>
             </div>
             {% if miner_jobs %}
             <div style="overflow-x:auto">
@@ -571,6 +582,7 @@
                     {% if job.status in ('done','cancelled') and job.leads_count %}
                     <a href="{{ url_for('miner_export', job_id=job.id, fmt='csv') }}" class="btn btn-ghost btn-xs">CSV</a>
                     <a href="{{ url_for('miner_export', job_id=job.id, fmt='txt') }}" class="btn btn-ghost btn-xs">TXT</a>
+                    <a href="{{ url_for('miner_export', job_id=job.id, fmt='json') }}" class="btn btn-ghost btn-xs">JSON</a>
                     {% endif %}
                     <button class="btn btn-ghost btn-xs" title="Повторить сбор"
                       onclick="repeatJob({{ job._links|tojson }}, {{ job.filters_json or '{}' }}, '{{ job.source_type or 'members' }}')">🔁</button>
@@ -583,6 +595,28 @@
             {% else %}
             <div style="text-align:center;padding:28px;color:rgba(255,255,255,.25);font-size:13px">
               Заданий пока нет. Запустите первый сбор 👆
+            </div>
+            {% endif %}
+
+            {% if jobs_pages and jobs_pages > 1 %}
+            <div style="display:flex;justify-content:center;gap:6px;margin-top:14px;flex-wrap:wrap">
+              {% if jobs_page > 1 %}
+                <a href="?page={{ jobs_page - 1 }}" class="btn btn-ghost btn-sm">‹ Назад</a>
+              {% endif %}
+              {% for p in range(1, jobs_pages + 1) %}
+                {% if p == jobs_page %}
+                  <span class="btn btn-primary btn-sm" style="cursor:default">{{ p }}</span>
+                {% elif p <= 3 or p > jobs_pages - 3 or (p >= jobs_page - 1 and p <= jobs_page + 1) %}
+                  <a href="?page={{ p }}" class="btn btn-ghost btn-sm">{{ p }}</a>
+                {% elif p == 4 and jobs_page > 5 %}
+                  <span style="color:rgba(255,255,255,.3);padding:5px">…</span>
+                {% elif p == jobs_pages - 3 and jobs_page < jobs_pages - 4 %}
+                  <span style="color:rgba(255,255,255,.3);padding:5px">…</span>
+                {% endif %}
+              {% endfor %}
+              {% if jobs_page < jobs_pages %}
+                <a href="?page={{ jobs_page + 1 }}" class="btn btn-ghost btn-sm">Вперёд ›</a>
+              {% endif %}
             </div>
             {% endif %}
           </div>
@@ -738,6 +772,18 @@ if (autoJoinToggle) {
   });
 }
 
+/* ── DEDUP GLOBAL TOGGLE ──────────────────────────── */
+const dedupToggle = document.getElementById('dedupToggle');
+if (dedupToggle) {
+  const cb = dedupToggle.querySelector('input');
+  dedupToggle.addEventListener('click', e => {
+    if (e.target === cb) return;
+    e.preventDefault();
+    cb.checked = !cb.checked;
+    dedupToggle.classList.toggle('active', cb.checked);
+  });
+}
+
 /* ── NO FILTERS TOGGLE ────────────────────────────── */
 let _noFilters = false;
 function toggleNoFilters() {
@@ -808,6 +854,8 @@ async function startCollect() {
   const sourceType = document.getElementById('sourceTypeSel').value;
   const autoJoinCb = document.getElementById('autoJoinChk');
   const autoJoin   = autoJoinCb ? autoJoinCb.checked : false;
+  const dedupCb    = document.getElementById('dedupChk');
+  const dedupGlobal = dedupCb ? dedupCb.checked : false;
 
   const btn = document.getElementById('startBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Запуск...';
@@ -817,10 +865,11 @@ async function startCollect() {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         links,
-        filters:     _noFilters ? {} : getFilters(),
-        no_filters:  _noFilters,
-        source_type: sourceType,
-        auto_join:   autoJoin,
+        filters:      _noFilters ? {} : getFilters(),
+        no_filters:   _noFilters,
+        source_type:  sourceType,
+        auto_join:    autoJoin,
+        dedup_global: dedupGlobal,
       })
     });
     const d = await r.json();
@@ -929,7 +978,8 @@ function showExports(jid, cnt) {
   document.getElementById('exportBtns').innerHTML =
     `<span style="font-size:12px;color:#3be88c;margin-right:6px">✅ ${cnt} лидов</span>
      <a href="/miner/job/${jid}/export/csv" class="btn btn-ghost btn-sm">📊 CSV</a>
-     <a href="/miner/job/${jid}/export/txt" class="btn btn-ghost btn-sm">📄 TXT</a>`;
+     <a href="/miner/job/${jid}/export/txt" class="btn btn-ghost btn-sm">📄 TXT</a>
+     <a href="/miner/job/${jid}/export/json" class="btn btn-ghost btn-sm">{ } JSON</a>`;
 }
 
 function esc(s) { const d=document.createElement('div'); d.appendChild(document.createTextNode(s)); return d.innerHTML; }

@@ -1637,9 +1637,17 @@ def miner():
         "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND LOWER(product) IN ('miner','start','pro','scale') ORDER BY price DESC, expires_at DESC LIMIT 1",
         (current_user.id,),
     ).fetchone()
-    _raw_jobs = db.execute(
-        "SELECT * FROM miner_jobs WHERE user_id=? ORDER BY created_at DESC LIMIT 10",
+    # Пагинация истории
+    page = max(1, int(request.args.get('page', 1)))
+    per_page = 10
+    jobs_total = db.execute(
+        "SELECT COUNT(*) FROM miner_jobs WHERE user_id=?",
         (current_user.id,),
+    ).fetchone()[0]
+    jobs_pages = max(1, (jobs_total + per_page - 1) // per_page)
+    _raw_jobs = db.execute(
+        "SELECT * FROM miner_jobs WHERE user_id=? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        (current_user.id, per_page, (page - 1) * per_page),
     ).fetchall()
     miner_jobs = []
     for _j in _raw_jobs:
@@ -1683,6 +1691,9 @@ def miner():
         today_count=today_count,
         is_trial=is_trial,
         trial_seconds_left=trial_seconds_left,
+        jobs_page=page,
+        jobs_pages=jobs_pages,
+        jobs_total=jobs_total,
     )
 
 # ---------- MINER: HELPERS ----------
@@ -1778,11 +1789,12 @@ def _apply_miner_filters(member, filters):
 # ---------- MINER: ФОНОВЫЙ СБОР ----------
 
 def run_miner_job(job_id, session_path, api_id, api_hash, links, user_id, proxy, limit,
-                  filters=None, source_type='members', auto_join=False):
+                  filters=None, source_type='members', auto_join=False, dedup_global=False):
     """Фоновый сбор лидов.
     source_type: 'members' — iter_participants, 'messages' — по авторам сообщений.
     auto_join: автоматически вступить в чат перед сбором и выйти после.
     filters: None или {} — фильтры отключены полностью.
+    dedup_global: пропускать tg_id, которые уже есть в БД у этого пользователя.
     """
     if isinstance(links, str):
         links = [links]
@@ -1839,6 +1851,17 @@ def run_miner_job(job_id, session_path, api_id, api_hash, links, user_id, proxy,
             await client.connect()
 
             all_leads = {}   # tg_id → dict  (дедупликация по всем источникам)
+
+            # Глобальная дедупликация — загружаем уже собранные tg_id из БД
+            already_collected = set()
+            if dedup_global:
+                rows = conn.execute(
+                    "SELECT DISTINCT tg_id FROM leads WHERE user_id=?",
+                    (user_id,),
+                ).fetchall()
+                already_collected = {r['tg_id'] for r in rows}
+                _set_progress(conn, 4, f'Загружено {len(already_collected)} уже собранных лидов — будут пропущены')
+
             total      = len(links)
             link_errors = []
 
@@ -1880,6 +1903,8 @@ def run_miner_job(job_id, session_path, api_id, api_hash, links, user_id, proxy,
                             if filters is not None and not _apply_miner_filters(sender, filters):
                                 continue
                             tid = str(sender.id)
+                            if dedup_global and tid in already_collected:
+                                continue
                             if tid not in all_leads:
                                 all_leads[tid] = _make_lead(sender, job_id, user_id)
                             if count_fetched % 200 == 0:
@@ -1897,6 +1922,9 @@ def run_miner_job(job_id, session_path, api_id, api_hash, links, user_id, proxy,
                                 count_fetched += 1
                                 continue
                             tid = str(member.id)
+                            if dedup_global and tid in already_collected:
+                                count_fetched += 1
+                                continue
                             if tid not in all_leads:
                                 all_leads[tid] = _make_lead(member, job_id, user_id)
                             count_fetched += 1
@@ -1974,9 +2002,10 @@ def miner_start():
     data        = request.get_json(force=True) or {}
     links_raw   = data.get('links', '').strip()
     raw_filters = data.get('filters', {})
-    source_type = data.get('source_type', 'members')   # 'members' | 'messages'
-    auto_join   = bool(data.get('auto_join', False))
-    no_filters  = bool(data.get('no_filters', False))
+    source_type  = data.get('source_type', 'members')   # 'members' | 'messages'
+    auto_join    = bool(data.get('auto_join', False))
+    no_filters   = bool(data.get('no_filters', False))
+    dedup_global = bool(data.get('dedup_global', False))
 
     # None = фильтры полностью отключены (пропускать всех)
     filters = None if no_filters else (raw_filters or {})
@@ -2028,7 +2057,7 @@ def miner_start():
         target=run_miner_job,
         args=(job_id, session_path, account['api_id'], account['api_hash'],
               links, current_user.id, proxy, collect_limit,
-              filters, source_type, auto_join),
+              filters, source_type, auto_join, dedup_global),
         daemon=True,
     ).start()
 
@@ -2140,6 +2169,30 @@ def miner_export(job_id, fmt='csv'):
             mimetype='text/plain',
             as_attachment=True,
             download_name=f'leads_{job_id}.txt',
+        )
+
+    if fmt == 'json':
+        data = [{
+            'tg_id':     r['tg_id'],
+            'username':  r['username'],
+            'first_name': r['first_name'],
+            'last_name': r['last_name'],
+            'premium':   bool(r['premium']),
+            'has_photo': bool(r['has_photo']),
+            'gender':    r['gender'],
+            'last_seen': r['last_seen_cat'],
+        } for r in rows]
+        content = json.dumps({
+            'job_id':  job_id,
+            'total':   len(data),
+            'source':  job['source_link'],
+            'leads':   data,
+        }, ensure_ascii=False, indent=2)
+        return send_file(
+            io.BytesIO(content.encode('utf-8')),
+            mimetype='application/json',
+            as_attachment=True,
+            download_name=f'leads_{job_id}.json',
         )
 
     # CSV (default)
