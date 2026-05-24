@@ -380,6 +380,16 @@ def init_db():
         except Exception:
             pass
     db.commit()
+    # Нормализуем названия продуктов в Title Case (miner→Miner, start→Start, etc.)
+    try:
+        db.execute("UPDATE licenses SET product='Miner' WHERE LOWER(product)='miner'")
+        db.execute("UPDATE licenses SET product='Start'  WHERE LOWER(product)='start'")
+        db.execute("UPDATE licenses SET product='Pro'    WHERE LOWER(product)='pro'")
+        db.execute("UPDATE licenses SET product='Scale'  WHERE LOWER(product)='scale'")
+        db.execute("UPDATE licenses SET product='Sender' WHERE LOWER(product)='sender'")
+        db.commit()
+    except Exception:
+        pass
 
 
 def send_telegram(chat_id, text):
@@ -576,11 +586,9 @@ def dashboard():
     total_leads_collected = db.execute("SELECT COALESCE(SUM(leads_count), 0) FROM miner_jobs WHERE user_id = ?", (current_user.id,)).fetchone()[0]
     total_messages_sent = db.execute("SELECT COALESCE(total_sent, 0) FROM users WHERE id = ?", (current_user.id,)).fetchone()[0]
     # Miner доступен по любому из этих тарифов
-    _MINER_PRODUCTS = ('Miner', 'Start', 'Pro', 'Scale')
     miner_license = db.execute(
-        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND product IN ({}) ORDER BY price DESC, expires_at DESC LIMIT 1".format(
-            ','.join('?' * len(_MINER_PRODUCTS))),
-        (current_user.id, *_MINER_PRODUCTS),
+        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND LOWER(product) IN ('miner','start','pro','scale') ORDER BY price DESC, expires_at DESC LIMIT 1",
+        (current_user.id,),
     ).fetchone()
     sender_license = db.execute("SELECT * FROM licenses WHERE user_id = ? AND is_active = 1 AND product = 'Sender' ORDER BY expires_at DESC LIMIT 1", (current_user.id,)).fetchone()
     sender_accounts = db.execute("SELECT * FROM sender_accounts WHERE user_id = ?", (current_user.id,)).fetchall()
@@ -1577,11 +1585,9 @@ def payment_success():
 def miner():
     db = get_db()
     # Miner доступен при любой активной лицензии: Miner, Start, Pro, Scale
-    MINER_PRODUCTS = ('Miner', 'Start', 'Pro', 'Scale')
     lic = db.execute(
-        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND product IN ({}) ORDER BY price DESC, expires_at DESC LIMIT 1".format(
-            ','.join('?' * len(MINER_PRODUCTS))),
-        (current_user.id, *MINER_PRODUCTS),
+        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND LOWER(product) IN ('miner','start','pro','scale') ORDER BY price DESC, expires_at DESC LIMIT 1",
+        (current_user.id,),
     ).fetchone()
     miner_jobs = db.execute(
         "SELECT * FROM miner_jobs WHERE user_id=? ORDER BY created_at DESC LIMIT 10",
@@ -1854,10 +1860,9 @@ def miner_start():
         return jsonify({'error': 'Введите хотя бы одну ссылку'})
 
     db = get_db()
-    _MP = ('Miner','Start','Pro','Scale')
     lic = db.execute(
-        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND product IN ({}) ORDER BY price DESC, expires_at DESC LIMIT 1".format(','.join('?'*len(_MP))),
-        (current_user.id, *_MP),
+        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND LOWER(product) IN ('miner','start','pro','scale') ORDER BY price DESC, expires_at DESC LIMIT 1",
+        (current_user.id,),
     ).fetchone()
     if not lic:
         return jsonify({'error': 'Нужна активная лицензия (Miner / Start / Pro / Scale)'})

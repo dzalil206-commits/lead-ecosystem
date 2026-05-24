@@ -423,7 +423,7 @@
       </div>
       <div class="db-profile-plan">
         {% if user_licenses %}
-          <span class="db-plan-pill">{{ user_licenses[0].product }}</span>
+          <span class="db-plan-pill">{{ user_licenses[0].product | capitalize }}</span>
           {% set dl = user_licenses[0].days_left %}
           {% if dl <= 3 %}
             <span class="db-days-pill crit">⚠ {{ dl }} дн.</span>
