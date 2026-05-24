@@ -445,6 +445,53 @@ def generate_license_key():
 def index():
     return render_template('index.html')
 
+
+@app.route('/sitemap.xml')
+def sitemap():
+    from flask import Response
+    pages = [
+        ('/', '1.0', 'weekly'),
+        ('/pricing', '0.9', 'monthly'),
+        ('/cases', '0.8', 'monthly'),
+        ('/faq', '0.8', 'monthly'),
+        ('/blog', '0.8', 'weekly'),
+        ('/blog/how-to-collect-50000-leads', '0.7', 'monthly'),
+        ('/blog/5-mailing-strategies', '0.7', 'monthly'),
+        ('/download', '0.7', 'monthly'),
+        ('/terms', '0.5', 'yearly'),
+    ]
+    base = 'https://tgleadwareon.ru'
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    for path, priority, freq in pages:
+        xml += f'  <url>\n'
+        xml += f'    <loc>{base}{path}</loc>\n'
+        xml += f'    <changefreq>{freq}</changefreq>\n'
+        xml += f'    <priority>{priority}</priority>\n'
+        xml += f'  </url>\n'
+    xml += '</urlset>'
+    return Response(xml, mimetype='application/xml')
+
+
+@app.route('/robots.txt')
+def robots():
+    from flask import Response
+    txt = (
+        'User-agent: *\n'
+        'Allow: /\n'
+        'Disallow: /dashboard\n'
+        'Disallow: /miner\n'
+        'Disallow: /sender\n'
+        'Disallow: /admin\n'
+        'Disallow: /login\n'
+        'Disallow: /register\n'
+        'Disallow: /buy\n'
+        'Disallow: /api/\n'
+        '\n'
+        'Sitemap: https://tgleadwareon.ru/sitemap.xml\n'
+    )
+    return Response(txt, mimetype='text/plain')
+
 # ---------- СТРАНИЦЫ ----------
 @app.route('/pricing')
 def pricing():
