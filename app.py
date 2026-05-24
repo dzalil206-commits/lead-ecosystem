@@ -630,20 +630,14 @@ def _get_user_proxy(db, user_id):
     proxy_type = (row['type'] or 'socks5').lower()
 
     if proxy_type == 'mtproto':
+        # Передаём secret как строку — Telethon сам вызывает normalize_secret()
+        # которая делает bytes.fromhex(secret). Если передать bytes, она падает.
         raw_secret = (row['secret'] or '').strip()
-        try:
-            secret_bytes = bytes.fromhex(raw_secret)
-        except (ValueError, AttributeError):
-            try:
-                import base64
-                secret_bytes = base64.b64decode(raw_secret)
-            except Exception:
-                secret_bytes = raw_secret.encode('utf-8')
         return {
             '_type':  'mtproto',
             'host':   row['host'],
             'port':   int(row['port']),
-            'secret': secret_bytes,
+            'secret': raw_secret,  # строка, НЕ bytes
         }
 
     # SOCKS / HTTP — dict для python-socks / Telethon
@@ -987,19 +981,11 @@ def sender_test_proxy_api():
         async def _test_mtproto():
             try:
                 raw_secret = (secret or '').strip()
-                try:
-                    secret_bytes = bytes.fromhex(raw_secret)
-                except (ValueError, AttributeError):
-                    import base64
-                    try:
-                        secret_bytes = base64.b64decode(raw_secret)
-                    except Exception:
-                        secret_bytes = raw_secret.encode('utf-8')
-
+                # Передаём secret строкой — Telethon normalize_secret сам конвертирует
                 # Временный клиент без аккаунта — пробуем подключиться
                 import tempfile, os
                 tmp_session = os.path.join(tempfile.gettempdir(), f'tg_proxy_test_{row["id"]}')
-                proxy_info = {'_type': 'mtproto', 'host': host, 'port': port, 'secret': secret_bytes}
+                proxy_info = {'_type': 'mtproto', 'host': host, 'port': port, 'secret': raw_secret}
                 client = _make_tg_client(tmp_session, 2040, 'b18441a1ff607e10a989891a5462e627', proxy_info)
                 await asyncio.wait_for(client.connect(), timeout=12)
                 connected = client.is_connected()
