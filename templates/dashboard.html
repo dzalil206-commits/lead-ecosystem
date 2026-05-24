@@ -468,6 +468,7 @@
         </a>
         <a class="db-nav-item" data-section="sender-module" id="nav-sender-module">
           <span class="db-nav-icon">✉️</span> TG Lead Sender
+          <span class="db-nav-tag">SOON</span>
         </a>
         <a class="db-nav-item" data-section="neuro-module" id="nav-neuro-module">
           <span class="db-nav-icon">🤖</span> Нейрочаттинг
@@ -983,55 +984,21 @@
 
 
       <!-- ═══════════════════════════════════
-           СЕКЦИЯ: SENDER
+           СЕКЦИЯ: SENDER (временно недоступен)
       ═══════════════════════════════════ -->
       <div class="db-section" id="section-sender-module">
         <div class="db-section-title">TG Lead Sender</div>
         <div class="db-section-sub">Умные рассылки с имитацией живого поведения</div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-          <div class="mod-card">
-            <div class="mod-card-icon">✉️</div>
-            <div class="mod-card-title">Авторассылка</div>
-            <div class="mod-card-desc">Персонализированные сообщения по вашей базе с человекоподобными задержками.</div>
-            <ul class="mod-features">
-              <li>Персонализация {имя} и {username}</li>
-              <li>Настройка интервалов</li>
-              <li>Остановка в один клик</li>
-              <li>Детальная статистика доставки</li>
-            </ul>
-            {% if sender_accounts %}
-            <div class="info-box success" style="margin-bottom:14px;">
-              <span>✅</span> {{ active_accounts_count }} аккаунт(ов) готовы к работе
-            </div>
-            {% endif %}
-            <button class="db-btn db-btn-primary" data-modal-open="modalAddAccount" style="width:100%;justify-content:center;">
-              {% if sender_accounts %}+ Добавить аккаунт{% else %}Подключить аккаунт →{% endif %}
-            </button>
+        <div style="background:linear-gradient(135deg,rgba(255,106,0,.08),rgba(255,150,0,.04));border:1px solid rgba(255,106,0,.25);border-radius:16px;padding:40px 32px;text-align:center">
+          <div style="font-size:48px;margin-bottom:12px">⏳</div>
+          <div style="font-size:20px;font-weight:700;color:#ff9040;margin-bottom:8px">Sender временно недоступен</div>
+          <div style="font-size:14px;color:rgba(255,255,255,.5);max-width:520px;margin:0 auto 20px;line-height:1.6">
+            Мы дорабатываем модуль автоматических рассылок — добавляем новые функции безопасности и улучшаем стабильность работы.
+            Скоро всё будет готово!
           </div>
-
-          <div class="panel" style="margin:0;">
-            <div class="panel-title" style="margin-bottom:14px;">📱 Подключённые аккаунты</div>
-            {% if sender_accounts %}
-              {% for acc in (sender_accounts or [])[:5] %}
-              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
-                <div>
-                  <div style="font-size:13px;font-weight:500;">{{ acc.phone }}</div>
-                  <div style="font-size:11px;color:rgba(255,255,255,0.35);">{{ acc.created_at[:10] }}</div>
-                </div>
-                <span class="spill {% if acc.is_active %}sp-active{% else %}sp-inactive{% endif %}">
-                  {% if acc.is_active %}Активен{% else %}Неактивен{% endif %}
-                </span>
-              </div>
-              {% endfor %}
-              {% if (sender_accounts|length) > 5 %}
-              <div style="font-size:12px;color:rgba(255,255,255,0.3);padding-top:8px;">+{{ (sender_accounts|length) - 5 }} ещё...</div>
-              {% endif %}
-            {% else %}
-            <div style="text-align:center;padding:20px 0;color:rgba(255,255,255,0.3);font-size:13px;">
-              Аккаунты не подключены
-            </div>
-            {% endif %}
+          <div style="display:inline-flex;gap:8px;align-items:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);padding:8px 16px;border-radius:8px;font-size:13px;color:rgba(255,255,255,.6)">
+            📬 Уведомим вас по почте, как только запустим
           </div>
         </div>
       </div><!-- /section-sender-module -->

@@ -473,6 +473,12 @@ def sitemap():
     return Response(xml, mimetype='application/xml')
 
 
+@app.route('/favicon.ico')
+def favicon():
+    """Перенаправляем все запросы /favicon.ico на favicon.png."""
+    return redirect(url_for('static', filename='favicon.png'), code=301)
+
+
 @app.route('/robots.txt')
 def robots():
     from flask import Response
@@ -1421,6 +1427,10 @@ ADDON_NAMES = {
 def buy(product='start'):
     if product not in PRODUCT_PRICES:
         product = 'start'
+    # Sender временно недоступен — редиректим на страницу тарифов
+    if product == 'sender':
+        flash('TG Lead Sender временно недоступен. Скоро запустим — следите за обновлениями.', 'info')
+        return redirect(url_for('pricing'))
     info = PRODUCT_PRICES[product]
 
     # Обрабатываем дополнительные модули из URL: ?addons=warmup,analytics

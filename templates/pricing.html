@@ -441,7 +441,8 @@
         </div>
 
         <!-- Sender -->
-        <div class="product-card">
+        <div class="product-card" style="opacity:.7;position:relative;overflow:hidden">
+          <div style="position:absolute;top:14px;right:14px;background:linear-gradient(135deg,#ff6a00,#ff9040);color:#fff;font-size:10px;font-weight:800;letter-spacing:.08em;padding:4px 10px;border-radius:999px;text-transform:uppercase">Скоро</div>
           <div class="product-card-header">
             <div class="product-icon product-icon-sender">📨</div>
             <div>
@@ -470,10 +471,10 @@
             </div>
             <div>
               <span class="product-price-period">в месяц · 30 дней доступа</span>
-              <span class="product-price-saving">Окупается с первой коммуникации</span>
+              <span class="product-price-saving">Скоро в продаже</span>
             </div>
           </div>
-          <a href="{{ url_for('buy', product='sender') }}" class="product-btn">Купить Sender за 990 ₽ →</a>
+          <button class="product-btn" disabled style="opacity:.5;cursor:not-allowed;background:rgba(255,255,255,.06)">⏳ Временно недоступен</button>
         </div>
 
       </div>
