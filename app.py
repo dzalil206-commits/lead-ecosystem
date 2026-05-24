@@ -1141,7 +1141,9 @@ def sender_send_code_api():
         status, payload = run_async(_send())
     except Exception as e:
         import traceback as _tb
-        return jsonify({'error': f'Ошибка: {e}', 'trace': _tb.format_exc()})
+        _trace = _tb.format_exc()
+        print(f'[PROXY ERROR] {_trace}', flush=True)  # → app.log
+        return jsonify({'error': f'Ошибка: {e}', 'trace': _trace})
 
     if status == 'timeout':
         return jsonify({'error': 'Таймаут подключения к Telegram. Добавьте прокси в настройках.'})
