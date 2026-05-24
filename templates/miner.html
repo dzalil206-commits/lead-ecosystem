@@ -170,6 +170,26 @@
     .no-lic p{font-size:13px;color:rgba(255,255,255,.4);margin-bottom:16px}
 
     @media(max-width:768px){.db-sidebar{display:none}}
+
+    /* ── sidebar trial timer ────────────────────────── */
+    .sb-trial-timer{margin:0 10px 6px;padding:9px 10px;background:rgba(255,106,0,.07);border:1px solid rgba(255,106,0,.18);border-radius:9px}
+    .sb-trial-timer-row{display:flex;align-items:center;justify-content:center;gap:5px}
+    .sb-tnum{font-size:15px;font-weight:800;color:#ff9040;font-variant-numeric:tabular-nums;line-height:1;min-width:20px;text-align:center}
+    .sb-tsep{color:rgba(255,106,0,.5);font-weight:700;font-size:13px}
+    .sb-tlabel{font-size:9px;color:rgba(255,255,255,.28);text-align:center}
+
+    /* ── filters lock overlay ───────────────────────── */
+    .filters-lock-wrap{position:relative}
+    .filters-lock-overlay{display:none}
+    .is-trial .filters-lock-overlay{display:flex;position:absolute;inset:-6px;background:rgba(7,7,15,.72);backdrop-filter:blur(3px);border-radius:10px;align-items:center;justify-content:center;z-index:6;flex-direction:column;gap:6px}
+
+    /* ── sticky trial bar ───────────────────────────── */
+    .trial-sticky{position:fixed;bottom:0;left:0;right:0;z-index:9000;background:linear-gradient(90deg,#c82000,#ff5500);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;font-size:13px;color:#fff;box-shadow:0 -4px 24px rgba(255,80,0,.45)}
+
+    /* ── trial popup ────────────────────────────────── */
+    .trial-popup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9500;align-items:center;justify-content:center}
+    .trial-popup-overlay.show{display:flex}
+    .trial-popup{background:#0e0e1c;border:1px solid rgba(255,106,0,.3);border-radius:18px;padding:28px 32px;max-width:380px;width:90%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.6)}
   </style>
 </head>
 <body class="page-dark">
@@ -200,6 +220,22 @@
         {% endif %}
       </div>
     </div>
+
+    {% if is_trial and trial_seconds_left > 0 %}
+    <div class="sb-trial-timer">
+      <div style="font-size:9.5px;color:rgba(255,255,255,.32);text-transform:uppercase;letter-spacing:.08em;text-align:center;margin-bottom:6px">⏰ Пробный период</div>
+      <div class="sb-trial-timer-row">
+        <div><div class="sb-tnum" id="sb-days">00</div><div class="sb-tlabel">дн</div></div>
+        <div class="sb-tsep">:</div>
+        <div><div class="sb-tnum" id="sb-hours">00</div><div class="sb-tlabel">ч</div></div>
+        <div class="sb-tsep">:</div>
+        <div><div class="sb-tnum" id="sb-mins">00</div><div class="sb-tlabel">м</div></div>
+        <div class="sb-tsep">:</div>
+        <div><div class="sb-tnum" id="sb-secs">00</div><div class="sb-tlabel">с</div></div>
+      </div>
+      <a href="{{ url_for('pricing') }}" style="display:block;text-align:center;font-size:10px;color:#ff9040;margin-top:7px;text-decoration:none;font-weight:600">Купить полный доступ →</a>
+    </div>
+    {% endif %}
 
     <nav class="db-nav">
       <div class="db-nav-section">
@@ -300,7 +336,15 @@
             <div class="kpi-icon ki-green">📅</div>
           </div>
           <div class="kpi-num">{{ today_count }}</div>
-          <div class="kpi-label">{% if is_trial %}Заданий сегодня (макс. 2){% else %}Заданий сегодня{% endif %}</div>
+          <div class="kpi-label">{% if is_trial %}Заданий сегодня{% else %}Заданий сегодня{% endif %}</div>
+          {% if is_trial %}
+          <div style="margin-top:10px">
+            <div style="height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden">
+              <div style="height:100%;width:{{ [today_count * 50, 100]|min }}%;background:{% if today_count >= 2 %}#ff6b6b{% else %}#3be88c{% endif %};border-radius:2px;transition:width .3s"></div>
+            </div>
+            <div style="font-size:10px;color:{% if today_count >= 2 %}#ff6b6b{% else %}rgba(255,255,255,.3){% endif %};margin-top:4px">{{ today_count }}/2 использовано</div>
+          </div>
+          {% endif %}
         </div>
         <div class="kpi-card glow-blue">
           <div class="kpi-card-top">
@@ -366,53 +410,66 @@
             <!-- ── Фильтры ────────────────────────────────── -->
             <div class="panel-hd" style="margin-bottom:8px">
               <div class="panel-title" style="font-size:12.5px">🔧 Фильтры</div>
+              {% if not is_trial %}
               <button type="button" class="btn btn-ghost btn-xs" id="noFiltersBtn"
                       onclick="toggleNoFilters()" {% if not lic %}disabled{% endif %}
                       style="font-size:11px">✕ Без фильтров</button>
+              {% endif %}
             </div>
 
             <div id="filtersBlock">
-              <div class="filters-grid">
-                <label class="filter-toggle active" data-key="no_bots">
-                  <input type="checkbox" checked><div class="filter-dot"></div>Исключить ботов
-                </label>
-                <label class="filter-toggle" data-key="premium_only">
-                  <input type="checkbox"><div class="filter-dot"></div>Только Premium ⭐
-                </label>
-                <label class="filter-toggle" data-key="has_photo">
-                  <input type="checkbox"><div class="filter-dot"></div>Только с фото 📸
-                </label>
-                <label class="filter-toggle" data-key="verified_only">
-                  <input type="checkbox"><div class="filter-dot"></div>Верифицированные ✓
-                </label>
-                <label class="filter-toggle" data-key="has_username">
-                  <input type="checkbox"><div class="filter-dot"></div>Только с @username
-                </label>
-              </div>
-
-              <div class="two-col" style="margin-bottom:10px">
-                <div class="form-group" style="margin:0">
-                  <label class="form-label">Активность</label>
-                  <select class="form-select" id="lastSeenSel">
-                    <option value="any">Любая</option>
-                    <option value="online">🟢 Онлайн сейчас</option>
-                    <option value="recently">Был недавно</option>
-                    <option value="week">За неделю</option>
-                  </select>
+              <!-- Базовые фильтры + активность — заблокированы в триале -->
+              <div class="filters-lock-wrap">
+                <div class="filters-grid" style="{% if is_trial %}opacity:.3;pointer-events:none;user-select:none{% endif %}">
+                  <label class="filter-toggle active" data-key="no_bots">
+                    <input type="checkbox" checked><div class="filter-dot"></div>Исключить ботов
+                  </label>
+                  <label class="filter-toggle" data-key="premium_only">
+                    <input type="checkbox"><div class="filter-dot"></div>Только Premium ⭐
+                  </label>
+                  <label class="filter-toggle" data-key="has_photo">
+                    <input type="checkbox"><div class="filter-dot"></div>Только с фото 📸
+                  </label>
+                  <label class="filter-toggle" data-key="verified_only">
+                    <input type="checkbox"><div class="filter-dot"></div>Верифицированные ✓
+                  </label>
+                  <label class="filter-toggle" data-key="has_username">
+                    <input type="checkbox"><div class="filter-dot"></div>Только с @username
+                  </label>
                 </div>
-                <div class="form-group locked-feature" style="margin:0;position:relative">
-                  <label class="form-label">Пол {% if is_trial %}🔒{% endif %}</label>
-                  <select class="form-select" id="genderSel" {% if is_trial %}disabled{% endif %}>
-                    <option value="any">Любой</option>
-                    <option value="male">Мужской ♂</option>
-                    <option value="female">Женский ♀</option>
-                  </select>
-                </div>
-              </div>
 
-              <div class="two-col">
+                <div class="two-col" style="margin-bottom:10px;{% if is_trial %}opacity:.3;pointer-events:none;user-select:none{% endif %}">
+                  <div class="form-group" style="margin:0">
+                    <label class="form-label">Активность</label>
+                    <select class="form-select" id="lastSeenSel" {% if is_trial %}disabled{% endif %}>
+                      <option value="any">Любая</option>
+                      <option value="online">🟢 Онлайн сейчас</option>
+                      <option value="recently">Был недавно</option>
+                      <option value="week">За неделю</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin:0;opacity:{% if is_trial %}1{% else %}1{% endif %}">
+                    <label class="form-label">Пол 🔒</label>
+                    <select class="form-select" id="genderSel" disabled>
+                      <option value="any">Любой</option>
+                      <option value="male">Мужской ♂</option>
+                      <option value="female">Женский ♀</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Lock overlay поверх базовых фильтров (только в триале) -->
+                <div class="filters-lock-overlay">
+                  <div style="font-size:26px;margin-bottom:6px">🔒</div>
+                  <div style="font-size:12.5px;font-weight:600;color:#fff;margin-bottom:4px">Фильтры — платный тариф</div>
+                  <div style="font-size:11px;color:rgba(255,255,255,.45);margin-bottom:12px">Боты, Premium, фото, активность и др.</div>
+                  <a href="{{ url_for('pricing') }}" class="btn btn-primary btn-sm">Открыть доступ →</a>
+                </div>
+              </div><!-- /filters-lock-wrap -->
+
+              <div class="two-col" style="margin-top:10px">
                 <div class="form-group locked-feature" style="margin:0;position:relative">
-                  <label class="form-label">Язык {% if is_trial %}🔒{% endif %}</label>
+                  <label class="form-label">Язык 🔒</label>
                   <input class="form-input" id="langInput" type="text" placeholder="ru, en…" maxlength="5" {% if is_trial %}disabled{% endif %}>
                 </div>
                 <div class="form-group" style="margin:0">
@@ -595,30 +652,59 @@
   </div><!-- /db-main -->
 </div><!-- /db-wrap -->
 
+<!-- Trial popup -->
+<div class="trial-popup-overlay" id="trialPopup" onclick="this.classList.remove('show')">
+  <div class="trial-popup" onclick="event.stopPropagation()">
+    <div style="font-size:36px;margin-bottom:12px">⚠️</div>
+    <div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:8px" id="popupTitle">Задание завершено</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.45);margin-bottom:20px;line-height:1.6" id="popupBody"></div>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <a href="{{ url_for('pricing') }}" class="btn btn-primary">💎 Купить лицензию</a>
+      <button class="btn btn-ghost" onclick="document.getElementById('trialPopup').classList.remove('show')">Позже</button>
+    </div>
+  </div>
+</div>
+
 <script>
 'use strict';
-const IS_TRIAL = {{ 'true' if is_trial else 'false' }};
+const IS_TRIAL   = {{ 'true' if is_trial else 'false' }};
 const TRIAL_SECS = {{ trial_seconds_left | default(0) }};
+const TODAY_MAX  = IS_TRIAL ? 2 : Infinity;
 let _jobId = null, _pollTimer = null;
+let _todayCount = {{ today_count }};
 
-/* ── TRIAL COUNTDOWN ──────────────────────────────── */
+/* ── TRIAL COUNTDOWN (баннер + сайдбар) ──────────── */
 if (IS_TRIAL && TRIAL_SECS > 0) {
   let left = TRIAL_SECS;
+  const fmt = n => String(n).padStart(2,'0');
+  const ids_banner  = ['t-days','t-hours','t-mins','t-secs'];
+  const ids_sidebar = ['sb-days','sb-hours','sb-mins','sb-secs'];
   function updateTimer() {
     if (left <= 0) { clearInterval(_timerInterval); return; }
     const d = Math.floor(left / 86400);
     const h = Math.floor((left % 86400) / 3600);
     const m = Math.floor((left % 3600) / 60);
     const s = left % 60;
-    const fmt = n => String(n).padStart(2,'0');
-    document.getElementById('t-days').textContent  = fmt(d);
-    document.getElementById('t-hours').textContent = fmt(h);
-    document.getElementById('t-mins').textContent  = fmt(m);
-    document.getElementById('t-secs').textContent  = fmt(s);
+    const vals = [fmt(d), fmt(h), fmt(m), fmt(s)];
+    ids_banner.forEach((id,i) => { const el=document.getElementById(id); if(el) el.textContent=vals[i]; });
+    ids_sidebar.forEach((id,i) => { const el=document.getElementById(id); if(el) el.textContent=vals[i]; });
     left--;
   }
   updateTimer();
   const _timerInterval = setInterval(updateTimer, 1000);
+
+  /* Sticky-плашка если осталось < 24 часов */
+  if (TRIAL_SECS < 86400) {
+    const h = Math.floor(TRIAL_SECS / 3600);
+    const m = Math.floor((TRIAL_SECS % 3600) / 60);
+    const bar = document.createElement('div');
+    bar.className = 'trial-sticky';
+    bar.innerHTML = `<span>⚡ Пробный период заканчивается через <strong>${h}ч ${m}м</strong> — после этого сбор будет недоступен</span>
+      <a href="{{ url_for('pricing') }}" style="background:rgba(255,255,255,.18);color:#fff;padding:6px 16px;border-radius:6px;text-decoration:none;font-weight:600;border:1px solid rgba(255,255,255,.25);white-space:nowrap">Продлить →</a>`;
+    document.body.appendChild(bar);
+    // Отступ снизу чтобы контент не перекрывался
+    document.querySelector('.db-main').style.paddingBottom = '52px';
+  }
 }
 
 /* ── SOURCE TYPE HINT + LIMIT SYNC ───────────────── */
@@ -778,6 +864,16 @@ async function poll() {
             body: `Сбор завершён! Найдено ${d.leads_count} лидов.`,
             icon: '/static/favicon.ico'
           });
+        }
+        if (IS_TRIAL) {
+          _todayCount++;
+          const popup = document.getElementById('trialPopup');
+          document.getElementById('popupTitle').textContent =
+            _todayCount >= TODAY_MAX ? '🚫 Лимит заданий исчерпан' : `✅ Сбор завершён (${_todayCount}/${TODAY_MAX})`;
+          document.getElementById('popupBody').innerHTML = _todayCount >= TODAY_MAX
+            ? `Вы использовали все <strong>${TODAY_MAX} задания</strong> на сегодня.<br>Купите лицензию — лимит снимается навсегда.`
+            : `Использовано <strong>${_todayCount} из ${TODAY_MAX}</strong> заданий сегодня.<br>Найдено лидов: <strong>${d.leads_count}</strong>. Нужно больше — купите лицензию.`;
+          popup.classList.add('show');
         }
       } else if (d.status === 'error') {
         document.getElementById('progressMsg').style.color = '#ff6b6b';
