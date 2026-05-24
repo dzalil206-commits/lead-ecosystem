@@ -367,6 +367,7 @@ def init_db():
         "ALTER TABLE miner_jobs ADD COLUMN filters_json TEXT",
         "ALTER TABLE miner_jobs ADD COLUMN source_links TEXT",
         "ALTER TABLE miner_jobs ADD COLUMN cancelled INTEGER DEFAULT 0",
+        "ALTER TABLE miner_jobs ADD COLUMN source_type TEXT DEFAULT 'members'",
         "ALTER TABLE leads ADD COLUMN premium INTEGER DEFAULT 0",
         "ALTER TABLE leads ADD COLUMN has_photo INTEGER DEFAULT 0",
         "ALTER TABLE leads ADD COLUMN is_bot INTEGER DEFAULT 0",
@@ -1589,10 +1590,18 @@ def miner():
         "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND LOWER(product) IN ('miner','start','pro','scale') ORDER BY price DESC, expires_at DESC LIMIT 1",
         (current_user.id,),
     ).fetchone()
-    miner_jobs = db.execute(
+    _raw_jobs = db.execute(
         "SELECT * FROM miner_jobs WHERE user_id=? ORDER BY created_at DESC LIMIT 10",
         (current_user.id,),
     ).fetchall()
+    miner_jobs = []
+    for _j in _raw_jobs:
+        _jd = dict(_j)
+        try:
+            _jd['_links'] = json.loads(_jd.get('source_links') or '[]') or [_jd.get('source_link','')]
+        except Exception:
+            _jd['_links'] = [_jd.get('source_link','')]
+        miner_jobs.append(_jd)
     presets = db.execute(
         "SELECT * FROM miner_presets WHERE user_id=? ORDER BY created_at DESC",
         (current_user.id,),
@@ -1695,6 +1704,8 @@ def _apply_miner_filters(member, filters):
     ls_filter = filters.get('last_seen', 'any')
     if ls_filter != 'any':
         cat = _last_seen_cat(member.status)
+        if ls_filter == 'online' and cat not in ('online', 'offline'):
+            return False
         if ls_filter == 'recently' and cat not in ('online', 'offline', 'recently'):
             return False
         if ls_filter == 'week' and cat not in ('online', 'offline', 'recently', 'week'):
@@ -1705,6 +1716,9 @@ def _apply_miner_filters(member, filters):
         g = _guess_gender(member.first_name or '')
         if g != gender_filter:
             return False
+    # Только с username
+    if filters.get('has_username') and not member.username:
+        return False
     # Языковой фильтр (по language_code аккаунта)
     lang_filter = filters.get('language', '')
     if lang_filter:
@@ -1957,8 +1971,8 @@ def miner_start():
     proxy        = _get_user_proxy(db, current_user.id)
 
     cursor = db.execute(
-        "INSERT INTO miner_jobs (user_id, source_link, source_links, status, filters_json) VALUES (?,?,?,'pending',?)",
-        (current_user.id, links[0], json.dumps(links), json.dumps(filters)),
+        "INSERT INTO miner_jobs (user_id, source_link, source_links, status, filters_json, source_type) VALUES (?,?,?,'pending',?,?)",
+        (current_user.id, links[0], json.dumps(links), json.dumps(filters), source_type),
     )
     job_id = cursor.lastrowid
     db.commit()
@@ -2005,6 +2019,38 @@ def miner_job_cancel(job_id):
     )
     db.commit()
     return jsonify({'success': True})
+
+
+@app.route('/miner/job/<int:job_id>/stats')
+@login_required
+def miner_job_stats(job_id):
+    db  = get_db()
+    job = db.execute("SELECT * FROM miner_jobs WHERE id=? AND user_id=?",
+                     (job_id, current_user.id)).fetchone()
+    if not job:
+        return jsonify({'error': 'not found'}), 404
+    total = job['leads_count'] or 0
+    if total == 0:
+        return jsonify({'total': 0})
+    s = db.execute("""
+        SELECT
+            SUM(CASE WHEN premium=1 THEN 1 ELSE 0 END)  AS premium_cnt,
+            SUM(CASE WHEN has_photo=1 THEN 1 ELSE 0 END) AS photo_cnt,
+            SUM(CASE WHEN username IS NOT NULL AND username!='' THEN 1 ELSE 0 END) AS uname_cnt,
+            SUM(CASE WHEN gender='male'   THEN 1 ELSE 0 END) AS male_cnt,
+            SUM(CASE WHEN gender='female' THEN 1 ELSE 0 END) AS female_cnt,
+            SUM(CASE WHEN last_seen_cat IN ('online','offline','recently') THEN 1 ELSE 0 END) AS active_cnt
+        FROM leads WHERE job_id=?
+    """, (job_id,)).fetchone()
+    return jsonify({
+        'total':   total,
+        'premium': s['premium_cnt'] or 0,
+        'photo':   s['photo_cnt']   or 0,
+        'uname':   s['uname_cnt']   or 0,
+        'male':    s['male_cnt']    or 0,
+        'female':  s['female_cnt']  or 0,
+        'active':  s['active_cnt']  or 0,
+    })
 
 
 @app.route('/miner/job/<int:job_id>/preview')

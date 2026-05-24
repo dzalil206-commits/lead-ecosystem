@@ -385,6 +385,9 @@
                 <label class="filter-toggle" data-key="verified_only">
                   <input type="checkbox"><div class="filter-dot"></div>Верифицированные ✓
                 </label>
+                <label class="filter-toggle" data-key="has_username">
+                  <input type="checkbox"><div class="filter-dot"></div>Только с @username
+                </label>
               </div>
 
               <div class="two-col" style="margin-bottom:10px">
@@ -392,6 +395,7 @@
                   <label class="form-label">Активность</label>
                   <select class="form-select" id="lastSeenSel">
                     <option value="any">Любая</option>
+                    <option value="online">🟢 Онлайн сейчас</option>
                     <option value="recently">Был недавно</option>
                     <option value="week">За неделю</option>
                   </select>
@@ -453,6 +457,14 @@
             </div>
           </div>
 
+          <!-- Stats -->
+          <div class="panel results-box" id="statsBox" style="display:none">
+            <div class="panel-hd">
+              <div class="panel-title">📊 Статистика сбора</div>
+            </div>
+            <div id="statsGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
+          </div>
+
           <!-- Results -->
           <div class="panel results-box" id="resultsBox">
             <div class="panel-hd">
@@ -476,11 +488,20 @@
             {% if miner_jobs %}
             <div style="overflow-x:auto">
               <table class="job-table">
-                <thead><tr><th>Источник</th><th>Статус</th><th>Лидов</th><th>Дата</th><th>Экспорт</th></tr></thead>
+                <thead><tr><th>Источник</th><th>Метод</th><th>Статус</th><th>Лидов</th><th>Дата</th><th>Действия</th></tr></thead>
                 <tbody>
                 {% for job in miner_jobs %}
                 <tr>
-                  <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(255,255,255,.4)">{{ job.source_link }}</td>
+                  <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(255,255,255,.4)">
+                    {% if job._links|length > 1 %}
+                      <span title="{{ job._links|join('\n') }}">{{ job._links[0] }} <span style="color:rgba(255,106,0,.7);font-size:10px">+{{ job._links|length - 1 }}</span></span>
+                    {% else %}
+                      {{ job._links[0] if job._links else job.source_link }}
+                    {% endif %}
+                  </td>
+                  <td style="font-size:11px;color:rgba(255,255,255,.35)">
+                    {% if job.source_type == 'messages' %}💬 сообщ.{% else %}👥 участн.{% endif %}
+                  </td>
                   <td>
                     <span class="s-pill {{ job.status }}">
                       {% if job.status=='running' %}<span class="spin"></span>{% endif %}
@@ -489,11 +510,13 @@
                   </td>
                   <td style="font-weight:600;color:{% if job.leads_count %}#3be88c{% else %}rgba(255,255,255,.25){% endif %}">{{ job.leads_count or 0 }}</td>
                   <td style="color:rgba(255,255,255,.3);font-size:11px">{{ (job.created_at or '')[:16] }}</td>
-                  <td>
+                  <td style="white-space:nowrap">
                     {% if job.status in ('done','cancelled') and job.leads_count %}
                     <a href="{{ url_for('miner_export', job_id=job.id, fmt='csv') }}" class="btn btn-ghost btn-xs">CSV</a>
                     <a href="{{ url_for('miner_export', job_id=job.id, fmt='txt') }}" class="btn btn-ghost btn-xs">TXT</a>
-                    {% else %}—{% endif %}
+                    {% endif %}
+                    <button class="btn btn-ghost btn-xs" title="Повторить сбор"
+                      onclick="repeatJob({{ job._links|tojson }}, {{ job.filters_json or '{}' }}, '{{ job.source_type or 'members' }}')">🔁</button>
                   </td>
                 </tr>
                 {% endfor %}
@@ -598,13 +621,23 @@ if (IS_TRIAL && TRIAL_SECS > 0) {
   const _timerInterval = setInterval(updateTimer, 1000);
 }
 
-/* ── SOURCE TYPE HINT ─────────────────────────────── */
+/* ── SOURCE TYPE HINT + LIMIT SYNC ───────────────── */
 document.getElementById('sourceTypeSel').addEventListener('change', function() {
   const hints = {
-    members: 'Парсит список участников группы/чата',
+    members:  'Парсит список участников группы/чата',
     messages: 'Извлекает уникальных авторов сообщений (работает и для каналов)'
   };
   document.getElementById('sourceTypeHint').textContent = hints[this.value] || '';
+  if (!IS_TRIAL) {
+    const li = document.getElementById('limitInput');
+    if (this.value === 'messages') {
+      li.value = 1000; li.max = 10000;
+      li.title = 'Для режима «по сообщениям» рекомендуется до 1000';
+    } else {
+      li.value = 5000; li.max = 50000;
+      li.title = '';
+    }
+  }
 });
 
 /* ── AUTO JOIN TOGGLE ─────────────────────────────── */
@@ -676,6 +709,10 @@ function setFilters(f) {
 async function startCollect() {
   const linksRaw = document.getElementById('linksInput').value.trim();
   if (!linksRaw) { alert('Введите хотя бы одну ссылку'); return; }
+  // Запросить разрешение на браузерные уведомления
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
 
   // Триал: принудительно только 1 источник
   const links = IS_TRIAL
@@ -734,7 +771,14 @@ async function poll() {
       if (d.status === 'done') {
         showExports(_jobId, d.leads_count);
         loadPreview(_jobId);
+        loadStats(_jobId);
         updateProgress(100, '✅ Готово! Страница обновится...', d.leads_count);
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('TG Lead Miner', {
+            body: `Сбор завершён! Найдено ${d.leads_count} лидов.`,
+            icon: '/static/favicon.ico'
+          });
+        }
       } else if (d.status === 'error') {
         document.getElementById('progressMsg').style.color = '#ff6b6b';
         document.getElementById('progressMsg').textContent = '❌ ' + (d.error_msg || 'Ошибка');
@@ -831,6 +875,50 @@ async function deletePreset(e, id) {
   if (!confirm('Удалить пресет?')) return;
   await fetch('/miner/preset/'+id+'/delete', {method:'POST'});
   document.querySelector('.preset-item[data-id="'+id+'"]')?.remove();
+}
+
+/* ── STATS ───────────────────────────────────────── */
+async function loadStats(jid) {
+  try {
+    const r = await fetch('/miner/job/' + jid + '/stats');
+    const d = await r.json();
+    if (!d.total) return;
+    const pct = (n) => d.total > 0 ? Math.round(n / d.total * 100) : 0;
+    const stat = (icon, label, val, total) => {
+      const p = pct(val);
+      return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 12px;text-align:center">
+        <div style="font-size:18px;margin-bottom:4px">${icon}</div>
+        <div style="font-size:16px;font-weight:800;color:#ff9040">${val} <span style="font-size:11px;color:rgba(255,255,255,.35)">(${p}%)</span></div>
+        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:2px">${label}</div>
+      </div>`;
+    };
+    document.getElementById('statsGrid').innerHTML =
+      stat('⭐', 'Premium', d.premium, d.total) +
+      stat('📸', 'С фото', d.photo, d.total) +
+      stat('@', 'С username', d.uname, d.total) +
+      stat('🟢', 'Активные', d.active, d.total) +
+      stat('♂', 'Мужской', d.male, d.total) +
+      stat('♀', 'Женский', d.female, d.total);
+    document.getElementById('statsBox').style.display = '';
+  } catch(e) {}
+}
+
+/* ── REPEAT JOB ──────────────────────────────────── */
+function repeatJob(links, filtersJson, sourceType) {
+  try {
+    // Заполняем ссылки
+    document.getElementById('linksInput').value = Array.isArray(links) ? links.join('\n') : links;
+    // Выставляем метод парсинга
+    const sel = document.getElementById('sourceTypeSel');
+    sel.value = sourceType || 'members';
+    sel.dispatchEvent(new Event('change'));
+    // Применяем фильтры
+    const filters = typeof filtersJson === 'string' ? JSON.parse(filtersJson) : filtersJson;
+    if (filters && Object.keys(filters).length) setFilters(filters);
+    // Скроллим к форме
+    document.getElementById('linksInput').scrollIntoView({behavior:'smooth', block:'center'});
+    document.getElementById('linksInput').focus();
+  } catch(e) { console.warn('repeatJob error', e); }
 }
 </script>
 </body>
