@@ -617,11 +617,12 @@ def _make_session_path(user_id, phone):
     return os.path.join('sessions', f'u{user_id}_{safe_phone}')
 
 def _get_user_proxy(db, user_id):
-    """Вернуть первый активный прокси пользователя для Telethon, или None.
+    """Вернуть первый активный прокси пользователя как внутренний dict, или None.
     Приоритет: mtproto → socks5 → socks4 → http.
     """
     row = db.execute(
-        "SELECT * FROM proxies WHERE user_id=? AND is_active=1 ORDER BY CASE type WHEN 'mtproto' THEN 0 WHEN 'socks5' THEN 1 WHEN 'socks4' THEN 2 ELSE 3 END, id ASC LIMIT 1",
+        "SELECT * FROM proxies WHERE user_id=? AND is_active=1 "
+        "ORDER BY CASE type WHEN 'mtproto' THEN 0 WHEN 'socks5' THEN 1 WHEN 'socks4' THEN 2 ELSE 3 END, id ASC LIMIT 1",
         (user_id,)
     ).fetchone()
     if not row:
@@ -629,25 +630,25 @@ def _get_user_proxy(db, user_id):
     proxy_type = (row['type'] or 'socks5').lower()
 
     if proxy_type == 'mtproto':
-        # MTProto proxy — Telethon принимает tuple:
-        # (ConnectionClass, host, port, dc_id, secret_bytes)
-        # dc_id можно передать True (авто) или None
-        from telethon.network.connection import ConnectionTcpMTProxyRandomizedIntermediate
         raw_secret = (row['secret'] or '').strip()
-        # Secret может быть hex-строкой (32/34/96+ символов) или base64
         try:
             secret_bytes = bytes.fromhex(raw_secret)
         except (ValueError, AttributeError):
-            # Попытка base64 или просто байты
             try:
                 import base64
                 secret_bytes = base64.b64decode(raw_secret)
             except Exception:
                 secret_bytes = raw_secret.encode('utf-8')
-        return (ConnectionTcpMTProxyRandomizedIntermediate, row['host'], int(row['port']), True, secret_bytes)
+        return {
+            '_type':  'mtproto',
+            'host':   row['host'],
+            'port':   int(row['port']),
+            'secret': secret_bytes,
+        }
 
-    # SOCKS / HTTP — dict для python-socks/Telethon
+    # SOCKS / HTTP — dict для python-socks / Telethon
     return {
+        '_type':      'socks',
         'proxy_type': proxy_type,
         'addr':       row['host'],
         'port':       int(row['port']),
@@ -655,6 +656,31 @@ def _get_user_proxy(db, user_id):
         'password':   row['password'] or None,
         'rdns':       True,
     }
+
+
+def _make_tg_client(session_path, api_id, api_hash, proxy_info=None):
+    """Создать TelegramClient с правильной обработкой SOCKS и MTProto прокси.
+
+    Telethon для MTProto требует:
+        connection=ConnectionTcpMTProxyRandomizedIntermediate
+        proxy=(host, port, secret_bytes)
+    Для SOCKS/HTTP:
+        proxy={'proxy_type': ..., 'addr': ..., 'port': ..., ...}
+    """
+    if proxy_info is None:
+        return TelegramClient(session_path, api_id, api_hash)
+
+    if proxy_info.get('_type') == 'mtproto':
+        from telethon.network.connection import ConnectionTcpMTProxyRandomizedIntermediate
+        return TelegramClient(
+            session_path, api_id, api_hash,
+            connection=ConnectionTcpMTProxyRandomizedIntermediate,
+            proxy=(proxy_info['host'], proxy_info['port'], proxy_info['secret']),
+        )
+
+    # SOCKS / HTTP — убираем служебный ключ _type перед передачей
+    socks_dict = {k: v for k, v in proxy_info.items() if k != '_type'}
+    return TelegramClient(session_path, api_id, api_hash, proxy=socks_dict)
 
 @app.route('/sender_add_account', methods=['POST'])
 @login_required
@@ -677,7 +703,7 @@ def sender_add_account():
     proxy = _get_user_proxy(db, current_user.id)
 
     async def send_code():
-        client = TelegramClient(session_path, api_id_int, api_hash, proxy=proxy)
+        client = _make_tg_client(session_path, api_id_int, api_hash, proxy)
         await client.connect()
         try:
             if await client.is_user_authorized():
@@ -756,7 +782,9 @@ def verify_code():
     code = request.form.get('code', '').strip()
 
     async def do_sign_in():
-        client = TelegramClient(auth['session_path'], auth['api_id'], auth['api_hash'])
+        db_inner = get_db()
+        client = _make_tg_client(auth['session_path'], auth['api_id'], auth['api_hash'],
+                                  _get_user_proxy(db_inner, current_user.id))
         await client.connect()
         try:
             await client.sign_in(
@@ -823,7 +851,9 @@ def verify_2fa():
     password = request.form.get('password', '').strip()
 
     async def do_sign_in_2fa():
-        client = TelegramClient(auth['session_path'], auth['api_id'], auth['api_hash'])
+        db_inner = get_db()
+        client = _make_tg_client(auth['session_path'], auth['api_id'], auth['api_hash'],
+                                  _get_user_proxy(db_inner, current_user.id))
         await client.connect()
         try:
             await client.sign_in(password=password)
@@ -951,7 +981,6 @@ def sender_test_proxy_api():
     if proxy_type == 'mtproto':
         async def _test_mtproto():
             try:
-                from telethon.network.connection import ConnectionTcpMTProxyRandomizedIntermediate
                 raw_secret = (secret or '').strip()
                 try:
                     secret_bytes = bytes.fromhex(raw_secret)
@@ -962,11 +991,11 @@ def sender_test_proxy_api():
                     except Exception:
                         secret_bytes = raw_secret.encode('utf-8')
 
-                proxy_tuple = (ConnectionTcpMTProxyRandomizedIntermediate, host, port, True, secret_bytes)
                 # Временный клиент без аккаунта — пробуем подключиться
                 import tempfile, os
                 tmp_session = os.path.join(tempfile.gettempdir(), f'tg_proxy_test_{row["id"]}')
-                client = TelegramClient(tmp_session, 2040, 'b18441a1ff607e10a989891a5462e627', proxy=proxy_tuple)
+                proxy_info = {'_type': 'mtproto', 'host': host, 'port': port, 'secret': secret_bytes}
+                client = _make_tg_client(tmp_session, 2040, 'b18441a1ff607e10a989891a5462e627', proxy_info)
                 await asyncio.wait_for(client.connect(), timeout=12)
                 connected = client.is_connected()
                 await client.disconnect()
@@ -1082,7 +1111,7 @@ def sender_send_code_api():
     os.makedirs('sessions', exist_ok=True)
 
     async def _send():
-        client = TelegramClient(session_path, api_id_int, api_hash, proxy=proxy)
+        client = _make_tg_client(session_path, api_id_int, api_hash, proxy)
         try:
             await asyncio.wait_for(client.connect(), timeout=15)
             if await client.is_user_authorized():
@@ -1170,7 +1199,7 @@ def sender_verify_code_api():
     proxy = _get_user_proxy(db, current_user.id)
 
     async def _verify():
-        client = TelegramClient(auth['session_path'], auth['api_id'], auth['api_hash'], proxy=proxy)
+        client = _make_tg_client(auth['session_path'], auth['api_id'], auth['api_hash'], proxy)
         try:
             await asyncio.wait_for(client.connect(), timeout=15)
             if password:
@@ -1515,7 +1544,7 @@ def run_miner_job(job_id, session_path, api_id, api_hash, link, user_id, proxy, 
         try:
             conn.execute("UPDATE miner_jobs SET status='running' WHERE id=?", (job_id,))
             conn.commit()
-            client = TelegramClient(session_path, api_id, api_hash, proxy=proxy)
+            client = _make_tg_client(session_path, api_id, api_hash, proxy)
             await client.connect()
             try:
                 entity = await client.get_entity(link)
