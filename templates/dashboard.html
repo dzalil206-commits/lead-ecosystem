@@ -5,677 +5,1220 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Личный кабинет — TG Lead Wareon</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    .dashboard-container { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 60px); }
-    .sidebar { background: rgba(8,8,8,0.98); border-right: 1px solid var(--border-subtle); padding: 20px 0; display: flex; flex-direction: column; }
-    .sidebar-section { padding: 0 16px; margin-bottom: 20px; }
-    .sidebar-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 8px; padding: 0 8px; }
-    .sidebar-link { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 8px; color: var(--text-muted); font-size: 14px; text-decoration: none; transition: all 0.2s; cursor: pointer; }
-    .sidebar-link:hover, .sidebar-link.active { background: rgba(212,165,116,0.08); color: var(--accent-light); }
-    .sidebar-link .icon { width: 20px; text-align: center; font-size: 15px; }
-    .main-area { padding: 24px 32px; overflow-y: auto; }
-    .content-section { display: none; }
-    .content-section.active { display: block; }
+    /* ══════════════════════════════════════════════
+       DASHBOARD LAYOUT
+    ══════════════════════════════════════════════ */
+    html, body { height: 100%; overflow: hidden; }
+    body.page-dark { background: #07070f; }
 
-    /* Профиль в сайдбаре */
-    .sidebar-profile { padding: 12px 16px; margin: 0 8px 16px; background: rgba(212,165,116,0.06); border: 1px solid rgba(212,165,116,0.15); border-radius: 12px; }
-    .sidebar-profile .name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sidebar-profile .plan-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
-    .sidebar-profile .plan-badge { font-size: 10px; padding: 2px 7px; border-radius: 999px; background: rgba(212,165,116,0.18); color: var(--accent-light); font-weight: 600; }
-    .sidebar-profile .days-badge { font-size: 10px; color: var(--text-muted); }
-    .sidebar-profile .days-badge.warn { color: #ffb347; }
-    .sidebar-profile .days-badge.danger { color: #ff6b6b; }
+    .db-wrap { display: flex; height: 100vh; overflow: hidden; }
 
-    /* Сводка аккаунтов */
-    .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
-    .summary-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px; }
-    .summary-card .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
-    .summary-card .value { font-size: 24px; font-weight: 600; }
-    .summary-card .sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-    .summary-card.active .value { color: #3be88c; }
-    .summary-card.warning .value { color: #ffb347; }
-    .summary-card.danger .value { color: #ff6b6b; }
+    /* ── Sidebar ───────────────────────────── */
+    .db-sidebar {
+      width: 232px; flex-shrink: 0;
+      background: rgba(5,5,12,0.99);
+      border-right: 1px solid rgba(255,255,255,0.06);
+      display: flex; flex-direction: column;
+      overflow-y: auto; overflow-x: hidden;
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+      z-index: 60; position: relative;
+    }
+    .db-sidebar::-webkit-scrollbar { width: 3px; }
 
-    /* Таблица */
-    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .data-table th { text-align: left; padding: 10px 12px; color: var(--text-muted); font-weight: 500; font-size: 12px; border-bottom: 1px solid var(--border-subtle); }
-    .data-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
-    .data-table tr:hover td { background: rgba(212,165,116,0.03); }
-    .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
-    .status-dot.green { background: #3be88c; }
-    .status-dot.orange { background: #ffb347; }
-    .status-dot.red { background: #ff6b6b; }
+    /* Logo */
+    .db-logo-wrap {
+      padding: 18px 16px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      flex-shrink: 0;
+    }
 
-    /* Переключатели */
-    .toggle-switch { position: relative; width: 40px; height: 22px; }
-    .toggle-switch input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider { position: absolute; cursor: pointer; inset: 0; background: rgba(255,255,255,0.1); border-radius: 999px; transition: 0.3s; }
-    .toggle-slider:before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.3s; }
-    .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
-    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(18px); }
+    /* Profile card */
+    .db-profile {
+      margin: 12px 10px;
+      padding: 11px 12px;
+      background: rgba(255,106,0,0.06);
+      border: 1px solid rgba(255,106,0,0.14);
+      border-radius: 11px;
+      flex-shrink: 0;
+      cursor: default;
+    }
+    .db-profile-row { display: flex; align-items: center; gap: 9px; }
+    .db-avatar {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, #ff8c00, #ff4500);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800; color: #fff; letter-spacing: -0.5px;
+    }
+    .db-profile-name { font-size: 12.5px; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px; }
+    .db-profile-plan { margin-top: 5px; display: flex; align-items: center; gap: 6px; }
+    .db-plan-pill {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+      padding: 2px 7px; border-radius: 999px;
+      background: rgba(255,170,68,0.15); color: #ffaa44;
+      border: 1px solid rgba(255,170,68,0.25);
+    }
+    .db-plan-pill.no-plan { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.35); border-color: rgba(255,255,255,0.1); }
+    .db-days-pill { font-size: 10px; color: rgba(255,255,255,0.4); }
+    .db-days-pill.warn  { color: #ffb347; }
+    .db-days-pill.crit  { color: #ff6b6b; }
 
-    /* Модули */
-    .module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 16px; }
-    .module-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 20px; }
-    .module-card h3 { font-size: 16px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
-    .module-card p { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+    /* Nav sections */
+    .db-nav { padding: 6px 8px; flex: 1; }
+    .db-nav-section { margin-bottom: 22px; }
+    .db-nav-label {
+      font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.12em;
+      color: rgba(255,255,255,0.22); padding: 0 8px; margin-bottom: 3px;
+    }
+    .db-nav-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 10px; border-radius: 8px;
+      font-size: 13px; color: rgba(255,255,255,0.45);
+      cursor: pointer; text-decoration: none;
+      transition: all 0.15s; position: relative; user-select: none;
+    }
+    .db-nav-item:hover { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.75); }
+    .db-nav-item.active {
+      background: rgba(255,106,0,0.09);
+      color: #fff;
+    }
+    .db-nav-item.active::before {
+      content: ''; position: absolute; left: 0; top: 7px; bottom: 7px;
+      width: 3px; border-radius: 0 3px 3px 0; background: var(--orange);
+    }
+    .db-nav-icon { width: 17px; text-align: center; font-size: 14px; flex-shrink: 0; }
+    .db-nav-badge {
+      margin-left: auto; background: var(--orange); color: #fff;
+      border-radius: 999px; padding: 1px 6px; font-size: 10px; font-weight: 700;
+    }
+    .db-nav-tag {
+      margin-left: auto; font-size: 9px; font-weight: 700; letter-spacing: 0.05em;
+      background: rgba(100,160,255,0.12); color: rgba(100,160,255,0.7);
+      border-radius: 4px; padding: 1px 5px;
+    }
 
-    /* Реферальный виджет */
-    .ref-widget { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 18px 20px; }
-    .ref-widget h3 { font-size: 15px; margin-bottom: 12px; }
-    .ref-link-row { display: flex; gap: 8px; align-items: center; }
-    .ref-link-row input { flex: 1; background: rgba(10,10,10,0.9); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 10px; color: var(--text); font-size: 12px; }
+    .db-sidebar-footer {
+      padding: 12px 14px; border-top: 1px solid rgba(255,255,255,0.05);
+      flex-shrink: 0;
+    }
+    .db-logout-btn {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: rgba(255,255,255,0.3);
+      text-decoration: none; padding: 6px 8px; border-radius: 7px;
+      transition: all 0.15s;
+    }
+    .db-logout-btn:hover { color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.04); }
 
-    @media (max-width: 768px) { .dashboard-container { grid-template-columns: 1fr; } .sidebar { display: none; } .main-area { padding: 16px; } }
+    /* ── Main area ─────────────────────────── */
+    .db-main { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; }
+    .db-main::-webkit-scrollbar { width: 4px; }
+    .db-main::-webkit-scrollbar-thumb { background: rgba(255,106,0,0.25); border-radius: 4px; }
+
+    /* Topbar */
+    .db-topbar {
+      position: sticky; top: 0; z-index: 40; flex-shrink: 0;
+      height: 50px; padding: 0 28px;
+      background: rgba(7,7,15,0.85); backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .db-breadcrumb { font-size: 12.5px; color: rgba(255,255,255,0.35); display: flex; align-items: center; gap: 6px; }
+    .db-breadcrumb-cur { color: #fff; font-weight: 500; }
+    .db-topbar-right { display: flex; align-items: center; gap: 8px; }
+    .db-mobile-menu-btn {
+      display: none; width: 34px; height: 34px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1); background: transparent;
+      color: rgba(255,255,255,0.7); font-size: 16px; cursor: pointer;
+      align-items: center; justify-content: center;
+    }
+
+    /* Content area */
+    .db-content { padding: 24px 28px 48px; flex: 1; }
+    .db-section { display: none; }
+    .db-section.active { display: block; animation: sectionIn 0.18s ease; }
+    @keyframes sectionIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Section title */
+    .db-section-title {
+      font-size: 19px; font-weight: 700; letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .db-section-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 22px; }
+
+    /* ══════════════════════════════════════════
+       KPI CARDS
+    ══════════════════════════════════════════ */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 22px; }
+    .kpi-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px; padding: 17px 18px;
+      position: relative; overflow: hidden;
+      transition: border-color 0.2s, transform 0.18s;
+      cursor: default;
+    }
+    .kpi-card:hover { border-color: rgba(255,255,255,0.11); transform: translateY(-2px); }
+    .kpi-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+    .kpi-icon {
+      width: 34px; height: 34px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center; font-size: 15px;
+    }
+    .kpi-trend { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 999px; }
+    .kpi-trend-up   { background: rgba(59,232,140,0.12); color: #3be88c; }
+    .kpi-trend-down { background: rgba(255,107,107,0.1); color: #ff6b6b; }
+    .kpi-trend-neu  { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); }
+    .kpi-num { font-size: 26px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; margin-bottom: 4px; }
+    .kpi-label { font-size: 11.5px; color: rgba(255,255,255,0.38); }
+    /* colored icons */
+    .ki-green  { background: rgba(59,232,140,0.12); border: 1px solid rgba(59,232,140,0.18); }
+    .ki-orange { background: rgba(255,106,0,0.12);  border: 1px solid rgba(255,106,0,0.18); }
+    .ki-blue   { background: rgba(100,160,255,0.12);border: 1px solid rgba(100,160,255,0.18); }
+    .ki-purple { background: rgba(180,100,255,0.12);border: 1px solid rgba(180,100,255,0.18); }
+    /* card glow top line */
+    .kpi-card.glow-green::after { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(59,232,140,0.4),transparent); }
+    .kpi-card.glow-orange::after { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(255,106,0,0.5),transparent); }
+    .kpi-card.glow-blue::after { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(100,160,255,0.4),transparent); }
+
+    /* ══════════════════════════════════════════
+       PANELS
+    ══════════════════════════════════════════ */
+    .panel {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px; padding: 20px 22px;
+      margin-bottom: 16px; position: relative; overflow: hidden;
+    }
+    .panel-hd {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .panel-title { font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+    .panel-hint  { font-size: 11.5px; color: rgba(255,255,255,0.3); }
+
+    /* ══════════════════════════════════════════
+       TABLES
+    ══════════════════════════════════════════ */
+    .db-table-wrap { overflow-x: auto; }
+    .db-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 500px; }
+    .db-table th {
+      text-align: left; padding: 9px 14px;
+      font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em;
+      color: rgba(255,255,255,0.28); font-weight: 600;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .db-table td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    .db-table tr:last-child td { border-bottom: none; }
+    .db-table tbody tr { transition: background 0.12s; }
+    .db-table tbody tr:hover td { background: rgba(255,255,255,0.025); }
+    .db-table-empty { text-align: center; padding: 32px; color: rgba(255,255,255,0.25); font-size: 13px; }
+
+    /* Status pills */
+    .spill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 600; padding: 3px 9px;
+      border-radius: 999px; white-space: nowrap;
+    }
+    .spill::before { content:''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .sp-active   { background: rgba(59,232,140,0.09); color: #3be88c; border: 1px solid rgba(59,232,140,0.2); }
+    .sp-active::before  { background: #3be88c; box-shadow: 0 0 4px #3be88c; }
+    .sp-inactive { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.35); border: 1px solid rgba(255,255,255,0.08); }
+    .sp-inactive::before { background: rgba(255,255,255,0.3); }
+    .sp-warn     { background: rgba(255,179,71,0.09); color: #ffb347; border: 1px solid rgba(255,179,71,0.2); }
+    .sp-warn::before { background: #ffb347; animation: blink 1.8s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .sp-type { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.1); font-family: monospace; font-size: 10.5px; }
+
+    /* ══════════════════════════════════════════
+       QUICK START
+    ══════════════════════════════════════════ */
+    .qs-step {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 11px 12px; border-radius: 10px;
+      transition: background 0.12s;
+    }
+    .qs-step:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .qs-step:hover { background: rgba(255,255,255,0.02); }
+    .qs-num {
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; margin-top: 1px;
+    }
+    .qs-done { background: rgba(59,232,140,0.12); border: 1px solid rgba(59,232,140,0.3); color: #3be88c; }
+    .qs-todo { background: linear-gradient(135deg, var(--orange), var(--orange-2)); color: #fff; box-shadow: 0 0 12px rgba(255,106,0,0.4); }
+    .qs-future { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.25); }
+    .qs-body { flex: 1; }
+    .qs-title { font-size: 13.5px; font-weight: 500; margin-bottom: 2px; }
+    .qs-sub   { font-size: 11.5px; color: rgba(255,255,255,0.38); }
+    .qs-title.done { color: rgba(255,255,255,0.3); text-decoration: line-through; }
+    .qs-action { flex-shrink: 0; align-self: center; }
+
+    /* ══════════════════════════════════════════
+       LICENSE CARDS
+    ══════════════════════════════════════════ */
+    .lic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+    .lic-card {
+      background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 18px 20px; position: relative; overflow: hidden;
+    }
+    .lic-card.expiring { border-color: rgba(255,179,71,0.3); }
+    .lic-card.expiring::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,rgba(255,179,71,0.7),transparent); }
+    .lic-card.expired  { border-color: rgba(255,107,107,0.25); }
+    .lic-card-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .lic-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+    .lic-icon-miner  { background: rgba(255,106,0,0.1); border: 1px solid rgba(255,106,0,0.2); }
+    .lic-icon-sender { background: rgba(100,160,255,0.1); border: 1px solid rgba(100,160,255,0.2); }
+    .lic-days-big { font-size: 28px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+    .lic-days-lbl { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+    .lic-meta { font-size: 11px; color: rgba(255,255,255,0.3); margin-bottom: 10px; }
+    .lic-bar-wrap { height: 3px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; margin-bottom: 12px; }
+    .lic-bar { height: 100%; border-radius: 3px; transition: width 1s ease; }
+
+    /* ══════════════════════════════════════════
+       SUMMARY MINI CARDS
+    ══════════════════════════════════════════ */
+    .mini-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 18px; }
+    .mini-card { background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07); border-radius: 11px; padding: 13px 14px; }
+    .mini-card-val { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; }
+    .mini-card-lbl { font-size: 10.5px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+    .mc-green .mini-card-val { color: #3be88c; }
+    .mc-warn  .mini-card-val { color: #ffb347; }
+
+    /* ══════════════════════════════════════════
+       INFO BOX
+    ══════════════════════════════════════════ */
+    .info-box {
+      padding: 11px 14px; border-radius: 10px; font-size: 12.5px;
+      display: flex; align-items: flex-start; gap: 8px;
+      background: rgba(255,170,68,0.07); border: 1px solid rgba(255,170,68,0.2);
+      color: rgba(255,255,255,0.6); margin-bottom: 14px;
+    }
+    .info-box.danger { background: rgba(255,107,107,0.07); border-color: rgba(255,107,107,0.25); }
+    .info-box.success { background: rgba(59,232,140,0.07); border-color: rgba(59,232,140,0.2); color: rgba(59,232,140,0.85); }
+
+    /* ══════════════════════════════════════════
+       MODULE CARDS
+    ══════════════════════════════════════════ */
+    .mod-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px; padding: 24px 26px;
+      position: relative; overflow: hidden;
+    }
+    .mod-card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(255,106,0,0.35),transparent); }
+    .mod-card-icon { font-size: 32px; margin-bottom: 14px; }
+    .mod-card-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .mod-card-desc  { font-size: 13px; color: rgba(255,255,255,0.45); margin-bottom: 18px; line-height: 1.6; }
+    .mod-features { list-style: none; display: flex; flex-direction: column; gap: 7px; margin-bottom: 22px; }
+    .mod-features li { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: rgba(255,255,255,0.5); }
+    .mod-features li::before { content:''; width: 5px; height: 5px; border-radius: 50%; background: var(--orange); flex-shrink: 0; }
+
+    /* ══════════════════════════════════════════
+       REF WIDGET
+    ══════════════════════════════════════════ */
+    .ref-widget { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 20px 22px; }
+    .ref-link-row { display: flex; gap: 8px; margin-top: 12px; }
+    .ref-link-row input {
+      flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 9px 12px; color: rgba(255,255,255,0.6);
+      font-size: 12px; font-family: monospace;
+    }
+
+    /* ══════════════════════════════════════════
+       TOAST SYSTEM
+    ══════════════════════════════════════════ */
+    .toast-stack {
+      position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+    }
+    .toast {
+      background: rgba(12,12,22,0.96); border-radius: 11px; padding: 12px 16px;
+      font-size: 13px; max-width: 300px; backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; gap: 10px;
+      animation: toastIn 0.25s ease; pointer-events: auto;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+    }
+    .toast-success { border-color: rgba(59,232,140,0.3); }
+    .toast-error   { border-color: rgba(255,107,107,0.3); }
+    .toast-info    { border-color: rgba(255,170,68,0.3); }
+    @keyframes toastIn { from { opacity:0; transform: translateX(16px); } to { opacity:1; transform: translateX(0); } }
+    @keyframes toastOut { from { opacity:1; transform: translateX(0); } to { opacity:0; transform: translateX(16px); } }
+    .toast.removing { animation: toastOut 0.2s ease forwards; }
+
+    /* ══════════════════════════════════════════
+       BUTTONS (local overrides)
+    ══════════════════════════════════════════ */
+    .db-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: 8px; font-size: 12.5px;
+      font-weight: 600; cursor: pointer; border: none; font-family: inherit;
+      transition: all 0.15s; text-decoration: none; line-height: 1;
+    }
+    .db-btn-primary { background: var(--orange); color: #fff; }
+    .db-btn-primary:hover { background: var(--orange-2); box-shadow: 0 0 18px rgba(255,106,0,0.4); }
+    .db-btn-outline {
+      background: transparent; color: rgba(255,255,255,0.6);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .db-btn-outline:hover { border-color: rgba(255,106,0,0.4); color: var(--orange-3); background: rgba(255,106,0,0.05); }
+    .db-btn-ghost { background: transparent; color: rgba(255,255,255,0.4); }
+    .db-btn-ghost:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7); }
+    .db-btn-danger { background: transparent; color: #e05555; border: 1px solid rgba(224,85,85,0.2); }
+    .db-btn-danger:hover { background: rgba(224,85,85,0.08); border-color: rgba(224,85,85,0.4); }
+    .db-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ══════════════════════════════════════════
+       PROGRESS BAR (used in quick start)
+    ══════════════════════════════════════════ */
+    .prog-track { height: 3px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden; margin-bottom: 16px; }
+    .prog-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--orange), var(--orange-2)); transition: width 0.6s ease; }
+
+    /* ══════════════════════════════════════════
+       MOBILE
+    ══════════════════════════════════════════ */
+    @media (max-width: 860px) {
+      html, body { overflow: auto; }
+      .db-wrap { flex-direction: column; height: auto; min-height: 100vh; }
+      .db-sidebar {
+        position: fixed; top: 0; left: 0; height: 100vh;
+        transform: translateX(-100%); box-shadow: 4px 0 40px rgba(0,0,0,0.8);
+      }
+      .db-sidebar.open { transform: translateX(0); }
+      .db-main { overflow: visible; }
+      .db-mobile-menu-btn { display: flex; }
+      .kpi-grid { grid-template-columns: repeat(2,1fr); }
+      .mini-cards { grid-template-columns: repeat(3,1fr); }
+      .db-content { padding: 16px 14px 32px; }
+    }
+    @media (max-width: 480px) {
+      .kpi-grid { grid-template-columns: repeat(2,1fr); }
+      .mini-cards { grid-template-columns: repeat(2,1fr); }
+    }
   </style>
 </head>
 <body class="page-dark">
-<div class="dashboard-container">
-    <!-- Сайдбар -->
-    <aside class="sidebar">
-        <div style="padding: 0 16px 16px;">
-            <a href="{{ url_for('index') }}" class="logo" style="margin-bottom:0;">
-                <span class="logo-mark">TG</span>
-                <span class="logo-text">Lead Wareon</span>
-            </a>
+
+<div class="db-wrap">
+  <!-- ══════════════════════════════════════════
+       SIDEBAR
+  ══════════════════════════════════════════ -->
+  <aside class="db-sidebar" id="dbSidebar">
+
+    <!-- Logo -->
+    <div class="db-logo-wrap">
+      <a href="{{ url_for('index') }}" class="logo" style="margin:0;">
+        <span class="logo-mark">TG</span>
+        <span class="logo-text">Lead Wareon</span>
+      </a>
+    </div>
+
+    <!-- Profile -->
+    <div class="db-profile">
+      <div class="db-profile-row">
+        <div class="db-avatar">{{ (current_user.full_name or current_user.email)[0].upper() }}</div>
+        <div style="overflow:hidden;">
+          <div class="db-profile-name">{{ current_user.full_name or current_user.email }}</div>
+        </div>
+      </div>
+      <div class="db-profile-plan">
+        {% if user_licenses %}
+          <span class="db-plan-pill">{{ user_licenses[0].product }}</span>
+          {% set dl = user_licenses[0].days_left %}
+          {% if dl <= 3 %}
+            <span class="db-days-pill crit">⚠ {{ dl }} дн.</span>
+          {% elif dl <= 7 %}
+            <span class="db-days-pill warn">{{ dl }} дн. осталось</span>
+          {% else %}
+            <span class="db-days-pill">{{ dl }} дн.</span>
+          {% endif %}
+        {% else %}
+          <span class="db-plan-pill no-plan">Нет лицензии</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="db-nav">
+      <div class="db-nav-section">
+        <div class="db-nav-label">Главная</div>
+        <a class="db-nav-item active" data-section="overview" id="nav-overview">
+          <span class="db-nav-icon">📊</span> Обзор
+        </a>
+        <a class="db-nav-item" data-section="accounts" id="nav-accounts">
+          <span class="db-nav-icon">👤</span> Аккаунты
+          {% if active_accounts_count %}<span class="db-nav-badge">{{ active_accounts_count }}</span>{% endif %}
+        </a>
+        <a class="db-nav-item" data-section="stats" id="nav-stats">
+          <span class="db-nav-icon">📈</span> Статистика
+        </a>
+        <a class="db-nav-item" href="{{ url_for('referral') }}">
+          <span class="db-nav-icon">🎁</span> Рефералы
+          {% if referral_count %}<span class="db-nav-badge">{{ referral_count }}</span>{% endif %}
+        </a>
+        <a class="db-nav-item" href="{{ url_for('support') }}">
+          <span class="db-nav-icon">💬</span> Поддержка
+        </a>
+      </div>
+
+      <div class="db-nav-section">
+        <div class="db-nav-label">Инструменты</div>
+        <a class="db-nav-item" data-section="miner-module" id="nav-miner-module">
+          <span class="db-nav-icon">⛏️</span> TG Lead Miner
+        </a>
+        <a class="db-nav-item" data-section="sender-module" id="nav-sender-module">
+          <span class="db-nav-icon">✉️</span> TG Lead Sender
+        </a>
+        <a class="db-nav-item" data-section="neuro-module" id="nav-neuro-module">
+          <span class="db-nav-icon">🤖</span> Нейрочаттинг
+          <span class="db-nav-tag">SOON</span>
+        </a>
+      </div>
+
+      <div class="db-nav-section">
+        <div class="db-nav-label">Аккаунт</div>
+        <a class="db-nav-item" data-section="licenses" id="nav-licenses">
+          <span class="db-nav-icon">📜</span> Мои лицензии
+        </a>
+        <a class="db-nav-item" href="{{ url_for('pricing') }}">
+          <span class="db-nav-icon">🛒</span> Тарифы
+        </a>
+        <a class="db-nav-item" href="{{ url_for('buy_proxy') }}">
+          <span class="db-nav-icon">🌐</span> Купить прокси
+        </a>
+      </div>
+    </nav>
+
+    <div class="db-sidebar-footer">
+      <a href="{{ url_for('logout') }}" class="db-logout-btn">
+        <span>🚪</span> Выйти из аккаунта
+      </a>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════════════════════════
+       MAIN
+  ══════════════════════════════════════════ -->
+  <div class="db-main" id="dbMain">
+
+    <!-- Topbar -->
+    <div class="db-topbar">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="db-mobile-menu-btn" id="dbMobileMenu">☰</button>
+        <div class="db-breadcrumb">
+          TG Lead Wareon &nbsp;/&nbsp; <span class="db-breadcrumb-cur" id="topbarTitle">Обзор</span>
+        </div>
+      </div>
+      <div class="db-topbar-right">
+        {% if days_left is not none and days_left <= 7 %}
+          <a href="/buy/miner" class="db-btn db-btn-danger" style="font-size:11.5px;">⚠ Продлить лицензию</a>
+        {% endif %}
+        <a href="{{ url_for('pricing') }}" class="db-btn db-btn-primary">+ Тариф</a>
+      </div>
+    </div>
+
+    <!-- ──────────────────────────── Content ──── -->
+    <div class="db-content">
+
+      <!-- ═══════════════════════════════════
+           СЕКЦИЯ: ОБЗОР
+      ═══════════════════════════════════ -->
+      <div class="db-section active" id="section-overview">
+
+        <div style="margin-bottom:20px;">
+          <div class="db-section-title">Добро пожаловать, {{ current_user.full_name or 'Пользователь' }} 👋</div>
+          <div class="db-section-sub">
+            {{ "Сегодня" }}, {{ "{date}" | replace("{date}", "") }}
+            <span id="currentDate" style="color:rgba(255,255,255,0.4);"></span>
+          </div>
         </div>
 
-        <!-- Профиль -->
-        <div class="sidebar-profile">
-            <div class="name">{{ current_user.full_name or current_user.email }}</div>
-            <div class="plan-row">
-                {% if user_licenses %}
-                    <span class="plan-badge">{{ user_licenses[0].product }}</span>
-                    {% set dl = user_licenses[0].days_left %}
-                    {% if dl <= 3 %}
-                        <span class="days-badge danger">⚠️ {{ dl }} дн.</span>
-                    {% elif dl <= 7 %}
-                        <span class="days-badge warn">{{ dl }} дн.</span>
+        {% if days_left is not none and days_left <= 3 %}
+        <div class="info-box danger" style="margin-bottom:18px;">
+          <span>🔴</span>
+          <div>Лицензия истекает через <strong>{{ days_left }}</strong> дн.
+            <a href="/buy/miner" style="color:#ff8080;text-decoration:underline;margin-left:6px;">Продлить сейчас →</a>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- KPI -->
+        <div class="kpi-grid">
+          <div class="kpi-card {% if active_licenses_count %}glow-green{% endif %}">
+            <div class="kpi-card-top">
+              <div class="kpi-icon ki-green">📜</div>
+              <span class="kpi-trend {% if active_licenses_count %}kpi-trend-up{% else %}kpi-trend-neu{% endif %}">
+                {% if active_licenses_count %}Активно{% else %}Нет{% endif %}
+              </span>
+            </div>
+            <div class="kpi-num" data-counter="{{ active_licenses_count or 0 }}">{{ active_licenses_count or 0 }}</div>
+            <div class="kpi-label">Лицензий активно</div>
+          </div>
+          <div class="kpi-card {% if active_accounts_count %}glow-blue{% endif %}">
+            <div class="kpi-card-top">
+              <div class="kpi-icon ki-blue">📱</div>
+              <span class="kpi-trend {% if active_accounts_count %}kpi-trend-up{% else %}kpi-trend-neu{% endif %}">
+                {% if active_accounts_count %}+{{ active_accounts_count }}{% else %}0{% endif %}
+              </span>
+            </div>
+            <div class="kpi-num" data-counter="{{ active_accounts_count or 0 }}">{{ active_accounts_count or 0 }}</div>
+            <div class="kpi-label">Аккаунтов TG</div>
+          </div>
+          <div class="kpi-card {% if total_leads_collected %}glow-orange{% endif %}">
+            <div class="kpi-card-top">
+              <div class="kpi-icon ki-orange">⛏️</div>
+              <span class="kpi-trend {% if total_leads_collected %}kpi-trend-up{% else %}kpi-trend-neu{% endif %}">
+                {% if total_leads_collected %}Miner{% else %}0{% endif %}
+              </span>
+            </div>
+            <div class="kpi-num" data-counter="{{ total_leads_collected or 0 }}">{{ total_leads_collected or 0 }}</div>
+            <div class="kpi-label">Лидов собрано</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-card-top">
+              <div class="kpi-icon ki-purple">✉️</div>
+              <span class="kpi-trend kpi-trend-neu">Sender</span>
+            </div>
+            <div class="kpi-num" data-counter="{{ total_messages_sent or 0 }}">{{ total_messages_sent or 0 }}</div>
+            <div class="kpi-label">Сообщений отправлено</div>
+          </div>
+        </div>
+
+        <!-- Лицензии краткий обзор -->
+        {% if user_licenses %}
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-bottom:18px;">
+          {% for lic in user_licenses %}
+          {% set bar_pct = [((lic.days_left / 30) * 100)|int, 100]|min %}
+          <div class="lic-card {% if lic.days_left <= 3 %}expiring{% elif lic.is_expired %}expired{% endif %}">
+            <div class="lic-card-hd">
+              <div class="lic-icon {% if lic.product == 'Miner' %}lic-icon-miner{% else %}lic-icon-sender{% endif %}">
+                {% if lic.product == 'Miner' %}⛏️{% else %}✉️{% endif %}
+              </div>
+              <div style="text-align:right;">
+                <div class="lic-days-big" style="color:{% if lic.days_left <= 3 %}#ff6b6b{% elif lic.days_left <= 7 %}#ffb347{% else %}#3be88c{% endif %};">{{ lic.days_left }}</div>
+                <div class="lic-days-lbl">дней осталось</div>
+              </div>
+            </div>
+            <div class="lic-meta">{{ lic.product }} · до {{ lic.expires_at[:10] }}</div>
+            <div class="lic-bar-wrap">
+              <div class="lic-bar" style="width:{{ bar_pct }}%;background:{% if lic.days_left <= 3 %}#ff6b6b{% elif lic.days_left <= 7 %}#ffb347{% else %}linear-gradient(90deg,#3be88c,#48e88c){% endif %};"></div>
+            </div>
+            {% if lic.days_left <= 7 %}
+            <a href="/buy/{{ lic.product|lower }}" class="db-btn db-btn-danger" style="width:100%;justify-content:center;font-size:11.5px;">
+              {% if lic.is_expired %}Продлить{% else %}Продлить заранее{% endif %}
+            </a>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Быстрый старт -->
+        <div class="panel">
+          <div class="panel-hd">
+            <div class="panel-title">🚀 Быстрый старт
+              {% set steps_done = (1 if user_licenses else 0) + (1 if sender_accounts else 0) + (1 if total_leads_collected else 0) %}
+            </div>
+            <span class="panel-hint">{{ steps_done }}/3 выполнено</span>
+          </div>
+          <div class="prog-track">
+            <div class="prog-fill" style="width:{{ (steps_done/3*100)|int }}%;"></div>
+          </div>
+
+          <div class="qs-step">
+            <div class="qs-num {% if user_licenses %}qs-done{% else %}qs-todo{% endif %}">
+              {% if user_licenses %}✓{% else %}1{% endif %}
+            </div>
+            <div class="qs-body">
+              <div class="qs-title {% if user_licenses %}done{% endif %}">Активируйте лицензию</div>
+              <div class="qs-sub">Выберите тариф под свои задачи</div>
+            </div>
+            {% if not user_licenses %}
+            <div class="qs-action">
+              <a href="{{ url_for('pricing') }}" class="db-btn db-btn-primary">Тарифы</a>
+            </div>
+            {% else %}
+            <span style="font-size:11px;color:#3be88c;">✓ Готово</span>
+            {% endif %}
+          </div>
+
+          <div class="qs-step">
+            <div class="qs-num {% if sender_accounts %}qs-done{% elif user_licenses %}qs-todo{% else %}qs-future{% endif %}">
+              {% if sender_accounts %}✓{% else %}2{% endif %}
+            </div>
+            <div class="qs-body">
+              <div class="qs-title {% if sender_accounts %}done{% endif %}">Подключите Telegram-аккаунт</div>
+              <div class="qs-sub">Нужен для работы Miner и Sender</div>
+            </div>
+            {% if not sender_accounts %}
+            <div class="qs-action">
+              <button class="db-btn db-btn-outline" data-modal-open="modalAddAccount">Добавить</button>
+            </div>
+            {% else %}
+            <span style="font-size:11px;color:#3be88c;">✓ Готово</span>
+            {% endif %}
+          </div>
+
+          <div class="qs-step">
+            <div class="qs-num {% if total_leads_collected %}qs-done{% elif sender_accounts %}qs-todo{% else %}qs-future{% endif %}">
+              {% if total_leads_collected %}✓{% else %}3{% endif %}
+            </div>
+            <div class="qs-body">
+              <div class="qs-title {% if total_leads_collected %}done{% endif %}">Запустите первый сбор</div>
+              <div class="qs-sub">Введите ссылку на Telegram-чат или канал</div>
+            </div>
+            {% if not total_leads_collected %}
+            <div class="qs-action">
+              <a href="{{ url_for('miner') }}" class="db-btn db-btn-outline">Miner →</a>
+            </div>
+            {% else %}
+            <span style="font-size:11px;color:#3be88c;">✓ Готово</span>
+            {% endif %}
+          </div>
+
+          {% if steps_done == 3 %}
+          <div class="info-box success" style="margin:12px 0 0;">
+            🎉 Вы полностью настроили рабочую среду! Удачи в работе.
+          </div>
+          {% endif %}
+        </div>
+
+      </div><!-- /section-overview -->
+
+
+      <!-- ═══════════════════════════════════
+           СЕКЦИЯ: АККАУНТЫ
+      ═══════════════════════════════════ -->
+      <div class="db-section" id="section-accounts">
+        <div class="db-section-title">Менеджер аккаунтов</div>
+        <div class="db-section-sub">Telegram-аккаунты для Miner и Sender</div>
+
+        <div class="mini-cards">
+          <div class="mini-card mc-green">
+            <div class="mini-card-val">{{ active_accounts_count or 0 }}</div>
+            <div class="mini-card-lbl">Активных</div>
+          </div>
+          <div class="mini-card mc-warn">
+            <div class="mini-card-val">{{ inactive_accounts_count or 0 }}</div>
+            <div class="mini-card-lbl">Неактивных</div>
+          </div>
+          <div class="mini-card">
+            <div class="mini-card-val">{{ proxies|length }}</div>
+            <div class="mini-card-lbl">Прокси</div>
+          </div>
+        </div>
+
+        <div class="panel" style="padding:0;">
+          <div class="panel-hd" style="padding:18px 20px 14px;">
+            <div class="panel-title">📱 Аккаунты</div>
+            <button class="db-btn db-btn-primary" data-modal-open="modalAddAccount">+ Добавить аккаунт</button>
+          </div>
+          <div class="db-table-wrap">
+            <table class="db-table" id="accountsTable">
+              <thead>
+                <tr>
+                  <th>Телефон</th><th>Статус</th><th>Прокси</th><th>Добавлен</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="accountsTableBody">
+                {% for acc in sender_accounts or [] %}
+                <tr data-account-id="{{ acc.id }}">
+                  <td style="font-weight:600;">{{ acc.phone }}</td>
+                  <td>
+                    {% if acc.is_active %}
+                      <span class="spill sp-active">Активен</span>
                     {% else %}
-                        <span class="days-badge">{{ dl }} дн.</span>
+                      <span class="spill sp-inactive">Неактивен</span>
                     {% endif %}
+                  </td>
+                  <td style="color:rgba(255,255,255,0.4);">{{ acc.proxy_id or '—' }}</td>
+                  <td style="color:rgba(255,255,255,0.35);font-size:12px;">{{ acc.created_at[:10] }}</td>
+                  <td style="text-align:right;padding-right:16px;">
+                    <button class="db-btn db-btn-danger delete-account-btn"
+                            data-account-id="{{ acc.id }}" data-phone="{{ acc.phone }}"
+                            style="font-size:11.5px;padding:5px 10px;">Удалить</button>
+                  </td>
+                </tr>
                 {% else %}
-                    <span class="plan-badge" style="background:rgba(255,255,255,0.06);color:var(--text-muted);">Нет лицензии</span>
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="sidebar-section">
-            <div class="sidebar-section-title">Главная</div>
-            <a class="sidebar-link active" data-section="overview">
-                <span class="icon">📊</span> Обзор
-            </a>
-            <a class="sidebar-link" data-section="accounts">
-                <span class="icon">👤</span> Аккаунты
-            </a>
-            <a class="sidebar-link" data-section="stats">
-                <span class="icon">📈</span> Статистика
-            </a>
-            <a class="sidebar-link" href="{{ url_for('referral') }}">
-                <span class="icon">🎁</span> Рефералы
-                {% if referral_count %}<span style="background:var(--accent);color:#111;border-radius:999px;padding:1px 6px;font-size:10px;margin-left:auto;">{{ referral_count }}</span>{% endif %}
-            </a>
-            <a class="sidebar-link" href="{{ url_for('support') }}">
-                <span class="icon">💬</span> Поддержка
-            </a>
-        </div>
-
-        <div class="sidebar-section">
-            <div class="sidebar-section-title">Инструменты</div>
-            <a class="sidebar-link" data-section="miner-module">
-                <span class="icon">⛏️</span> TG Lead Miner
-            </a>
-            <a class="sidebar-link" data-section="sender-module">
-                <span class="icon">✉️</span> TG Lead Sender
-            </a>
-            <a class="sidebar-link" data-section="neuro-module">
-                <span class="icon">🤖</span> Нейрочаттинг
-            </a>
-            <a class="sidebar-link" data-section="licenses">
-                <span class="icon">📜</span> Мои лицензии
-            </a>
-            <a class="sidebar-link" href="{{ url_for('buy_proxy') }}">
-                <span class="icon">🌐</span> Купить прокси
-            </a>
-        </div>
-
-        <div style="margin-top:auto;padding:12px 16px;border-top:1px solid var(--border-subtle);">
-            <a href="{{ url_for('logout') }}" style="font-size:12px;color:var(--text-muted);text-decoration:none;display:flex;align-items:center;gap:6px;">
-                <span>🚪</span> Выйти
-            </a>
-        </div>
-    </aside>
-
-    <!-- Основная область -->
-    <div class="main-area">
-
-        <!-- ═══════════════════════════════════ -->
-        <!-- Секция: Обзор                       -->
-        <!-- ═══════════════════════════════════ -->
-        <div class="content-section active" id="section-overview">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px;">
-                <div>
-                    <h1 style="font-size:22px;margin-bottom:4px;">Добро пожаловать, {{ current_user.full_name or 'Пользователь' }}!</h1>
-                    <p style="color:var(--text-muted);font-size:13px;margin:0;">Управляйте своими продуктами TG Lead из одного кабинета.</p>
-                </div>
-                <a href="{{ url_for('pricing') }}" class="btn btn-primary btn-sm" style="flex-shrink:0;margin-top:4px;">+ Тарифы</a>
-            </div>
-
-            {% if days_left is not none and days_left <= 3 %}
-            <div style="padding:12px 16px;border-radius:12px;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);margin-bottom:16px;font-size:13px;">
-                ⚠️ Ваша лицензия истекает через <strong>{{ days_left }}</strong> дн.
-                <a href="/buy/miner" style="color:#ff6b6b;text-decoration:underline;margin-left:8px;">Продлить сейчас →</a>
-            </div>
-            {% endif %}
-
-            <!-- Сводка KPI -->
-            <div class="summary-cards">
-                <div class="summary-card {% if active_licenses_count %}active{% endif %}">
-                    <div class="label">Лицензий активно</div>
-                    <div class="value">{{ active_licenses_count or 0 }}</div>
-                    <div class="sub">Из всех продуктов</div>
-                </div>
-                <div class="summary-card {% if active_accounts_count %}active{% endif %}">
-                    <div class="label">Аккаунтов TG</div>
-                    <div class="value">{{ active_accounts_count or 0 }}</div>
-                    <div class="sub">Готовы к работе</div>
-                </div>
-                <div class="summary-card">
-                    <div class="label">Собрано лидов</div>
-                    <div class="value">{{ total_leads_collected or 0 }}</div>
-                    <div class="sub">Всего через Miner</div>
-                </div>
-                <div class="summary-card">
-                    <div class="label">Отправлено</div>
-                    <div class="value">{{ total_messages_sent or 0 }}</div>
-                    <div class="sub">Через Sender</div>
-                </div>
-            </div>
-
-            <!-- Быстрый старт -->
-            <div class="glass" style="padding:20px 24px;border-radius:18px;margin-bottom:20px;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-                    <h3 style="margin:0;font-size:15px;">🚀 Запуск за 15 минут</h3>
-                    {% set steps_done = (1 if user_licenses else 0) + (1 if sender_accounts else 0) + (1 if total_leads_collected else 0) %}
-                    <span style="font-size:12px;color:var(--text-muted);">{{ steps_done }}/3 шага выполнено</span>
-                </div>
-                <!-- Прогресс-бар -->
-                <div style="height:3px;background:rgba(255,255,255,0.07);border-radius:3px;margin-bottom:18px;overflow:hidden;">
-                    <div style="height:100%;width:{{ (steps_done/3*100)|int }}%;background:linear-gradient(90deg,#ff8c00,#ff6a00);border-radius:3px;transition:width 0.4s;"></div>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:12px;">
-                    <!-- Шаг 1: Лицензия -->
-                    <div style="display:flex;align-items:center;gap:12px;">
-                        <span style="width:28px;height:28px;border-radius:999px;background:{% if user_licenses %}rgba(59,232,140,0.2);border:1px solid rgba(59,232,140,0.4){% else %}var(--accent){% endif %};display:flex;align-items:center;justify-content:center;font-size:13px;color:{% if user_licenses %}#3be88c{% else %}#111{% endif %};flex-shrink:0;">{% if user_licenses %}✓{% else %}1{% endif %}</span>
-                        <span style="flex:1;font-size:14px;{% if user_licenses %}color:rgba(255,255,255,0.4);text-decoration:line-through;{% endif %}">Активируйте лицензию</span>
-                        {% if not user_licenses %}
-                        <a href="{{ url_for('pricing') }}" class="btn btn-primary btn-sm">Тарифы</a>
-                        {% else %}
-                        <span style="font-size:12px;color:#3be88c;">✓ Активна</span>
-                        {% endif %}
-                    </div>
-                    <!-- Шаг 2: Добавить аккаунт TG -->
-                    <div style="display:flex;align-items:center;gap:12px;">
-                        <span style="width:28px;height:28px;border-radius:999px;background:{% if sender_accounts %}rgba(59,232,140,0.2);border:1px solid rgba(59,232,140,0.4){% else %}var(--accent){% endif %};display:flex;align-items:center;justify-content:center;font-size:13px;color:{% if sender_accounts %}#3be88c{% else %}#111{% endif %};flex-shrink:0;">{% if sender_accounts %}✓{% else %}2{% endif %}</span>
-                        <div style="flex:1;">
-                            <div style="font-size:14px;{% if sender_accounts %}color:rgba(255,255,255,0.4);text-decoration:line-through;{% endif %}">Подключите Telegram-аккаунт</div>
-                            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Нужен для работы Miner и Sender</div>
-                        </div>
-                        {% if not sender_accounts %}
-                        <button class="btn btn-outline btn-sm" data-modal-open="modalAddAccount">Добавить</button>
-                        {% else %}
-                        <span style="font-size:12px;color:#3be88c;">✓ Добавлен</span>
-                        {% endif %}
-                    </div>
-                    <!-- Шаг 3: Первый сбор -->
-                    <div style="display:flex;align-items:center;gap:12px;">
-                        <span style="width:28px;height:28px;border-radius:999px;background:{% if total_leads_collected %}rgba(59,232,140,0.2);border:1px solid rgba(59,232,140,0.4){% else %}var(--accent){% endif %};display:flex;align-items:center;justify-content:center;font-size:13px;color:{% if total_leads_collected %}#3be88c{% else %}#111{% endif %};flex-shrink:0;">{% if total_leads_collected %}✓{% else %}3{% endif %}</span>
-                        <div style="flex:1;">
-                            <div style="font-size:14px;{% if total_leads_collected %}color:rgba(255,255,255,0.4);text-decoration:line-through;{% endif %}">Запустите первый сбор лидов</div>
-                            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Введите ссылку на чат или канал</div>
-                        </div>
-                        {% if not total_leads_collected %}
-                        <a href="{{ url_for('miner') }}" class="btn btn-outline btn-sm">Открыть Miner</a>
-                        {% else %}
-                        <span style="font-size:12px;color:#3be88c;">✓ Запущен</span>
-                        {% endif %}
-                    </div>
-                </div>
-                {% if steps_done == 3 %}
-                <div style="margin-top:16px;padding:12px 14px;background:rgba(59,232,140,0.06);border:1px solid rgba(59,232,140,0.2);border-radius:10px;font-size:13px;color:rgba(59,232,140,0.85);">
-                    🎉 Всё готово! Вы полностью настроили рабочую среду.
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Лицензии краткий обзор -->
-            {% if user_licenses %}
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px;">
-                {% for lic in user_licenses %}
-                <div style="background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">
-                    <div>
-                        <div style="font-size:12px;color:var(--text-muted);">{% if lic.product == 'Miner' %}⛏️{% else %}✉️{% endif %} {{ lic.product }}</div>
-                        <div style="font-size:20px;font-weight:600;margin-top:2px;color:{% if lic.days_left <= 3 %}#ff6b6b{% elif lic.days_left <= 7 %}#ffb347{% else %}#3be88c{% endif %};">{{ lic.days_left }} дн.</div>
-                    </div>
-                    {% if lic.is_expired %}
-                    <a href="/buy/{{ lic.product|lower }}" class="btn btn-primary btn-sm" style="font-size:11px;">Продлить</a>
-                    {% else %}
-                    <span style="font-size:20px;">{% if lic.days_left <= 3 %}⚠️{% else %}✅{% endif %}</span>
-                    {% endif %}
-                </div>
+                <tr id="accountsEmptyRow">
+                  <td colspan="5" class="db-table-empty">
+                    <div style="margin-bottom:10px;">Аккаунты ещё не добавлены</div>
+                    <button class="db-btn db-btn-outline" data-modal-open="modalAddAccount">+ Добавить первый аккаунт</button>
+                  </td>
+                </tr>
                 {% endfor %}
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- ═══════════════════════════════════ -->
-        <!-- Секция: Аккаунты                    -->
-        <!-- ═══════════════════════════════════ -->
-        <div class="content-section" id="section-accounts">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                <h1 style="font-size:22px;">Менеджер аккаунтов</h1>
-                <div style="display:flex;gap:8px;">
-                    <button class="btn btn-outline btn-sm" data-modal-open="modalAddAccount">+ Добавить</button>
-                    <button class="btn btn-outline btn-sm" data-modal-open="modalAddProxy">+ Прокси</button>
-                </div>
-            </div>
-
-            <div class="summary-cards">
-                <div class="summary-card active">
-                    <div class="label">Активные</div>
-                    <div class="value">{{ active_accounts_count or 0 }}</div>
-                </div>
-                <div class="summary-card warning">
-                    <div class="label">Неактивные</div>
-                    <div class="value">{{ inactive_accounts_count or 0 }}</div>
-                </div>
-                <div class="summary-card">
-                    <div class="label">Прокси</div>
-                    <div class="value">{{ proxies|length }}</div>
-                </div>
-            </div>
-
-            <table class="data-table" id="accountsTable">
-                <thead>
-                    <tr><th>Телефон</th><th>Статус</th><th>Прокси</th><th>Добавлен</th><th></th></tr>
-                </thead>
-                <tbody id="accountsTableBody">
-                    {% for acc in sender_accounts or [] %}
-                    <tr data-account-id="{{ acc.id }}">
-                        <td style="font-weight:500;">{{ acc.phone }}</td>
-                        <td>
-                            {% if acc.is_active %}
-                                <span class="status-dot green"></span>Активен
-                            {% else %}
-                                <span class="status-dot" style="background:#888;"></span>Не активен
-                            {% endif %}
-                        </td>
-                        <td>{{ acc.proxy_id or '—' }}</td>
-                        <td style="color:var(--text-muted);font-size:13px;">{{ acc.created_at[:10] }}</td>
-                        <td style="text-align:right;">
-                            <button class="btn btn-ghost btn-sm delete-account-btn"
-                                    data-account-id="{{ acc.id }}"
-                                    data-phone="{{ acc.phone }}"
-                                    title="Удалить аккаунт"
-                                    style="color:#e05555;opacity:0.7;">✕</button>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr id="accountsEmptyRow">
-                        <td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">
-                            Аккаунты ещё не добавлены
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
+              </tbody>
             </table>
-
-            <!-- Таблица прокси — внутри того же раздела -->
-            <div style="margin-top:28px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                    <div>
-                        <h2 style="font-size:16px;margin:0;font-weight:600;">Прокси</h2>
-                        <p style="font-size:12px;color:var(--text-muted);margin:3px 0 0;">
-                            Активный прокси используется автоматически при подключении аккаунтов
-                        </p>
-                    </div>
-                    <button class="btn btn-outline btn-sm" data-modal-open="modalAddProxy">+ Добавить прокси</button>
-                </div>
-
-                <table class="data-table" id="proxiesTable">
-                    <thead>
-                        <tr><th>Тип</th><th>Адрес</th><th>Порт</th><th>Логин</th><th>Статус</th><th></th></tr>
-                    </thead>
-                    <tbody id="proxiesTableBody">
-                        {% for proxy in proxies or [] %}
-                        <tr data-proxy-id="{{ proxy.id }}">
-                            <td><span style="font-family:monospace;font-size:12px;background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:5px;">{{ proxy.type }}</span></td>
-                            <td style="font-weight:500;">{{ proxy.host }}</td>
-                            <td style="color:var(--text-muted);">{{ proxy.port }}</td>
-                            <td style="color:var(--text-muted);font-size:13px;">{{ proxy.username or '—' }}</td>
-                            <td>
-                                {% if proxy.is_active %}
-                                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3be88c;margin-right:5px;"></span>Активен
-                                {% else %}
-                                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;margin-right:5px;"></span>Отключён
-                                {% endif %}
-                            </td>
-                            <td style="text-align:right;white-space:nowrap;">
-                                <button class="btn btn-ghost btn-sm test-proxy-btn"
-                                        data-proxy-id="{{ proxy.id }}"
-                                        title="Проверить прокси"
-                                        style="font-size:12px;margin-right:4px;">🔍 Проверить</button>
-                                <button class="btn btn-ghost btn-sm delete-proxy-btn"
-                                        data-proxy-id="{{ proxy.id }}"
-                                        title="Удалить прокси"
-                                        style="color:#e05555;opacity:0.7;">✕</button>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr id="proxiesEmptyRow">
-                            <td colspan="6" style="text-align:center;color:var(--text-muted);padding:14px;font-size:13px;">
-                                Прокси не добавлены
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-
-                <div style="margin-top:10px;padding:10px 14px;background:rgba(212,165,116,0.07);border-radius:8px;font-size:12px;color:var(--text-muted);">
-                    💡 <strong style="color:var(--accent-light);">Порядок подключения:</strong>
-                    сначала добавьте прокси → затем нажмите «+ Добавить» аккаунт → введите телефон, API ID, API Hash → получите код в Telegram.
-                    Получить API ID / Hash: <a href="https://my.telegram.org/apps" target="_blank" style="color:var(--accent-light);">my.telegram.org/apps</a>
-                </div>
-            </div>
+          </div>
         </div>
 
-        <!-- ═══════════════════════════════════ -->
-        <!-- Секция: Статистика                  -->
-        <!-- ═══════════════════════════════════ -->
-        <div class="content-section" id="section-stats">
-            <h1 style="font-size:22px;margin-bottom:16px;">Моя статистика</h1>
-
-            <div class="summary-cards" style="margin-bottom:20px;">
-                <div class="summary-card {% if active_accounts_count %}active{% endif %}">
-                    <div class="label">Аккаунтов</div>
-                    <div class="value">{{ (sender_accounts or [])|length }}</div>
-                    <div class="sub">{{ active_accounts_count }} активных</div>
-                </div>
-                <div class="summary-card">
-                    <div class="label">Лидов собрано</div>
-                    <div class="value">{{ total_leads_collected or 0 }}</div>
-                    <div class="sub">Всего за всё время</div>
-                </div>
-                <div class="summary-card">
-                    <div class="label">Рефералов</div>
-                    <div class="value">{{ referral_count or 0 }}</div>
-                    <div class="sub">+{{ referral_count or 0 }} бонусных дн.</div>
-                </div>
-                <div class="summary-card">
-                    <div class="label">Сообщений</div>
-                    <div class="value">{{ total_messages_sent or 0 }}</div>
-                    <div class="sub">Через Sender</div>
-                </div>
+        <!-- Прокси -->
+        <div class="panel" style="padding:0;margin-top:18px;">
+          <div class="panel-hd" style="padding:18px 20px 14px;">
+            <div>
+              <div class="panel-title">🌐 Прокси</div>
+              <div class="panel-hint" style="margin-top:3px;">Используется автоматически при подключении аккаунтов</div>
             </div>
-
-            <div class="glass" style="padding:24px;border-radius:18px;margin-bottom:16px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                    <h3 style="margin:0;font-size:15px;">📈 Лиды за последние 7 дней</h3>
-                    <span style="font-size:12px;color:var(--text-muted);">через Miner</span>
-                </div>
-                <canvas id="leadsChart" height="80"></canvas>
-            </div>
-
-            <!-- Реферальный виджет -->
-            <div class="ref-widget">
-                <h3>🎁 Реферальная программа</h3>
-                <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
-                    Приглашено: <strong style="color:var(--text);">{{ referral_count }}</strong> чел. &nbsp;·&nbsp;
-                    Бонус: <strong style="color:var(--accent-light);">+{{ referral_count }} дн.</strong>
-                </div>
-                <div class="ref-link-row">
-                    <input id="shareLink" type="text" value="{{ request.host_url }}?ref={{ current_user.id }}" readonly />
-                    <button onclick="copyShareLink()" class="btn btn-outline btn-sm">📋 Копировать</button>
-                </div>
-                <p style="font-size:11px;color:var(--text-muted);margin-top:8px;margin-bottom:0;">
-                    Когда друг зарегистрируется по вашей ссылке — вы получите +1 день к лицензии.
-                </p>
-                <a href="{{ url_for('referral') }}" class="btn btn-ghost btn-sm" style="margin-top:10px;font-size:12px;">Подробнее о программе →</a>
-            </div>
-        </div>
-
-        <!-- ═══════════════════════════════════ -->
-        <!-- Секция: Мои лицензии                -->
-        <!-- ═══════════════════════════════════ -->
-        <div class="content-section" id="section-licenses">
-            <h1 style="font-size:22px;margin-bottom:4px;">Мои лицензии</h1>
-            <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Ваши активные продукты и сроки действия.</p>
-
-            <div class="module-grid">
-                {% for lic in user_licenses or [] %}
-                <div class="module-card">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                        <h3 style="margin:0;">
-                            {% if lic.product == 'Miner' %}⛏️{% else %}✉️{% endif %}
-                            {{ lic.product }}
-                        </h3>
-                        <span class="pill {% if lic.is_expired %}pill-gray{% elif lic.days_left <= 3 %}pill-red{% else %}pill-gold{% endif %}">
-                            {{ lic.days_left }} дн.
-                        </span>
-                    </div>
-                    <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">
-                        Выдана: {{ lic.created_at[:10] }} · Истекает: {{ lic.expires_at[:10] }}
-                    </p>
-                    {% if lic.is_expired %}
-                        <a href="/buy/{{ lic.product | lower }}" class="btn btn-primary btn-sm">Продлить</a>
-                    {% elif lic.days_left <= 7 %}
-                        <a href="/buy/{{ lic.product | lower }}" class="btn btn-outline btn-sm">Продлить заранее</a>
+            <button class="db-btn db-btn-outline" data-modal-open="modalAddProxy">+ Прокси</button>
+          </div>
+          <div class="db-table-wrap">
+            <table class="db-table" id="proxiesTable">
+              <thead>
+                <tr><th>Тип</th><th>Адрес</th><th>Порт</th><th>Логин</th><th>Статус</th><th></th></tr>
+              </thead>
+              <tbody id="proxiesTableBody">
+                {% for proxy in proxies or [] %}
+                <tr data-proxy-id="{{ proxy.id }}">
+                  <td><span class="spill sp-type">{{ proxy.type }}</span></td>
+                  <td style="font-weight:500;">{{ proxy.host }}</td>
+                  <td style="color:rgba(255,255,255,0.4);">{{ proxy.port }}</td>
+                  <td style="color:rgba(255,255,255,0.35);font-size:12px;">{{ proxy.username or '—' }}</td>
+                  <td>
+                    {% if proxy.is_active %}
+                      <span class="spill sp-active">Активен</span>
+                    {% else %}
+                      <span class="spill sp-inactive">Отключён</span>
                     {% endif %}
-                </div>
+                  </td>
+                  <td style="text-align:right;padding-right:16px;white-space:nowrap;">
+                    <button class="db-btn db-btn-ghost test-proxy-btn" data-proxy-id="{{ proxy.id }}" style="font-size:11.5px;margin-right:4px;">🔍 Тест</button>
+                    <button class="db-btn db-btn-danger delete-proxy-btn" data-proxy-id="{{ proxy.id }}" style="font-size:11.5px;padding:5px 10px;">✕</button>
+                  </td>
+                </tr>
                 {% else %}
-                <div style="color:var(--text-muted);font-size:14px;padding:20px 0;">
-                    У вас пока нет активных лицензий.
-                    <a href="{{ url_for('pricing') }}" style="color:var(--accent-light);">Выбрать тариф →</a>
-                </div>
+                <tr id="proxiesEmptyRow">
+                  <td colspan="6" class="db-table-empty">
+                    <div style="margin-bottom:10px;">Прокси не добавлены</div>
+                    <button class="db-btn db-btn-outline" data-modal-open="modalAddProxy">+ Добавить прокси</button>
+                  </td>
+                </tr>
                 {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div style="padding:12px 20px;border-top:1px solid rgba(255,255,255,0.05);">
+            <div style="font-size:12px;color:rgba(255,255,255,0.35);line-height:1.6;">
+              💡 Для работы из России нужен нероссийский SOCKS5-прокси.
+              API ID / Hash: <a href="https://my.telegram.org/apps" target="_blank" style="color:var(--orange-3);">my.telegram.org/apps</a>
             </div>
+          </div>
+        </div>
+      </div><!-- /section-accounts -->
+
+
+      <!-- ═══════════════════════════════════
+           СЕКЦИЯ: СТАТИСТИКА
+      ═══════════════════════════════════ -->
+      <div class="db-section" id="section-stats">
+        <div class="db-section-title">Статистика</div>
+        <div class="db-section-sub">Активность за всё время работы</div>
+
+        <div class="kpi-grid" style="margin-bottom:20px;">
+          <div class="kpi-card">
+            <div class="kpi-icon ki-blue" style="margin-bottom:10px;">📱</div>
+            <div class="kpi-num">{{ (sender_accounts or [])|length }}</div>
+            <div class="kpi-label">Всего аккаунтов</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon ki-orange" style="margin-bottom:10px;">⛏️</div>
+            <div class="kpi-num">{{ total_leads_collected or 0 }}</div>
+            <div class="kpi-label">Лидов собрано</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon ki-purple" style="margin-bottom:10px;">✉️</div>
+            <div class="kpi-num">{{ total_messages_sent or 0 }}</div>
+            <div class="kpi-label">Сообщений отправлено</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon ki-green" style="margin-bottom:10px;">🎁</div>
+            <div class="kpi-num">{{ referral_count or 0 }}</div>
+            <div class="kpi-label">Рефералов</div>
+          </div>
         </div>
 
-        <!-- ═══════════════════════════════════ -->
-        <!-- Секция: Miner                       -->
-        <!-- ═══════════════════════════════════ -->
-        <div class="content-section" id="section-miner-module">
-            <h1 style="font-size:22px;margin-bottom:16px;">TG Lead Miner</h1>
-            <div class="module-card">
-                <h3>⛏️ Автосбор аудитории</h3>
-                <p>Собирайте активную аудиторию из чатов и каналов без риска банов.</p>
-                <a href="{{ url_for('miner') }}" class="btn btn-primary btn-sm">Открыть Miner</a>
+        <div class="panel">
+          <div class="panel-hd">
+            <div class="panel-title">📈 Лиды за последние 7 дней</div>
+            <span class="panel-hint">через Miner</span>
+          </div>
+          <canvas id="leadsChart" height="70"></canvas>
+        </div>
+
+        <!-- Реферальная программа -->
+        <div class="ref-widget">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+            <div>
+              <div style="font-size:14px;font-weight:600;margin-bottom:4px;">🎁 Реферальная программа</div>
+              <div style="font-size:12.5px;color:rgba(255,255,255,0.45);">
+                Приглашено: <strong style="color:#fff;">{{ referral_count }}</strong> чел. &nbsp;·&nbsp;
+                Бонус: <strong style="color:var(--orange-3);">+{{ referral_count }} дн.</strong>
+              </div>
             </div>
+            <a href="{{ url_for('referral') }}" class="db-btn db-btn-outline" style="flex-shrink:0;">Подробнее</a>
+          </div>
+          <div class="ref-link-row">
+            <input id="shareLink" type="text" value="{{ request.host_url }}?ref={{ current_user.id }}" readonly />
+            <button onclick="copyShareLink()" class="db-btn db-btn-outline">📋 Копировать</button>
+          </div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.25);margin-top:8px;">
+            Когда друг зарегистрируется по ссылке — вы получите +1 день к лицензии.
+          </div>
         </div>
+      </div><!-- /section-stats -->
 
-        <!-- ═══════════════════════════════════ -->
-        <!-- Секция: Sender                      -->
-        <!-- ═══════════════════════════════════ -->
-        <div class="content-section" id="section-sender-module">
-            <h1 style="font-size:22px;margin-bottom:16px;">TG Lead Sender</h1>
-            <div class="module-card">
-                <h3>✉️ Авторассылка</h3>
-                <p>Запускайте умные цепочки сообщений с имитацией поведения человека.</p>
-                <button class="btn btn-primary btn-sm" data-modal-open="modalAddAccount">Добавить аккаунт</button>
+
+      <!-- ═══════════════════════════════════
+           СЕКЦИЯ: ЛИЦЕНЗИИ
+      ═══════════════════════════════════ -->
+      <div class="db-section" id="section-licenses">
+        <div class="db-section-title">Мои лицензии</div>
+        <div class="db-section-sub">Активные продукты и сроки действия</div>
+
+        {% if not user_licenses %}
+        <div class="panel" style="text-align:center;padding:40px;">
+          <div style="font-size:36px;margin-bottom:14px;">📜</div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:6px;">У вас пока нет активных лицензий</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:20px;">Выберите тариф, чтобы начать работу</div>
+          <a href="{{ url_for('pricing') }}" class="db-btn db-btn-primary">Выбрать тариф →</a>
+        </div>
+        {% else %}
+        <div class="lic-grid">
+          {% for lic in user_licenses %}
+          {% set bar_pct = [((lic.days_left / 30) * 100)|int, 100]|min %}
+          <div class="lic-card {% if lic.days_left <= 3 %}expiring{% elif lic.is_expired %}expired{% endif %}">
+            <div class="lic-card-hd">
+              <div>
+                <div class="lic-icon {% if lic.product == 'Miner' %}lic-icon-miner{% else %}lic-icon-sender{% endif %}">
+                  {% if lic.product == 'Miner' %}⛏️{% else %}✉️{% endif %}
+                </div>
+                <div style="font-size:15px;font-weight:700;margin-top:8px;">{{ lic.product }}</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="lic-days-big" style="color:{% if lic.days_left <= 3 %}#ff6b6b{% elif lic.days_left <= 7 %}#ffb347{% else %}#3be88c{% endif %};">{{ lic.days_left }}</div>
+                <div class="lic-days-lbl">дней</div>
+              </div>
             </div>
-        </div>
-
-        <!-- ═══════════════════════════════════ -->
-        <!-- Секция: Нейрочаттинг               -->
-        <!-- ═══════════════════════════════════ -->
-        <div class="content-section" id="section-neuro-module">
-            <h1 style="font-size:22px;margin-bottom:16px;">Нейрочаттинг</h1>
-            <div class="module-card">
-                <h3>🤖 AI-диалоги 24/7</h3>
-                <p>Нейросеть отвечает за вас, уточняет потребности и доводит до оплаты.</p>
-                <span class="pill">Скоро</span>
+            <div class="lic-meta">
+              Выдана: {{ lic.created_at[:10] }}<br>
+              Истекает: {{ lic.expires_at[:10] }}
             </div>
-        </div>
-
-    </div><!-- /main-area -->
-</div><!-- /dashboard-container -->
-
-<!-- ═══════════════════════════════════════════ -->
-<!-- Модальное окно: Добавить аккаунт           -->
-<!-- ═══════════════════════════════════════════ -->
-<div class="modal" id="modalAddAccount">
-    <div class="modal-backdrop" data-modal-close></div>
-    <div class="modal-dialog" style="max-width:420px;">
-        <button class="modal-close" id="accountModalClose" data-modal-close>&times;</button>
-
-        <!-- Индикатор шагов -->
-        <div style="display:flex;gap:6px;margin-bottom:20px;" id="accountStepsIndicator">
-            <div id="stepDot1" style="flex:1;height:3px;border-radius:3px;background:var(--accent);transition:background 0.3s;"></div>
-            <div id="stepDot2" style="flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,0.1);transition:background 0.3s;"></div>
-            <div id="stepDot3" style="flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,0.1);transition:background 0.3s;"></div>
-        </div>
-
-        <!-- Блок статуса / ошибки -->
-        <div id="accountStatusMsg" style="display:none;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px;"></div>
-
-        <!-- ШАГ 1: Данные аккаунта -->
-        <div id="accountStep1">
-            <h2 style="margin-bottom:4px;">Добавить аккаунт</h2>
-            <p class="modal-subtitle">Введите данные Telegram-клиента для рассылок.</p>
-            <div class="modal-form">
-                <div class="field">
-                    <label for="tgPhone">Телефон</label>
-                    <input id="tgPhone" type="tel" placeholder="+7 900 000-00-00" autocomplete="off">
-                </div>
-                <div class="field">
-                    <label for="tgApiId">API ID</label>
-                    <input id="tgApiId" type="text" placeholder="12345678" autocomplete="off">
-                </div>
-                <div class="field">
-                    <label for="tgApiHash">API Hash</label>
-                    <input id="tgApiHash" type="text" placeholder="0a1b2c3d4e5f..." autocomplete="off">
-                </div>
-                <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">
-                    Получить API ID и Hash: <a href="https://my.telegram.org/apps" target="_blank" style="color:var(--accent-light);">my.telegram.org/apps</a>
-                </div>
-                <button id="btnSendCode" class="btn btn-primary btn-full" onclick="tgSendCode()">
-                    Отправить код в Telegram
-                </button>
+            <div class="lic-bar-wrap">
+              <div class="lic-bar" style="width:{{ bar_pct }}%;background:{% if lic.days_left <= 3 %}#ff6b6b{% elif lic.days_left <= 7 %}#ffb347{% else %}linear-gradient(90deg,#3be88c,#48e88c){% endif %};"></div>
             </div>
-        </div>
+            {% if lic.is_expired %}
+              <a href="/buy/{{ lic.product|lower }}" class="db-btn db-btn-danger" style="width:100%;justify-content:center;">Продлить</a>
+            {% elif lic.days_left <= 7 %}
+              <a href="/buy/{{ lic.product|lower }}" class="db-btn db-btn-outline" style="width:100%;justify-content:center;font-size:12px;">Продлить заранее</a>
+            {% endif %}
+          </div>
+          {% endfor %}
 
-        <!-- ШАГ 2: Ввод кода -->
-        <div id="accountStep2" style="display:none;">
-            <h2 style="margin-bottom:4px;">Введите код</h2>
-            <p class="modal-subtitle" id="accountStep2Subtitle">Telegram отправил вам код подтверждения.</p>
-            <div class="modal-form">
-                <div class="field" id="codeFieldWrap">
-                    <label for="tgCode">Код из Telegram</label>
-                    <input id="tgCode" type="text" placeholder="12345" maxlength="6"
-                           autocomplete="one-time-code" inputmode="numeric"
-                           style="font-size:22px;letter-spacing:6px;text-align:center;">
-                </div>
-                <div class="field" id="passwordFieldWrap" style="display:none;">
-                    <label for="tgPassword">Пароль 2FA</label>
-                    <input id="tgPassword" type="password" placeholder="Пароль облачного хранилища">
-                </div>
-                <button id="btnVerifyCode" class="btn btn-primary btn-full" onclick="tgVerifyCode()">
-                    Подтвердить
-                </button>
-                <button class="btn btn-ghost btn-full" style="margin-top:6px;font-size:13px;"
-                        onclick="tgRestart()">← Ввести другой номер</button>
+          <!-- Добавить продукт -->
+          <div class="lic-card" style="border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;cursor:pointer;min-height:160px;"
+               onclick="location.href='{{ url_for('pricing') }}'">
+            <div style="font-size:28px;margin-bottom:10px;opacity:0.4;">+</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.35);">Добавить продукт</div>
+          </div>
+        </div>
+        {% endif %}
+      </div><!-- /section-licenses -->
+
+
+      <!-- ═══════════════════════════════════
+           СЕКЦИЯ: MINER
+      ═══════════════════════════════════ -->
+      <div class="db-section" id="section-miner-module">
+        <div class="db-section-title">TG Lead Miner</div>
+        <div class="db-section-sub">Автосбор аудитории из Telegram-каналов и групп</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+          <div class="mod-card">
+            <div class="mod-card-icon">⛏️</div>
+            <div class="mod-card-title">Запустить Miner</div>
+            <div class="mod-card-desc">Собирайте активную аудиторию из чатов и каналов — напрямую из браузера.</div>
+            <ul class="mod-features">
+              <li>Экспорт участников в CSV</li>
+              <li>Фильтрация ботов и неактивных</li>
+              <li>История всех сборов</li>
+              <li>Поддержка SOCKS5-прокси</li>
+            </ul>
+            <a href="{{ url_for('miner') }}" class="db-btn db-btn-primary" style="width:100%;justify-content:center;">Открыть Miner →</a>
+          </div>
+
+          <div class="panel" style="margin:0;">
+            <div class="panel-title" style="margin-bottom:14px;">📊 Статистика сборов</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;">
+                <div style="font-size:22px;font-weight:700;color:var(--orange-3);">{{ total_leads_collected or 0 }}</div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:3px;">Лидов всего</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;">
+                <div style="font-size:22px;font-weight:700;color:#3be88c;">{{ active_accounts_count or 0 }}</div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:3px;">Акк. готовы</div>
+              </div>
             </div>
+            {% if not sender_accounts %}
+            <div class="info-box" style="margin-top:14px;margin-bottom:0;">
+              <span>ℹ</span>
+              <div>Для запуска Miner сначала <button class="db-btn db-btn-outline" data-modal-open="modalAddAccount" style="font-size:11px;padding:4px 8px;display:inline-flex;">подключите аккаунт</button></div>
+            </div>
+            {% endif %}
+          </div>
         </div>
+      </div><!-- /section-miner-module -->
 
-        <!-- ШАГ 3: Успех -->
-        <div id="accountStep3" style="display:none;text-align:center;padding:20px 0;">
-            <div style="font-size:48px;margin-bottom:16px;">✅</div>
-            <h2 style="margin-bottom:8px;">Аккаунт подключён!</h2>
-            <p class="modal-subtitle" id="accountSuccessText">Аккаунт успешно активирован и добавлен в систему.</p>
-            <button class="btn btn-primary btn-full" style="margin-top:20px;" data-modal-close onclick="document.getElementById('modalAddAccount').classList.remove('open')">
-                Закрыть
+
+      <!-- ═══════════════════════════════════
+           СЕКЦИЯ: SENDER
+      ═══════════════════════════════════ -->
+      <div class="db-section" id="section-sender-module">
+        <div class="db-section-title">TG Lead Sender</div>
+        <div class="db-section-sub">Умные рассылки с имитацией живого поведения</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+          <div class="mod-card">
+            <div class="mod-card-icon">✉️</div>
+            <div class="mod-card-title">Авторассылка</div>
+            <div class="mod-card-desc">Персонализированные сообщения по вашей базе с человекоподобными задержками.</div>
+            <ul class="mod-features">
+              <li>Персонализация {имя} и {username}</li>
+              <li>Настройка интервалов</li>
+              <li>Остановка в один клик</li>
+              <li>Детальная статистика доставки</li>
+            </ul>
+            {% if sender_accounts %}
+            <div class="info-box success" style="margin-bottom:14px;">
+              <span>✅</span> {{ active_accounts_count }} аккаунт(ов) готовы к работе
+            </div>
+            {% endif %}
+            <button class="db-btn db-btn-primary" data-modal-open="modalAddAccount" style="width:100%;justify-content:center;">
+              {% if sender_accounts %}+ Добавить аккаунт{% else %}Подключить аккаунт →{% endif %}
             </button>
+          </div>
+
+          <div class="panel" style="margin:0;">
+            <div class="panel-title" style="margin-bottom:14px;">📱 Подключённые аккаунты</div>
+            {% if sender_accounts %}
+              {% for acc in (sender_accounts or [])[:5] %}
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+                <div>
+                  <div style="font-size:13px;font-weight:500;">{{ acc.phone }}</div>
+                  <div style="font-size:11px;color:rgba(255,255,255,0.35);">{{ acc.created_at[:10] }}</div>
+                </div>
+                <span class="spill {% if acc.is_active %}sp-active{% else %}sp-inactive{% endif %}">
+                  {% if acc.is_active %}Активен{% else %}Неактивен{% endif %}
+                </span>
+              </div>
+              {% endfor %}
+              {% if (sender_accounts|length) > 5 %}
+              <div style="font-size:12px;color:rgba(255,255,255,0.3);padding-top:8px;">+{{ (sender_accounts|length) - 5 }} ещё...</div>
+              {% endif %}
+            {% else %}
+            <div style="text-align:center;padding:20px 0;color:rgba(255,255,255,0.3);font-size:13px;">
+              Аккаунты не подключены
+            </div>
+            {% endif %}
+          </div>
         </div>
+      </div><!-- /section-sender-module -->
+
+
+      <!-- ═══════════════════════════════════
+           СЕКЦИЯ: НЕЙРОЧАТТИНГ
+      ═══════════════════════════════════ -->
+      <div class="db-section" id="section-neuro-module">
+        <div class="db-section-title">Нейрочаттинг</div>
+        <div class="db-section-sub">AI-диалоги 24/7 — в разработке</div>
+
+        <div class="mod-card" style="max-width:520px;">
+          <div class="mod-card-icon">🤖</div>
+          <div class="mod-card-title">AI-ответы на входящие</div>
+          <div class="mod-card-desc">
+            Нейросеть отвечает за вас, уточняет потребности клиентов и доводит до оплаты. GPT-powered автоответы с A/B-тестами посылов.
+          </div>
+          <ul class="mod-features">
+            <li>GPT-4 автоответы на входящие</li>
+            <li>A/B-тесты посылов</li>
+            <li>Встроенная воронка квалификации</li>
+            <li>Передача менеджеру по сигналу</li>
+          </ul>
+          <div style="display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12.5px;color:rgba(255,255,255,0.35);">
+            ⏳ Скоро — следите за обновлениями
+          </div>
+        </div>
+      </div><!-- /section-neuro-module -->
+
+    </div><!-- /db-content -->
+  </div><!-- /db-main -->
+</div><!-- /db-wrap -->
+
+<!-- Toast container -->
+<div class="toast-stack" id="toastStack"></div>
+
+<!-- ══════════════════════════════════════════
+     MODAL: Добавить аккаунт
+══════════════════════════════════════════ -->
+<div class="modal" id="modalAddAccount">
+  <div class="modal-backdrop" data-modal-close></div>
+  <div class="modal-dialog" style="max-width:420px;">
+    <button class="modal-close" id="accountModalClose" data-modal-close>&times;</button>
+
+    <div style="display:flex;gap:6px;margin-bottom:20px;" id="accountStepsIndicator">
+      <div id="stepDot1" style="flex:1;height:3px;border-radius:3px;background:var(--accent);transition:background 0.3s;"></div>
+      <div id="stepDot2" style="flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,0.1);transition:background 0.3s;"></div>
+      <div id="stepDot3" style="flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,0.1);transition:background 0.3s;"></div>
     </div>
+
+    <div id="accountStatusMsg" style="display:none;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px;"></div>
+
+    <div id="accountStep1">
+      <h2 style="margin-bottom:4px;">Добавить аккаунт</h2>
+      <p class="modal-subtitle">Введите данные Telegram-клиента для рассылок.</p>
+      <div class="modal-form">
+        <div class="field"><label for="tgPhone">Телефон</label><input id="tgPhone" type="tel" placeholder="+7 900 000-00-00" autocomplete="off"></div>
+        <div class="field"><label for="tgApiId">API ID</label><input id="tgApiId" type="text" placeholder="12345678" autocomplete="off"></div>
+        <div class="field"><label for="tgApiHash">API Hash</label><input id="tgApiHash" type="text" placeholder="0a1b2c3d4e5f..." autocomplete="off"></div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">
+          Получить: <a href="https://my.telegram.org/apps" target="_blank" style="color:var(--accent-light);">my.telegram.org/apps</a>
+        </div>
+        <button id="btnSendCode" class="btn btn-primary btn-full" onclick="tgSendCode()">Отправить код</button>
+      </div>
+    </div>
+
+    <div id="accountStep2" style="display:none;">
+      <h2 style="margin-bottom:4px;">Введите код</h2>
+      <p class="modal-subtitle" id="accountStep2Subtitle">Telegram отправил код подтверждения.</p>
+      <div class="modal-form">
+        <div class="field" id="codeFieldWrap">
+          <label for="tgCode">Код из Telegram</label>
+          <input id="tgCode" type="text" placeholder="12345" maxlength="6" autocomplete="one-time-code" inputmode="numeric" style="font-size:22px;letter-spacing:6px;text-align:center;">
+        </div>
+        <div class="field" id="passwordFieldWrap" style="display:none;">
+          <label for="tgPassword">Пароль 2FA</label>
+          <input id="tgPassword" type="password" placeholder="Пароль облачного хранилища">
+        </div>
+        <button id="btnVerifyCode" class="btn btn-primary btn-full" onclick="tgVerifyCode()">Подтвердить</button>
+        <button class="btn btn-ghost btn-full" style="margin-top:6px;font-size:13px;" onclick="tgRestart()">← Другой номер</button>
+      </div>
+    </div>
+
+    <div id="accountStep3" style="display:none;text-align:center;padding:20px 0;">
+      <div style="font-size:48px;margin-bottom:16px;">✅</div>
+      <h2 style="margin-bottom:8px;">Аккаунт подключён!</h2>
+      <p class="modal-subtitle" id="accountSuccessText">Аккаунт успешно активирован.</p>
+      <button class="btn btn-primary btn-full" style="margin-top:20px;" data-modal-close>Закрыть</button>
+    </div>
+  </div>
 </div>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- Модальное окно: Добавить прокси            -->
-<!-- ═══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════
+     MODAL: Добавить прокси
+══════════════════════════════════════════ -->
 <div class="modal" id="modalAddProxy">
-    <div class="modal-backdrop" data-modal-close></div>
-    <div class="modal-dialog" style="max-width:400px;">
-        <button class="modal-close" data-modal-close>&times;</button>
-        <h2>Добавить прокси</h2>
-        <p class="modal-subtitle">SOCKS5-прокси используется автоматически при подключении Telegram-аккаунтов.</p>
+  <div class="modal-backdrop" data-modal-close></div>
+  <div class="modal-dialog" style="max-width:400px;">
+    <button class="modal-close" data-modal-close>&times;</button>
+    <h2>Добавить прокси</h2>
+    <p class="modal-subtitle">SOCKS5 используется автоматически при подключении аккаунтов.</p>
 
-        <div id="proxyStatusMsg" style="display:none;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px;"></div>
+    <div id="proxyStatusMsg" style="display:none;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px;"></div>
 
-        <div class="modal-form">
-            <div class="field">
-                <label>Тип</label>
-                <select id="proxyType" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text);font-size:14px;">
-                    <option value="socks5">SOCKS5 (рекомендуется)</option>
-                    <option value="socks4">SOCKS4</option>
-                    <option value="http">HTTP</option>
-                </select>
-            </div>
-            <div class="field"><label>Хост</label><input id="proxyHost" type="text" placeholder="1.2.3.4 или proxy.example.com"></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                <div class="field"><label>Порт</label><input id="proxyPort" type="number" placeholder="1080"></div>
-                <div class="field"><label>Логин</label><input id="proxyUsername" type="text" placeholder="(опц.)"></div>
-            </div>
-            <div class="field"><label>Пароль</label><input id="proxyPassword" type="password" placeholder="(опционально)"></div>
-            <button id="btnAddProxy" class="btn btn-primary btn-full" onclick="proxyAdd()">Добавить прокси</button>
-        </div>
+    <div class="modal-form">
+      <div class="field">
+        <label>Тип</label>
+        <select id="proxyType" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text);font-size:14px;">
+          <option value="socks5">SOCKS5 (рекомендуется)</option>
+          <option value="socks4">SOCKS4</option>
+          <option value="http">HTTP</option>
+        </select>
+      </div>
+      <div class="field"><label>Хост</label><input id="proxyHost" type="text" placeholder="1.2.3.4 или proxy.example.com"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field"><label>Порт</label><input id="proxyPort" type="number" placeholder="1080"></div>
+        <div class="field"><label>Логин</label><input id="proxyUsername" type="text" placeholder="(опц.)"></div>
+      </div>
+      <div class="field"><label>Пароль</label><input id="proxyPassword" type="password" placeholder="(опционально)"></div>
+      <button id="btnAddProxy" class="btn btn-primary btn-full" onclick="proxyAdd()">Добавить прокси</button>
     </div>
+  </div>
 </div>
+
+<!-- Mobile sidebar overlay -->
+<div id="dbOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:55;backdrop-filter:blur(3px);"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 <script>
-// ── График лидов ──────────────────────────────────────
-(function() {
-    const ctx = document.getElementById('leadsChart');
-    if (!ctx) return;
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: {{ chart_labels | tojson }},
-            datasets: [{
-                data: {{ chart_leads | tojson }},
-                borderColor: '#d4a574',
-                backgroundColor: 'rgba(212,165,116,0.08)',
-                borderWidth: 2,
-                tension: 0.4,
-                fill: true,
-                pointBackgroundColor: '#d4a574',
-                pointRadius: 4,
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#b3b3b3', precision: 0 } },
-                x: { grid: { display: false }, ticks: { color: '#b3b3b3' } }
-            }
-        }
-    });
-})();
+// ═══════════════════════════════════════════════════
+// TOAST SYSTEM
+// ═══════════════════════════════════════════════════
+function toast(msg, type = 'info', duration = 3500) {
+    const stack = document.getElementById('toastStack');
+    const icons = { success: '✅', error: '❌', info: '💡', warn: '⚠️' };
+    const t = document.createElement('div');
+    t.className = `toast toast-${type}`;
+    t.innerHTML = `<span style="flex-shrink:0;">${icons[type]||'ℹ'}</span><span>${msg}</span>`;
+    stack.appendChild(t);
+    setTimeout(() => {
+        t.classList.add('removing');
+        setTimeout(() => t.remove(), 210);
+    }, duration);
+}
 
-// ── Переключение секций ───────────────────────────────
-document.querySelectorAll('.sidebar-link[data-section]').forEach(link => {
-    link.addEventListener('click', () => {
-        document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
-        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-        document.getElementById('section-' + link.dataset.section).classList.add('active');
-    });
+// ═══════════════════════════════════════════════════
+// SECTION NAVIGATION
+// ═══════════════════════════════════════════════════
+const sectionTitles = {
+    overview: 'Обзор',
+    accounts: 'Аккаунты',
+    stats: 'Статистика',
+    licenses: 'Лицензии',
+    'miner-module': 'TG Lead Miner',
+    'sender-module': 'TG Lead Sender',
+    'neuro-module': 'Нейрочаттинг',
+};
+
+function switchSection(key) {
+    document.querySelectorAll('.db-nav-item[data-section]').forEach(l => l.classList.remove('active'));
+    document.querySelectorAll('.db-section').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById('section-' + key);
+    if (target) target.classList.add('active');
+    const navEl = document.getElementById('nav-' + key);
+    if (navEl) navEl.classList.add('active');
+    const tb = document.getElementById('topbarTitle');
+    if (tb) tb.textContent = sectionTitles[key] || key;
+    // Animate counters in newly visible section
+    animateCountersIn(target);
+    // Close mobile sidebar
+    closeMobileSidebar();
+}
+
+document.querySelectorAll('.db-nav-item[data-section]').forEach(link => {
+    link.addEventListener('click', () => switchSection(link.dataset.section));
 });
 
-// ── Модальные окна ────────────────────────────────────
+// ═══════════════════════════════════════════════════
+// MOBILE SIDEBAR
+// ═══════════════════════════════════════════════════
+const dbSidebar = document.getElementById('dbSidebar');
+const dbOverlay = document.getElementById('dbOverlay');
+
+document.getElementById('dbMobileMenu').addEventListener('click', () => {
+    dbSidebar.classList.add('open');
+    dbOverlay.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+});
+
+function closeMobileSidebar() {
+    dbSidebar.classList.remove('open');
+    dbOverlay.style.display = 'none';
+    document.body.style.overflow = '';
+}
+dbOverlay.addEventListener('click', closeMobileSidebar);
+
+// ═══════════════════════════════════════════════════
+// MODAL SYSTEM
+// ═══════════════════════════════════════════════════
 document.querySelectorAll('[data-modal-open]').forEach(btn => {
     btn.addEventListener('click', () => {
         const modal = document.getElementById(btn.getAttribute('data-modal-open'));
@@ -683,23 +1226,142 @@ document.querySelectorAll('[data-modal-open]').forEach(btn => {
     });
 });
 document.querySelectorAll('[data-modal-close]').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const modal = btn.closest('.modal');
-        if (modal) modal.classList.remove('open');
-    });
+    btn.addEventListener('click', () => btn.closest('.modal')?.classList.remove('open'));
 });
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
 });
 
-// ── Копирование реферальной ссылки ────────────────────
+// Reset TG account modal on close
+document.querySelectorAll('#modalAddAccount [data-modal-close]').forEach(el => {
+    el.addEventListener('click', () => setTimeout(() => {
+        tgSetStep(1);
+        ['tgPhone','tgApiId','tgApiHash','tgCode','tgPassword'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+    }, 300));
+});
+
+// ═══════════════════════════════════════════════════
+// ANIMATED COUNTERS
+// ═══════════════════════════════════════════════════
+function animateCounter(el) {
+    const target = parseInt(el.dataset.counter || '0', 10);
+    if (target === 0) return;
+    let start = 0;
+    const dur = 900;
+    const t0 = performance.now();
+    const step = (now) => {
+        const p = Math.min((now - t0) / dur, 1);
+        const ease = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.floor(ease * target).toLocaleString('ru-RU');
+        if (p < 1) requestAnimationFrame(step);
+        else el.textContent = target.toLocaleString('ru-RU');
+    };
+    requestAnimationFrame(step);
+}
+
+function animateCountersIn(section) {
+    if (!section) return;
+    section.querySelectorAll('[data-counter]').forEach(el => animateCounter(el));
+}
+
+// Run counters on visible section at page load
+window.addEventListener('load', () => {
+    animateCountersIn(document.querySelector('.db-section.active'));
+});
+
+// ═══════════════════════════════════════════════════
+// CURRENT DATE
+// ═══════════════════════════════════════════════════
+(function() {
+    const el = document.getElementById('currentDate');
+    if (!el) return;
+    const d = new Date();
+    const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+    el.textContent = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+})();
+
+// ═══════════════════════════════════════════════════
+// LEADS CHART
+// ═══════════════════════════════════════════════════
+(function() {
+    const ctx = document.getElementById('leadsChart');
+    if (!ctx) return;
+    const labels = {{ chart_labels | tojson }};
+    const data   = {{ chart_leads | tojson }};
+    const maxVal = Math.max(...data, 1);
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    type: 'line',
+                    data,
+                    borderColor: '#ff6a00',
+                    backgroundColor: 'rgba(255,106,0,0.06)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#ff6a00',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    order: 1,
+                },
+                {
+                    type: 'bar',
+                    data,
+                    backgroundColor: data.map(v => v > 0 ? 'rgba(255,106,0,0.2)' : 'rgba(255,255,255,0.04)'),
+                    borderRadius: 5,
+                    borderSkipped: false,
+                    order: 2,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(10,10,20,0.9)',
+                    borderColor: 'rgba(255,106,0,0.4)',
+                    borderWidth: 1,
+                    padding: 10,
+                    callbacks: { label: ctx => ` ${ctx.parsed.y} лидов` }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
+                    ticks: { color: 'rgba(255,255,255,0.3)', precision: 0, font: { size: 11 } },
+                    border: { display: false }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 11 } },
+                    border: { display: false }
+                }
+            }
+        }
+    });
+})();
+
+// ═══════════════════════════════════════════════════
+// COPY REFERRAL LINK
+// ═══════════════════════════════════════════════════
 function copyShareLink() {
     const input = document.getElementById('shareLink');
     input.select();
-    try { document.execCommand('copy'); } catch(e) { navigator.clipboard.writeText(input.value); }
+    try { document.execCommand('copy'); } catch { navigator.clipboard?.writeText(input.value); }
     const btn = input.nextElementSibling;
     const orig = btn.textContent;
     btn.textContent = '✓ Скопировано';
+    toast('Ссылка скопирована!', 'success', 2000);
     setTimeout(() => btn.textContent = orig, 2000);
 }
 </script>
