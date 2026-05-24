@@ -1,4 +1,4 @@
-import os, uuid, sqlite3, random, string, io, asyncio, threading, concurrent.futures
+import os, uuid, sqlite3, random, string, io, asyncio, threading, concurrent.futures, json
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -344,12 +344,36 @@ def init_db():
         );
     ''')
     db.commit()
+    # Таблица пресетов фильтров майнера
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS miner_presets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            filters_json TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    db.commit()
     # Миграции для существующих таблиц (безопасны — падают если колонка уже есть)
     for sql in [
         "ALTER TABLE users ADD COLUMN referral_id INTEGER",
         "ALTER TABLE miner_jobs ADD COLUMN error_msg TEXT",
         "ALTER TABLE users ADD COLUMN telegram_id TEXT",
         "ALTER TABLE proxies ADD COLUMN secret TEXT",
+        # Miner v2 — новые колонки
+        "ALTER TABLE miner_jobs ADD COLUMN progress INTEGER DEFAULT 0",
+        "ALTER TABLE miner_jobs ADD COLUMN progress_msg TEXT",
+        "ALTER TABLE miner_jobs ADD COLUMN filters_json TEXT",
+        "ALTER TABLE miner_jobs ADD COLUMN source_links TEXT",
+        "ALTER TABLE miner_jobs ADD COLUMN cancelled INTEGER DEFAULT 0",
+        "ALTER TABLE leads ADD COLUMN premium INTEGER DEFAULT 0",
+        "ALTER TABLE leads ADD COLUMN has_photo INTEGER DEFAULT 0",
+        "ALTER TABLE leads ADD COLUMN is_bot INTEGER DEFAULT 0",
+        "ALTER TABLE leads ADD COLUMN verified INTEGER DEFAULT 0",
+        "ALTER TABLE leads ADD COLUMN gender TEXT",
+        "ALTER TABLE leads ADD COLUMN last_seen_cat TEXT",
+        "ALTER TABLE leads ADD COLUMN language TEXT",
     ]:
         try:
             db.execute(sql)
@@ -1542,108 +1566,306 @@ def payment_success():
 @login_required
 def miner():
     db = get_db()
-    miner_jobs = db.execute("SELECT * FROM miner_jobs WHERE user_id = ? ORDER BY created_at DESC LIMIT 10", (current_user.id,)).fetchall()
-    return render_template('miner.html', miner_jobs=miner_jobs)
+    lic = db.execute(
+        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND product='Miner' ORDER BY expires_at DESC LIMIT 1",
+        (current_user.id,),
+    ).fetchone()
+    miner_jobs = db.execute(
+        "SELECT * FROM miner_jobs WHERE user_id=? ORDER BY created_at DESC LIMIT 10",
+        (current_user.id,),
+    ).fetchall()
+    presets = db.execute(
+        "SELECT * FROM miner_presets WHERE user_id=? ORDER BY created_at DESC",
+        (current_user.id,),
+    ).fetchall()
+    accounts = db.execute(
+        "SELECT id, phone FROM sender_accounts WHERE user_id=? AND is_active=1",
+        (current_user.id,),
+    ).fetchall()
+    total_collected = db.execute(
+        "SELECT COALESCE(SUM(leads_count),0) FROM miner_jobs WHERE user_id=? AND status='done'",
+        (current_user.id,),
+    ).fetchone()[0]
+    today_count = db.execute(
+        "SELECT COUNT(*) FROM miner_jobs WHERE user_id=? AND date(created_at)=date('now')",
+        (current_user.id,),
+    ).fetchone()[0]
+    is_trial = (lic['price'] == 0) if lic else True
+    return render_template('miner.html',
+        lic=lic,
+        miner_jobs=miner_jobs,
+        presets=presets,
+        accounts=accounts,
+        total_collected=total_collected,
+        today_count=today_count,
+        is_trial=is_trial,
+    )
+
+# ---------- MINER: HELPERS ----------
+
+try:
+    import gender_guesser.detector as _gd
+    _gender_det = _gd.Detector(case_sensitive=False)
+    def _guess_gender(first_name):
+        if not first_name:
+            return ''
+        name = first_name.strip().split()[0]
+        r = _gender_det.get_gender(name)
+        if r in ('male', 'mostly_male'):
+            return 'male'
+        if r in ('female', 'mostly_female'):
+            return 'female'
+        return ''
+except ImportError:
+    def _guess_gender(first_name):
+        if not first_name:
+            return ''
+        n = first_name.strip().split()[0].lower()
+        if n.endswith(('а', 'я', 'на', 'ра', 'ла', 'са', 'та', 'да', 'ка', 'ма', 'ia', 'na', 'ra', 'la', 'sa', 'ta', 'da', 'ka', 'ma', 'ya')):
+            return 'female'
+        return 'male'
+
+
+def _last_seen_cat(status):
+    """Вернуть строку-категорию по Telethon UserStatus."""
+    from telethon.tl.types import (
+        UserStatusOnline, UserStatusOffline, UserStatusRecently,
+        UserStatusLastWeek, UserStatusLastMonth, UserStatusEmpty,
+    )
+    if status is None:
+        return 'hidden'
+    if isinstance(status, UserStatusOnline):
+        return 'online'
+    if isinstance(status, UserStatusOffline):
+        return 'offline'
+    if isinstance(status, UserStatusRecently):
+        return 'recently'
+    if isinstance(status, UserStatusLastWeek):
+        return 'week'
+    if isinstance(status, UserStatusLastMonth):
+        return 'month'
+    return 'long_ago'
+
+
+def _apply_miner_filters(member, filters):
+    """Вернуть True если участник проходит все фильтры."""
+    if not filters:
+        return True
+    # Боты
+    if filters.get('no_bots') and member.bot:
+        return False
+    # Только Premium
+    if filters.get('premium_only') and not getattr(member, 'premium', False):
+        return False
+    # Только с фото
+    if filters.get('has_photo') and not member.photo:
+        return False
+    # Только верифицированные
+    if filters.get('verified_only') and not getattr(member, 'verified', False):
+        return False
+    # Фильтр last_seen
+    ls_filter = filters.get('last_seen', 'any')
+    if ls_filter != 'any':
+        cat = _last_seen_cat(member.status)
+        if ls_filter == 'recently' and cat not in ('online', 'offline', 'recently'):
+            return False
+        if ls_filter == 'week' and cat not in ('online', 'offline', 'recently', 'week'):
+            return False
+    # Фильтр пола
+    gender_filter = filters.get('gender', 'any')
+    if gender_filter != 'any':
+        g = _guess_gender(member.first_name or '')
+        if g != gender_filter:
+            return False
+    # Языковой фильтр (по language_code аккаунта)
+    lang_filter = filters.get('language', '')
+    if lang_filter:
+        user_lang = getattr(member, 'lang_code', '') or ''
+        if user_lang.lower()[:2] != lang_filter.lower()[:2]:
+            return False
+    return True
+
 
 # ---------- MINER: ФОНОВЫЙ СБОР ----------
 
-def run_miner_job(job_id, session_path, api_id, api_hash, link, user_id, proxy, limit):
-    """Запускается в отдельном потоке. Создаёт собственное соединение с БД."""
+def run_miner_job(job_id, session_path, api_id, api_hash, links, user_id, proxy, limit, filters=None):
+    """Фоновый сбор лидов. links — список строк. filters — dict с параметрами."""
+    if isinstance(links, str):
+        links = [links]
+    filters = filters or {}
+
+    def _set_progress(conn, pct, msg):
+        try:
+            conn.execute(
+                "UPDATE miner_jobs SET progress=?, progress_msg=? WHERE id=?",
+                (pct, msg[:200], job_id),
+            )
+            conn.commit()
+        except Exception:
+            pass
+
+    def _is_cancelled(conn):
+        try:
+            r = conn.execute("SELECT cancelled FROM miner_jobs WHERE id=?", (job_id,)).fetchone()
+            return r and r[0]
+        except Exception:
+            return False
+
     async def _collect():
         conn = sqlite3.connect(DATABASE)
+        conn.row_factory = sqlite3.Row
+        client = None
         try:
-            conn.execute("UPDATE miner_jobs SET status='running' WHERE id=?", (job_id,))
+            conn.execute("UPDATE miner_jobs SET status='running', progress=2, progress_msg='Подключение к Telegram...' WHERE id=?", (job_id,))
             conn.commit()
+
             client = _make_tg_client(session_path, api_id, api_hash, proxy)
             await client.connect()
-            try:
-                entity = await client.get_entity(link)
-                participants = await client.get_participants(entity, limit=limit)
-                batch = [
-                    (job_id, user_id, str(m.id), m.username, m.first_name or '', m.last_name or '')
-                    for m in participants if not m.bot
-                ]
+
+            all_leads = {}   # tg_id → dict  (дедупликация по всем источникам)
+            total = len(links)
+            link_errors = []
+
+            for idx, link in enumerate(links):
+                if _is_cancelled(conn):
+                    break
+                base_pct = int(5 + (idx / total) * 85)
+                _set_progress(conn, base_pct, f'[{idx+1}/{total}] Получаю участников: {link[:50]}')
+
+                try:
+                    entity = await client.get_entity(link)
+                    count_fetched = 0
+
+                    async for member in client.iter_participants(entity, limit=limit):
+                        if count_fetched % 100 == 0 and _is_cancelled(conn):
+                            break
+                        if not _apply_miner_filters(member, filters):
+                            count_fetched += 1
+                            continue
+
+                        tid = str(member.id)
+                        if tid not in all_leads:
+                            all_leads[tid] = {
+                                'job_id':       job_id,
+                                'user_id':      user_id,
+                                'tg_id':        tid,
+                                'username':     member.username or '',
+                                'first_name':   member.first_name or '',
+                                'last_name':    member.last_name or '',
+                                'premium':      1 if getattr(member, 'premium', False) else 0,
+                                'has_photo':    1 if member.photo else 0,
+                                'is_bot':       1 if member.bot else 0,
+                                'verified':     1 if getattr(member, 'verified', False) else 0,
+                                'gender':       _guess_gender(member.first_name or ''),
+                                'last_seen_cat': _last_seen_cat(member.status),
+                                'language':     getattr(member, 'lang_code', '') or '',
+                            }
+                        count_fetched += 1
+
+                        if count_fetched % 200 == 0:
+                            pct = min(base_pct + int((count_fetched / (limit or 5000)) * (85 / total)), 90)
+                            _set_progress(conn, pct,
+                                f'[{idx+1}/{total}] {link[:30]}: {len(all_leads)} лидов...')
+
+                except Exception as e:
+                    link_errors.append(f'{link[:40]}: {str(e)[:80]}')
+                    _set_progress(conn, base_pct, f'Ошибка в {link[:40]}: {str(e)[:80]}')
+
+            _set_progress(conn, 95, f'Сохраняю {len(all_leads)} лидов в базу...')
+
+            leads_list = list(all_leads.values())
+            if leads_list:
                 conn.executemany(
-                    "INSERT INTO leads (job_id, user_id, tg_id, username, first_name, last_name) VALUES (?,?,?,?,?,?)",
-                    batch,
+                    '''INSERT INTO leads
+                       (job_id, user_id, tg_id, username, first_name, last_name,
+                        premium, has_photo, is_bot, verified, gender, last_seen_cat, language)
+                       VALUES (:job_id,:user_id,:tg_id,:username,:first_name,:last_name,
+                               :premium,:has_photo,:is_bot,:verified,:gender,:last_seen_cat,:language)''',
+                    leads_list,
                 )
-                conn.execute(
-                    "UPDATE miner_jobs SET status='done', leads_count=? WHERE id=?",
-                    (len(batch), job_id),
-                )
-            except Exception as e:
-                conn.execute(
-                    "UPDATE miner_jobs SET status='error', error_msg=? WHERE id=?",
-                    (str(e)[:255], job_id),
-                )
-            finally:
-                await client.disconnect()
+
+            cancelled = _is_cancelled(conn)
+            final_status = 'cancelled' if cancelled else 'done'
+            err_summary = '; '.join(link_errors[:3]) if link_errors else None
+
+            conn.execute(
+                '''UPDATE miner_jobs SET status=?, leads_count=?, progress=100,
+                   progress_msg=?, error_msg=? WHERE id=?''',
+                (final_status, len(leads_list),
+                 f'{"Отменено" if cancelled else "Готово"}! Собрано {len(leads_list)} лидов',
+                 err_summary, job_id),
+            )
             conn.commit()
+
         except Exception as e:
             try:
+                import traceback as _tb
+                print(f'[MINER JOB {job_id} ERROR]\n{_tb.format_exc()}', flush=True)
                 conn.execute(
-                    "UPDATE miner_jobs SET status='error', error_msg=? WHERE id=?",
-                    (str(e)[:255], job_id),
+                    "UPDATE miner_jobs SET status='error', error_msg=?, progress_msg=? WHERE id=?",
+                    (str(e)[:255], f'Ошибка: {str(e)[:100]}', job_id),
                 )
                 conn.commit()
             except Exception:
                 pass
         finally:
+            if client:
+                try:
+                    await client.disconnect()
+                except Exception:
+                    pass
             conn.close()
 
     asyncio.run(_collect())
 
 
-@app.route('/miner/collect', methods=['POST'])
+@app.route('/miner/start', methods=['POST'])
 @login_required
-def miner_collect():
-    link = request.form.get('link', '').strip()
-    if not link:
-        flash('Введите ссылку на чат или канал.', 'error')
-        return redirect(url_for('miner'))
+def miner_start():
+    """JSON API: запустить сбор лидов."""
+    data     = request.get_json(force=True) or {}
+    links_raw = data.get('links', '').strip()
+    filters  = data.get('filters', {})
 
-    if not rate_limit_user(current_user.id, 'miner_collect', max_calls=20, window_seconds=3600):
-        flash('Превышен лимит запросов. Подождите немного.', 'error')
-        return redirect(url_for('miner'))
+    links = [l.strip() for l in links_raw.replace('\n', ',').split(',') if l.strip()]
+    if not links:
+        return jsonify({'error': 'Введите хотя бы одну ссылку'})
 
     db = get_db()
-
-    # Проверка лицензии
     lic = db.execute(
-        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND product='Miner'",
+        "SELECT * FROM licenses WHERE user_id=? AND is_active=1 AND product='Miner' ORDER BY expires_at DESC LIMIT 1",
         (current_user.id,),
     ).fetchone()
     if not lic:
-        flash('Нужна активная лицензия Miner.', 'error')
-        return redirect(url_for('miner'))
+        return jsonify({'error': 'Нужна активная лицензия Miner'})
 
-    is_trial = (lic['price'] == 0)
-    collect_limit = 200 if is_trial else 5000
+    if not rate_limit_user(current_user.id, 'miner_start', max_calls=1, window_seconds=60):
+        return jsonify({'error': 'Подождите 1 минуту перед запуском нового сбора'})
 
+    is_trial  = (lic['price'] == 0)
     if is_trial:
         count_today = db.execute(
             "SELECT COUNT(*) FROM miner_jobs WHERE user_id=? AND date(created_at)=date('now')",
             (current_user.id,),
         ).fetchone()[0]
         if count_today >= 2:
-            flash('Лимит пробного тарифа — 2 сбора в день. Купите лицензию для снятия ограничений.', 'error')
-            return redirect(url_for('miner'))
+            return jsonify({'error': 'Лимит пробного тарифа — 2 сбора в день. Купите лицензию.'})
 
-    # Активный аккаунт
+    collect_limit = 200 if is_trial else int(filters.get('limit', 5000))
+
     account = db.execute(
         "SELECT * FROM sender_accounts WHERE user_id=? AND is_active=1 LIMIT 1",
         (current_user.id,),
     ).fetchone()
     if not account:
-        flash('Сначала подключите аккаунт Telegram в разделе «Аккаунты».', 'error')
-        return redirect(url_for('miner'))
+        return jsonify({'error': 'Сначала подключите аккаунт Telegram в разделе «Аккаунты»'})
 
     session_path = os.path.join('sessions', account['session_file'])
-    proxy = _get_user_proxy(db, current_user.id)
+    proxy        = _get_user_proxy(db, current_user.id)
 
     cursor = db.execute(
-        "INSERT INTO miner_jobs (user_id, source_link, status) VALUES (?,?,'pending')",
-        (current_user.id, link),
+        "INSERT INTO miner_jobs (user_id, source_link, source_links, status, filters_json) VALUES (?,?,?,'pending',?)",
+        (current_user.id, links[0], json.dumps(links), json.dumps(filters)),
     )
     job_id = cursor.lastrowid
     db.commit()
@@ -1651,43 +1873,127 @@ def miner_collect():
     threading.Thread(
         target=run_miner_job,
         args=(job_id, session_path, account['api_id'], account['api_hash'],
-              link, current_user.id, proxy, collect_limit),
+              links, current_user.id, proxy, collect_limit, filters),
         daemon=True,
     ).start()
 
-    log_action(current_user.id, 'miner_collect', link)
-    flash('Сбор запущен! Статус обновляется автоматически.', 'success')
-    return redirect(url_for('miner'))
+    log_action(current_user.id, 'miner_start', links[0])
+    return jsonify({'success': True, 'job_id': job_id})
 
 
-@app.route('/miner/job/<int:job_id>/export')
+@app.route('/miner/job/<int:job_id>/status')
 @login_required
-def miner_export(job_id):
+def miner_job_status(job_id):
+    """Polling: вернуть прогресс задачи."""
+    db  = get_db()
+    job = db.execute(
+        "SELECT status, progress, progress_msg, leads_count, error_msg FROM miner_jobs WHERE id=? AND user_id=?",
+        (job_id, current_user.id),
+    ).fetchone()
+    if not job:
+        return jsonify({'error': 'not found'}), 404
+    return jsonify({
+        'status':       job['status'],
+        'progress':     job['progress'] or 0,
+        'progress_msg': job['progress_msg'] or '',
+        'leads_count':  job['leads_count'] or 0,
+        'error_msg':    job['error_msg'] or '',
+    })
+
+
+@app.route('/miner/job/<int:job_id>/cancel', methods=['POST'])
+@login_required
+def miner_job_cancel(job_id):
     db = get_db()
+    db.execute(
+        "UPDATE miner_jobs SET cancelled=1 WHERE id=? AND user_id=? AND status IN ('pending','running')",
+        (job_id, current_user.id),
+    )
+    db.commit()
+    return jsonify({'success': True})
+
+
+@app.route('/miner/job/<int:job_id>/preview')
+@login_required
+def miner_job_preview(job_id):
+    db   = get_db()
+    rows = db.execute(
+        '''SELECT tg_id, username, first_name, last_name,
+                  premium, has_photo, gender, last_seen_cat, verified
+           FROM leads WHERE job_id=?
+           ORDER BY premium DESC, has_photo DESC, verified DESC
+           LIMIT 20''',
+        (job_id,),
+    ).fetchall()
+    return jsonify({'leads': [dict(r) for r in rows]})
+
+
+@app.route('/miner/job/<int:job_id>/export/<fmt>')
+@login_required
+def miner_export(job_id, fmt='csv'):
+    db  = get_db()
     job = db.execute(
         "SELECT * FROM miner_jobs WHERE id=? AND user_id=?",
         (job_id, current_user.id),
     ).fetchone()
-    if not job or job['status'] != 'done':
+    if not job or job['status'] not in ('done', 'cancelled'):
         flash('Экспорт недоступен.', 'error')
         return redirect(url_for('miner'))
 
     rows = db.execute(
-        "SELECT tg_id, username, first_name, last_name FROM leads WHERE job_id=?",
+        "SELECT tg_id, username, first_name, last_name, premium, has_photo, gender, last_seen_cat FROM leads WHERE job_id=?",
         (job_id,),
     ).fetchall()
 
-    buf = io.StringIO()
-    buf.write("tg_id,username,first_name,last_name\n")
-    for r in rows:
-        buf.write(f"{r['tg_id']},{r['username'] or ''},{r['first_name'] or ''},{r['last_name'] or ''}\n")
+    if fmt == 'txt':
+        lines = [f"@{r['username']}" if r['username'] else str(r['tg_id']) for r in rows]
+        content = '\n'.join(lines)
+        return send_file(
+            io.BytesIO(content.encode('utf-8')),
+            mimetype='text/plain',
+            as_attachment=True,
+            download_name=f'leads_{job_id}.txt',
+        )
 
+    # CSV (default)
+    buf = io.StringIO()
+    buf.write('tg_id,username,first_name,last_name,premium,has_photo,gender,last_seen\n')
+    for r in rows:
+        buf.write(f"{r['tg_id']},{r['username'] or ''},{r['first_name'] or ''},"
+                  f"{r['last_name'] or ''},{r['premium']},{r['has_photo']},"
+                  f"{r['gender'] or ''},{r['last_seen_cat'] or ''}\n")
     return send_file(
         io.BytesIO(buf.getvalue().encode('utf-8')),
         mimetype='text/csv',
         as_attachment=True,
-        download_name=f'leads_job{job_id}.csv',
+        download_name=f'leads_{job_id}.csv',
     )
+
+
+@app.route('/miner/preset/save', methods=['POST'])
+@login_required
+def miner_preset_save():
+    data    = request.get_json(force=True) or {}
+    name    = data.get('name', '').strip()
+    filters = data.get('filters', {})
+    if not name:
+        return jsonify({'error': 'Введите название пресета'})
+    db = get_db()
+    cur = db.execute(
+        "INSERT INTO miner_presets (user_id, name, filters_json) VALUES (?,?,?)",
+        (current_user.id, name[:60], json.dumps(filters)),
+    )
+    db.commit()
+    return jsonify({'success': True, 'id': cur.lastrowid, 'name': name})
+
+
+@app.route('/miner/preset/<int:preset_id>/delete', methods=['POST'])
+@login_required
+def miner_preset_delete(preset_id):
+    db = get_db()
+    db.execute("DELETE FROM miner_presets WHERE id=? AND user_id=?", (preset_id, current_user.id))
+    db.commit()
+    return jsonify({'success': True})
 
 # ---------- МАГАЗИН ПРОКСИ ----------
 @app.route('/buy_proxy')
