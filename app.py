@@ -118,7 +118,12 @@ def send_purchase_email(to_email: str, product: str, price: int, expires_at):
 
 
 def create_lava_payment(amount_rub, user_id, product, days, user_email=''):
-    """Создаёт счёт в Lava.top. Возвращает (payment_url, invoice_id) или (None, None)."""
+    """Создаёт счёт в Lava.top. Возвращает (payment_url, invoice_id) или (None, None).
+    Поддерживает 2 типа оферт:
+      • Цифровой товар (One-time) — periodicity ONE_TIME
+      • Подписка — periodicity MONTHLY
+    Если первая попытка не возвращает URL — пробуем альтернативный режим.
+    """
     if not LAVA_API_KEY:
         logging.warning('LAVA: LAVA_API_KEY не задан')
         return None, None
@@ -126,41 +131,56 @@ def create_lava_payment(amount_rub, user_id, product, days, user_email=''):
     if not offer_id:
         logging.warning(f'LAVA: LAVA_OFFER_{product.upper()} не задан в .env')
         return None, None
-    try:
-        order_id = f'tglw-{user_id}-{product}-{uuid.uuid4().hex[:8]}'
-        payload = {
-            'email':         user_email or f'user{user_id}@tgleadwareon.ru',
-            'offerId':       offer_id,
-            'currency':      'RUB',
-            'periodicity':   'ONE_TIME',     # Разовая оплата — без автосписаний
-            'buyerLanguage': 'RU',
-            'orderId':       order_id,
-            'successUrl':    f'{BASE_URL}/payment/success?product={product}&provider=lava',
-            'failUrl':       f'{BASE_URL}/pricing',
-            'hookUrl':       f'{BASE_URL}/payment/lava/webhook',
-        }
-        logging.info(f'LAVA: создаём счёт order_id={order_id} offer={offer_id} amount={amount_rub}')
-        resp = requests.post(
-            'https://gate.lava.top/api/v2/invoice',
-            json=payload,
-            headers={
-                'X-Api-Key':    LAVA_API_KEY,
-                'Content-Type': 'application/json',
-                'Accept':       'application/json',
-            },
-            timeout=10,
-        )
-        logging.info(f'LAVA: ответ {resp.status_code} — {resp.text[:300]}')
-        data = resp.json()
-        pay_url = data.get('paymentUrl') or data.get('url') or data.get('URL')
-        inv_id  = data.get('id') or data.get('InvoiceId') or order_id
-        if not pay_url:
-            logging.error(f'LAVA: нет url в ответе — {data}')
-            return None, None
-        return pay_url, inv_id
-    except Exception as e:
-        logging.error(f'LAVA: исключение — {e}')
-        return None, None
+
+    order_id = f'tglw-{user_id}-{product}-{uuid.uuid4().hex[:8]}'
+    base_payload = {
+        'email':         user_email or f'user{user_id}@tgleadwareon.ru',
+        'offerId':       offer_id,
+        'currency':      'RUB',
+        'buyerLanguage': 'RU',
+        'orderId':       order_id,
+        'successUrl':    f'{BASE_URL}/payment/success?product={product}&provider=lava',
+        'failUrl':       f'{BASE_URL}/pricing',
+        'hookUrl':       f'{BASE_URL}/payment/lava/webhook',
+    }
+
+    # Пробуем в порядке: ONE_TIME → MONTHLY → без periodicity
+    attempts = [
+        ('ONE_TIME', {**base_payload, 'periodicity': 'ONE_TIME'}),
+        ('MONTHLY',  {**base_payload, 'periodicity': 'MONTHLY'}),
+        ('no-period', base_payload),
+    ]
+
+    for label, payload in attempts:
+        try:
+            logging.info(f'LAVA[{label}]: запрос order_id={order_id} offer={offer_id} amount={amount_rub}')
+            resp = requests.post(
+                'https://gate.lava.top/api/v2/invoice',
+                json=payload,
+                headers={
+                    'X-Api-Key':    LAVA_API_KEY,
+                    'Content-Type': 'application/json',
+                    'Accept':       'application/json',
+                },
+                timeout=10,
+            )
+            body = resp.text[:500]
+            logging.info(f'LAVA[{label}]: HTTP {resp.status_code} — {body}')
+            if resp.status_code >= 400:
+                continue
+            data = resp.json()
+            pay_url = data.get('paymentUrl') or data.get('url') or data.get('URL')
+            inv_id  = data.get('id') or data.get('InvoiceId') or order_id
+            if pay_url:
+                logging.info(f'LAVA[{label}]: OK → {pay_url}')
+                return pay_url, inv_id
+            logging.warning(f'LAVA[{label}]: нет paymentUrl в ответе — пробуем следующий режим')
+        except Exception as e:
+            logging.error(f'LAVA[{label}]: исключение — {e}')
+            continue
+
+    logging.error('LAVA: ни один из режимов не сработал')
+    return None, None
 
 
 def create_yookassa_payment(amount_rub, user_id, product, days):
