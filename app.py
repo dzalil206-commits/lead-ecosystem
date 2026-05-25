@@ -1,4 +1,4 @@
-import os, uuid, sqlite3, random, string, io, asyncio, threading, concurrent.futures, json
+import os, uuid, sqlite3, random, string, io, asyncio, threading, concurrent.futures, json, secrets
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -374,6 +374,18 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     ''')
+    # Бонусные токены для триала через Telegram-бота
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS bonus_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            token TEXT UNIQUE NOT NULL,
+            telegram_id TEXT,
+            user_id INTEGER,
+            used INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            used_at TIMESTAMP
+        );
+    ''')
     db.commit()
     # Миграции для существующих таблиц (безопасны — падают если колонка уже есть)
     for sql in [
@@ -463,6 +475,16 @@ def generate_license_key():
 # ---------- ГЛАВНАЯ ----------
 @app.route('/')
 def index():
+    # Бонусная ссылка из бота: /?bonus=TOKEN → редирект на регистрацию
+    bonus = request.args.get('bonus', '').strip()
+    if bonus:
+        db = get_db()
+        t = db.execute(
+            "SELECT id FROM bonus_tokens WHERE token=? AND used=0",
+            (bonus,)
+        ).fetchone()
+        if t:
+            return redirect(url_for('register', bonus=bonus))
     return render_template('index.html')
 
 
@@ -584,28 +606,39 @@ def download():
 # ---------- РЕГИСТРАЦИЯ / ВХОД ----------
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    # Бонус-токен из бота — берём из query (GET) или из form (POST)
+    bonus_token = (request.args.get('bonus') or request.form.get('bonus') or '').strip()
+    bonus_valid = False
+    if bonus_token:
+        db_pre = get_db()
+        t = db_pre.execute(
+            "SELECT id FROM bonus_tokens WHERE token=? AND used=0",
+            (bonus_token,)
+        ).fetchone()
+        bonus_valid = bool(t)
+
     if request.method == 'POST':
         if not rate_limit_ip('register', max_calls=5, window_seconds=3600):
             flash('Слишком много попыток регистрации. Попробуйте через час.', 'error')
-            return render_template('register.html')
+            return render_template('register.html', bonus_token=bonus_token, bonus_valid=bonus_valid)
 
         email     = request.form['email'].strip()
         password  = request.form['password'].strip()
         full_name = request.form.get('full_name', '').strip()
-        ref_id    = request.args.get('ref')
+        ref_id    = request.args.get('ref') or request.form.get('ref')
 
         if not request.form.get('agree'):
             flash('Необходимо принять Пользовательское соглашение и Политику конфиденциальности.', 'error')
-            return render_template('register.html')
+            return render_template('register.html', bonus_token=bonus_token, bonus_valid=bonus_valid)
 
         if len(password) < 8:
             flash('Пароль должен содержать не менее 8 символов.', 'error')
-            return render_template('register.html')
+            return render_template('register.html', bonus_token=bonus_token, bonus_valid=bonus_valid)
 
         db = get_db()
         if db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone():
             flash('Этот email уже зарегистрирован.', 'error')
-            return render_template('register.html')
+            return render_template('register.html', bonus_token=bonus_token, bonus_valid=bonus_valid)
         hashed_pw = generate_password_hash(password)
         cursor = db.execute(
             "INSERT INTO users (email, password, full_name, referral_id) VALUES (?, ?, ?, ?)",
@@ -613,10 +646,22 @@ def register():
         )
         user_id = cursor.lastrowid
         db.commit()
-        license_key = generate_license_key()
-        expires_at = datetime.now() + timedelta(days=3)
-        db.execute("INSERT INTO licenses (user_id, license_key, product, price, expires_at, is_active) VALUES (?, ?, ?, ?, ?, 1)", (user_id, license_key, 'Miner', 0, expires_at))
-        db.commit()
+
+        # 3-дневный триал Miner выдаётся ТОЛЬКО при валидной бонусной ссылке из бота
+        if bonus_valid:
+            license_key = generate_license_key()
+            expires_at  = datetime.now() + timedelta(days=3)
+            db.execute(
+                "INSERT INTO licenses (user_id, license_key, product, price, expires_at, is_active) VALUES (?, ?, ?, ?, ?, 1)",
+                (user_id, license_key, 'Miner', 0, expires_at)
+            )
+            db.execute(
+                "UPDATE bonus_tokens SET used=1, user_id=?, used_at=CURRENT_TIMESTAMP WHERE token=?",
+                (user_id, bonus_token)
+            )
+            db.commit()
+            log_action(user_id, 'trial_activated_via_bot', bonus_token)
+
         if ref_id and ref_id.isdigit():
             # Бонус +1 день начисляется только каждому 3-му рефералу
             ref_count = db.execute(
@@ -629,9 +674,12 @@ def register():
                 )
                 db.commit()
         log_action(user_id, 'register', email)
-        flash('Регистрация успешна! Войдите.', 'success')
+        if bonus_valid:
+            flash('🎉 Регистрация успешна! 3 дня Miner активированы. Войдите.', 'success')
+        else:
+            flash('Регистрация успешна! Получите бесплатный триал через нашего бота.', 'success')
         return redirect(url_for('login'))
-    return render_template('register.html')
+    return render_template('register.html', bonus_token=bonus_token, bonus_valid=bonus_valid)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -2730,6 +2778,39 @@ def bot_link_code():
     db.commit()
     log_action(user_id, 'bot_linked_qr', f'tg:{tg_id}')
     return jsonify({'ok': True})
+
+
+@app.route('/api/bot/generate_bonus', methods=['POST'])
+def bot_generate_bonus():
+    """Гайд-бот → выдаёт пользователю бонусную ссылку на 3 дня Miner-триала.
+    Тело: {"telegram_id": "..."}.
+    Если у этого telegram_id уже есть неиспользованный токен — возвращаем его же.
+    """
+    if not _bot_auth():
+        return jsonify({'error': 'Forbidden'}), 403
+    data = request.get_json(force=True) or {}
+    tg_id = str(data.get('telegram_id', '')).strip()
+    if not tg_id:
+        return jsonify({'error': 'telegram_id required'}), 400
+    db = get_db()
+    # Если уже есть неиспользованный токен — отдаём его
+    existing = db.execute(
+        "SELECT token FROM bonus_tokens WHERE telegram_id=? AND used=0 ORDER BY created_at DESC LIMIT 1",
+        (tg_id,)
+    ).fetchone()
+    if existing:
+        token = existing['token']
+    else:
+        token = secrets.token_urlsafe(16)
+        db.execute(
+            "INSERT INTO bonus_tokens (token, telegram_id) VALUES (?, ?)",
+            (token, tg_id)
+        )
+        db.commit()
+    return jsonify({
+        'token': token,
+        'url':   f'{BASE_URL}/?bonus={token}',
+    })
 
 
 @app.route('/api/bot/expiring_licenses', methods=['GET'])
