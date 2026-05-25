@@ -598,8 +598,16 @@ def register():
         db.execute("INSERT INTO licenses (user_id, license_key, product, price, expires_at, is_active) VALUES (?, ?, ?, ?, ?, 1)", (user_id, license_key, 'Miner', 0, expires_at))
         db.commit()
         if ref_id and ref_id.isdigit():
-            db.execute("UPDATE licenses SET expires_at = datetime(expires_at, '+1 day') WHERE user_id = ? AND is_active = 1", (ref_id,))
-            db.commit()
+            # Бонус +1 день начисляется только каждому 3-му рефералу
+            ref_count = db.execute(
+                "SELECT COUNT(*) FROM users WHERE referral_id=?", (int(ref_id),)
+            ).fetchone()[0]
+            if ref_count > 0 and ref_count % 3 == 0:
+                db.execute(
+                    "UPDATE licenses SET expires_at = datetime(expires_at, '+1 day') WHERE user_id = ? AND is_active = 1",
+                    (ref_id,)
+                )
+                db.commit()
         log_action(user_id, 'register', email)
         flash('Регистрация успешна! Войдите.', 'success')
         return redirect(url_for('login'))
@@ -2453,11 +2461,15 @@ def referral():
         "SELECT id, full_name, email, created_at FROM users WHERE referral_id=? ORDER BY created_at DESC",
         (current_user.id,),
     ).fetchall()
-    bonus_days = len(referred)
+    total_refs    = len(referred)
+    bonus_days    = total_refs // 3            # +1 день за каждых 3 рефералов
+    until_next    = (3 - total_refs % 3) if total_refs % 3 != 0 else 3
     ref_link = f"{BASE_URL}/?ref={current_user.id}"
     return render_template('referral.html',
                            referred=referred,
                            bonus_days=bonus_days,
+                           total_refs=total_refs,
+                           until_next=until_next,
                            ref_link=ref_link)
 
 
