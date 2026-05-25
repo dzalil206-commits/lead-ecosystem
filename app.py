@@ -132,7 +132,7 @@ def create_lava_payment(amount_rub, user_id, product, days, user_email=''):
             'email':         user_email or f'user{user_id}@tgleadwareon.ru',
             'offerId':       offer_id,
             'currency':      'RUB',
-            'periodicity':   'MONTHLY',
+            'periodicity':   'ONE_TIME',     # Разовая оплата — без автосписаний
             'buyerLanguage': 'RU',
             'orderId':       order_id,
             'successUrl':    f'{BASE_URL}/payment/success?product={product}&provider=lava',
@@ -1593,7 +1593,7 @@ def lava_webhook():
                 "UPDATE licenses SET expires_at = datetime(expires_at, '+30 days') WHERE id=?",
                 (existing['id'],)
             )
-            log_action(user_id, 'subscription_renewed', f'{product}:lava:{invoice_id}')
+            log_action(user_id, 'license_renewed', f'{product}:lava:{invoice_id}')
         else:
             license_key = generate_license_key()
             expires_at  = datetime.now() + timedelta(days=days)
@@ -1605,7 +1605,7 @@ def lava_webhook():
                 "UPDATE payments SET status='succeeded' WHERE user_id=? AND product=? AND status='pending'",
                 (user_id, product.lower())
             )
-            log_action(user_id, 'subscription_activated', f'{product}:{price}rub:lava:{invoice_id}')
+            log_action(user_id, 'license_activated', f'{product}:{price}rub:lava:{invoice_id}')
             # Уведомление пользователю и админу
             user_row = db.execute("SELECT telegram_id, email FROM users WHERE id=?", (user_id,)).fetchone()
             if user_row and user_row['telegram_id']:
