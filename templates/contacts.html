@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Контакты — TG Lead Wareon</title>
+  <meta name="description" content="Контактная информация TG Lead Wareon: email, Telegram, телефон, реквизиты для связи. Поддержка пользователей и официальные обращения."/>
+  <link rel="canonical" href="https://tgleadwareon.ru/contacts"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    body { overflow-x: hidden; }
+    .nb { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+    .nb-o { position: absolute; border-radius: 50%; filter: blur(150px); pointer-events: none; }
+    .nb-1 { width: 900px; height: 900px; background: radial-gradient(circle, rgba(255,80,0,0.22) 0%, rgba(255,120,0,0.07) 40%, transparent 70%); bottom: -400px; left: -250px; }
+    .nb-2 { width: 550px; height: 550px; background: radial-gradient(circle, rgba(255,120,0,0.06) 0%, transparent 60%); top: -100px; right: -100px; }
+    main { position: relative; z-index: 1; }
+
+    .contact-wrap { max-width: 1000px; margin: 0 auto; padding: 48px 24px 80px; }
+    .contact-hero { text-align: center; margin-bottom: 40px; }
+    .contact-hero .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,106,0,0.10); border: 1px solid rgba(255,106,0,0.25);
+      border-radius: 100px; padding: 5px 13px;
+      font-size: 11px; font-weight: 600; color: var(--orange-3);
+      letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 14px;
+    }
+    .contact-hero h1 { font-size: 36px; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 10px; }
+    .contact-hero p { font-size: 15px; color: rgba(255,255,255,0.45); max-width: 540px; margin: 0 auto; }
+
+    .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+    .contact-card {
+      background: rgba(8,5,18,0.75);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px; padding: 24px 26px;
+      backdrop-filter: blur(18px);
+      transition: border-color .2s, transform .2s;
+    }
+    .contact-card:hover { border-color: rgba(255,106,0,.3); transform: translateY(-2px); }
+    .contact-icon { font-size: 28px; margin-bottom: 12px; }
+    .contact-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; color: #fff; }
+    .contact-card p { font-size: 13px; color: rgba(255,255,255,0.45); line-height: 1.7; margin-bottom: 10px; }
+    .contact-card a { color: var(--orange-3); text-decoration: none; font-weight: 600; font-size: 13.5px; word-break: break-all; }
+    .contact-card a:hover { text-decoration: underline; }
+
+    .info-block {
+      background: rgba(255,255,255,.025);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 16px;
+      padding: 28px 30px;
+      margin-top: 24px;
+    }
+    .info-block h2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: var(--orange-3); }
+    .info-block p, .info-block li { font-size: 13.5px; color: rgba(255,255,255,0.5); line-height: 1.75; margin-bottom: 6px; }
+    .info-block strong { color: rgba(255,255,255,0.85); }
+    .info-block ul { padding-left: 20px; }
+    .info-block .req-row { display: flex; gap: 16px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.04); font-size: 13.5px; }
+    .info-block .req-row:last-child { border-bottom: none; }
+    .info-block .req-label { color: rgba(255,255,255,0.4); min-width: 200px; }
+    .info-block .req-val { color: rgba(255,255,255,0.85); font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="page-dark">
+<div class="nb"><div class="nb-o nb-1"></div><div class="nb-o nb-2"></div></div>
+
+<header class="site-header" style="position:relative;z-index:10;">
+  <div class="container header-inner">
+    <a href="{{ url_for('index') }}" class="logo">
+      <span class="logo-mark">TG</span>
+      <span class="logo-text">Lead Wareon</span>
+    </a>
+    <nav class="nav-main">
+      <a href="{{ url_for('index') }}">Главная</a>
+      <a href="{{ url_for('pricing') }}">Тарифы</a>
+      <a href="{{ url_for('faq') }}">FAQ</a>
+      <a href="{{ url_for('support') }}">Поддержка</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="contact-wrap">
+    <div class="contact-hero">
+      <div class="eyebrow">Связь с нами</div>
+      <h1>Контакты</h1>
+      <p>Мы открыты для общения. Поддержка, юридические вопросы, партнёрство, жалобы — пишите на нужный канал ниже.</p>
+    </div>
+
+    <!-- Каналы связи -->
+    <div class="contact-grid">
+
+      <div class="contact-card">
+        <div class="contact-icon">💬</div>
+        <h3>Поддержка пользователей</h3>
+        <p>Помощь с настройкой, вопросы по работе сервиса, технические проблемы.</p>
+        <a href="mailto:support@tgleadwareon.ru">support@tgleadwareon.ru</a><br>
+        <a href="https://t.me/TGLeadSupportBot" target="_blank" rel="noopener">@TGLeadSupportBot</a>
+      </div>
+
+      <div class="contact-card">
+        <div class="contact-icon">⚖️</div>
+        <h3>Юридические вопросы</h3>
+        <p>Запросы по оферте, возврату средств, претензии, договорные отношения.</p>
+        <a href="mailto:legal@tgleadwareon.ru">legal@tgleadwareon.ru</a>
+      </div>
+
+      <div class="contact-card">
+        <div class="contact-icon">🔒</div>
+        <h3>Персональные данные</h3>
+        <p>Запросы по 152-ФЗ: получение, изменение, удаление ваших данных.</p>
+        <a href="mailto:privacy@tgleadwareon.ru">privacy@tgleadwareon.ru</a>
+      </div>
+
+      <div class="contact-card" style="border-color:rgba(255,70,70,.25);">
+        <div class="contact-icon">🚨</div>
+        <h3>Жалобы и нарушения</h3>
+        <p>Сообщить о нарушении со стороны пользователя нашего сервиса.</p>
+        <a href="mailto:abuse@tgleadwareon.ru" style="color:#ff9999;">abuse@tgleadwareon.ru</a><br>
+        <a href="{{ url_for('abuse_policy') }}" style="color:rgba(255,255,255,.4);font-size:12px;">→ Политика противодействия злоупотреблениям</a>
+      </div>
+
+      <div class="contact-card">
+        <div class="contact-icon">🤝</div>
+        <h3>Партнёрство и B2B</h3>
+        <p>Сотрудничество для агентств, корпоративные тарифы, white-label решения.</p>
+        <a href="mailto:partners@tgleadwareon.ru">partners@tgleadwareon.ru</a>
+      </div>
+
+      <div class="contact-card">
+        <div class="contact-icon">📞</div>
+        <h3>Телефон</h3>
+        <p>Голосовая связь с поддержкой (рабочие часы Москва).</p>
+        <a href="tel:+79991234567">+7 (999) 123-45-67</a><br>
+        <span style="font-size:11.5px;color:rgba(255,255,255,.3);">Пн-Пт 10:00–19:00 МСК</span>
+      </div>
+
+    </div>
+
+    <!-- Реквизиты -->
+    <div class="info-block">
+      <h2>📋 Реквизиты</h2>
+      <div class="req-row"><span class="req-label">Полное наименование:</span> <span class="req-val">Индивидуальный предприниматель ____________</span></div>
+      <div class="req-row"><span class="req-label">ОГРНИП:</span> <span class="req-val">____________</span></div>
+      <div class="req-row"><span class="req-label">ИНН:</span> <span class="req-val">____________</span></div>
+      <div class="req-row"><span class="req-label">Адрес регистрации:</span> <span class="req-val">____________</span></div>
+      <div class="req-row"><span class="req-label">Сайт:</span> <span class="req-val">tgleadwareon.ru</span></div>
+      <div class="req-row"><span class="req-label">Юрисдикция:</span> <span class="req-val">Российская Федерация</span></div>
+    </div>
+
+    <!-- Время ответа -->
+    <div class="info-block">
+      <h2>⏱ Время ответа</h2>
+      <ul>
+        <li><strong>Техническая поддержка</strong> — до 24 часов в рабочие дни</li>
+        <li><strong>Юридические запросы</strong> — до 30 календарных дней (по 152-ФЗ)</li>
+        <li><strong>Жалобы на пользователей</strong> — 24-72 часа (см. <a href="{{ url_for('abuse_policy') }}" style="color:var(--orange-3);">Политику противодействия</a>)</li>
+        <li><strong>Запросы государственных органов</strong> — до 3 рабочих дней</li>
+      </ul>
+    </div>
+
+    <!-- Безопасность связи -->
+    <div class="info-block">
+      <h2>🛡️ Безопасность связи</h2>
+      <p>Указанные выше email-адреса и Telegram — <strong>единственные официальные каналы связи</strong>. Если вы получили сообщение от лица TG Lead Wareon с другого адреса или контакта, особенно с просьбой перевести деньги или передать данные карты — это <strong>мошенничество</strong>.</p>
+      <p>Сообщайте о таких случаях на <a href="mailto:abuse@tgleadwareon.ru" style="color:var(--orange-3);">abuse@tgleadwareon.ru</a>.</p>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer" style="position:relative;z-index:1;">
+  <div class="container footer-inner">
+    <div class="footer-left"><span class="logo-text">TG Lead Wareon</span></div>
+    <div class="footer-links">
+      <a href="{{ url_for('contacts') }}">Контакты</a>
+      <a href="{{ url_for('privacy') }}">Конфиденциальность</a>
+      <a href="{{ url_for('terms') }}">Соглашение</a>
+      <a href="{{ url_for('abuse_policy') }}">Анти-злоупотребления</a>
+      <a href="{{ url_for('support') }}">Поддержка</a>
+    </div>
+  </div>
+  <div class="container">{% include '_legal_footer.html' %}</div>
+</footer>
+{% include '_cookie_banner.html' %}
+</body>
+</html>

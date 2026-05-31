@@ -583,6 +583,14 @@ def privacy():
 def terms():
     return render_template('terms.html')
 
+@app.route('/abuse-policy')
+def abuse_policy():
+    return render_template('abuse_policy.html')
+
+@app.route('/contacts')
+def contacts():
+    return render_template('contacts.html')
+
 @app.route('/wheel')
 def wheel():
     return render_template('wheel.html')

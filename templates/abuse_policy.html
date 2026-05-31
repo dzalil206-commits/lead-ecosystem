@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Политика противодействия злоупотреблениям — TG Lead Wareon</title>
+  <meta name="description" content="Политика TG Lead Wareon по противодействию спаму, незаконной обработке персональных данных и иным злоупотреблениям. Процедура подачи жалобы."/>
+  <meta name="robots" content="index, follow"/>
+  <link rel="canonical" href="https://tgleadwareon.ru/abuse-policy"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    body { overflow-x: hidden; }
+    .nb { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+    .nb-o { position: absolute; border-radius: 50%; filter: blur(150px); pointer-events: none; }
+    .nb-1 { width: 900px; height: 900px; background: radial-gradient(circle, rgba(255,80,0,0.22) 0%, rgba(255,120,0,0.07) 40%, transparent 70%); bottom: -400px; left: -250px; }
+    .nb-2 { width: 550px; height: 550px; background: radial-gradient(circle, rgba(255,120,0,0.06) 0%, transparent 60%); top: -100px; right: -100px; }
+
+    main { position: relative; z-index: 1; }
+    .legal-wrap { max-width: 800px; margin: 0 auto; padding: 48px 24px 80px; }
+    .legal-hero { margin-bottom: 36px; }
+    .legal-hero .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,106,0,0.10); border: 1px solid rgba(255,106,0,0.25);
+      border-radius: 100px; padding: 5px 13px;
+      font-size: 11px; font-weight: 600; color: var(--orange-3);
+      letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 14px;
+    }
+    .legal-hero h1 { font-size: 30px; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 6px; }
+    .legal-hero .meta { font-size: 13px; color: rgba(255,255,255,0.35); }
+
+    .legal-section {
+      background: rgba(8,5,18,0.75);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px; padding: 24px 26px; margin-bottom: 12px;
+      backdrop-filter: blur(18px); position: relative; overflow: hidden;
+    }
+    .legal-section::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,106,0,0.20), transparent);
+    }
+    .legal-section h3 { font-size: 15px; font-weight: 700; margin: 0 0 14px; color: var(--orange-3); }
+    .legal-section p, .legal-section li { font-size: 14px; color: rgba(255,255,255,0.50); line-height: 1.75; margin: 0 0 8px; }
+    .legal-section strong { color: rgba(255,255,255,0.80); }
+    .legal-section ul, .legal-section ol { padding-left: 20px; margin: 8px 0; }
+    .legal-section li { margin-bottom: 4px; }
+    .legal-section a { color: var(--orange-3); text-decoration: none; }
+    .legal-section a:hover { text-decoration: underline; }
+
+    .commit-box {
+      background: linear-gradient(135deg, rgba(59,232,140,0.07), rgba(59,232,140,0.02));
+      border: 1px solid rgba(59,232,140,0.25);
+      border-radius: 12px; padding: 18px 22px; margin: 14px 0;
+    }
+    .commit-box p { color: rgba(132,232,170,0.85); margin: 0; font-size: 14px; }
+
+    .abuse-cta {
+      background: linear-gradient(135deg, rgba(255,70,70,0.07), rgba(255,70,70,0.02));
+      border: 1px solid rgba(255,70,70,0.25);
+      border-radius: 14px; padding: 22px 26px; margin-top: 20px;
+    }
+    .abuse-cta h4 { font-size: 16px; font-weight: 700; color: #ff9999; margin-bottom: 10px; }
+    .abuse-cta a.btn { display: inline-block; padding: 10px 20px; background: linear-gradient(135deg,#ff6a00,#ff9040); color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; margin-top: 10px; }
+  </style>
+</head>
+<body class="page-dark">
+<div class="nb"><div class="nb-o nb-1"></div><div class="nb-o nb-2"></div></div>
+
+<header class="site-header" style="position:relative;z-index:10;">
+  <div class="container header-inner">
+    <a href="{{ url_for('index') }}" class="logo">
+      <span class="logo-mark">TG</span>
+      <span class="logo-text">Lead Wareon</span>
+    </a>
+    <nav class="nav-main">
+      <a href="{{ url_for('index') }}">Главная</a>
+      <a href="{{ url_for('terms') }}">Соглашение</a>
+      <a href="{{ url_for('privacy') }}">Конфиденциальность</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="legal-wrap">
+    <div class="legal-hero">
+      <div class="eyebrow">🛡️ Безопасность и закон</div>
+      <h1>Политика противодействия злоупотреблениям</h1>
+      <div class="meta">Дата вступления в силу: 01.01.2026 · Версия 1.0</div>
+    </div>
+
+    <div class="legal-section">
+      <h3>1. Наша позиция</h3>
+      <p>TG Lead Wareon — инструмент для <strong>законной маркетинговой аналитики</strong> Telegram-аудитории. Мы категорически против использования Сервиса для нарушения закона, прав третьих лиц или Правил Telegram.</p>
+      <div class="commit-box">
+        <p><strong>Наше обязательство:</strong> мы блокируем аккаунты Пользователей, использующих Сервис для рассылки незапрошенных сообщений (спама), незаконного сбора персональных данных, мошенничества или иных нарушений — мгновенно и без возврата средств.</p>
+      </div>
+    </div>
+
+    <div class="legal-section">
+      <h3>2. Что мы считаем злоупотреблением</h3>
+      <p>К злоупотреблениям относятся, в частности (перечень не исчерпывающий):</p>
+      <ul>
+        <li><strong>Спам</strong> — рассылка сообщений лицам, не давших согласия в соответствии с 38-ФЗ «О рекламе»;</li>
+        <li><strong>Незаконная обработка ПД</strong> — сбор, хранение или передача персональных данных третьих лиц без законных оснований (152-ФЗ);</li>
+        <li><strong>Продажа баз данных</strong> — реализация собранных контактов третьим лицам;</li>
+        <li><strong>Фишинг и мошенничество</strong> — попытки обмана пользователей Telegram, выманивания денег или паролей;</li>
+        <li><strong>Нарушение Правил Telegram</strong> — действия, явно противоречащие <a href="https://telegram.org/tos" target="_blank" rel="noopener">Telegram Terms of Service</a>;</li>
+        <li><strong>Распространение запрещённого контента</strong> — экстремистские материалы, призывы к насилию, разжигание ненависти;</li>
+        <li><strong>Накрутка</strong> — использование Сервиса для имитации активности (фейковые подписчики, лайки, комментарии);</li>
+        <li><strong>Использование нескольких аккаунтов</strong> для обхода лимитов или мошенничества с триалом.</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h3>3. Как мы выявляем нарушения</h3>
+      <ul>
+        <li><strong>Автоматизированный мониторинг</strong> — анализ паттернов использования, частоты запросов, IP-адресов, признаков использования VPN/Tor;</li>
+        <li><strong>Обработка жалоб</strong> — каждая жалоба от третьих лиц проходит проверку в течение 24 часов;</li>
+        <li><strong>Запросы государственных органов</strong> — оперативная реакция на запросы Роскомнадзора, ФАС, МВД и иных уполномоченных органов;</li>
+        <li><strong>Внутренний аудит</strong> — выборочная проверка активности Пользователей с подозрительными показателями.</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h3>4. Меры, применяемые к нарушителям</h3>
+      <p>В зависимости от тяжести нарушения, Администрация применяет следующие меры:</p>
+      <ul>
+        <li><strong>Предупреждение</strong> — для незначительных нарушений с предоставлением 24 часов на исправление;</li>
+        <li><strong>Временное ограничение</strong> — приостановка отдельных функций Сервиса до выяснения обстоятельств;</li>
+        <li><strong>Блокировка аккаунта</strong> — для подтверждённых случаев нарушений, без возврата уплаченных средств;</li>
+        <li><strong>Передача данных в правоохранительные органы</strong> — при обнаружении признаков преступления (мошенничество, кибератаки, распространение запрещённой информации);</li>
+        <li><strong>Взыскание убытков</strong> — в соответствии с разделом 4 <a href="{{ url_for('terms') }}">Пользовательского соглашения</a> (indemnification).</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h3>5. Сотрудничество с регуляторами</h3>
+      <p>Мы оперативно реагируем на запросы со стороны:</p>
+      <ul>
+        <li><strong>Роскомнадзор</strong> — по вопросам обработки персональных данных (152-ФЗ);</li>
+        <li><strong>ФАС</strong> — по жалобам о ненадлежащей рекламе (38-ФЗ);</li>
+        <li><strong>МВД, Прокуратура, СК РФ</strong> — по уголовно-правовым обращениям;</li>
+        <li><strong>Налоговая служба</strong> — по финансовому мониторингу.</li>
+      </ul>
+      <p>Срок ответа на официальные запросы — не более 3 (трёх) рабочих дней с момента получения.</p>
+    </div>
+
+    <div class="legal-section">
+      <h3>6. Подача жалобы на пользователя Сервиса</h3>
+      <p>Если Вы получили нежелательное сообщение, отправленное предположительно через инструменты TG Lead Wareon, или обнаружили иное нарушение — направьте жалобу с описанием инцидента.</p>
+
+      <p><strong>В жалобе укажите:</strong></p>
+      <ul>
+        <li>Описание нарушения (что произошло, где, когда);</li>
+        <li>Доказательства (скриншоты сообщений, переписки, ссылки на аккаунты);</li>
+        <li>Контактные данные для обратной связи (email, Telegram);</li>
+        <li>Согласие на обработку Вашего обращения.</li>
+      </ul>
+
+      <p>Каждая жалоба рассматривается в течение <strong>24-72 часов</strong>. По результатам мы:</p>
+      <ul>
+        <li>Сообщим Вам о принятых мерах;</li>
+        <li>При подтверждении нарушения — заблокируем аккаунт нарушителя;</li>
+        <li>При необходимости — передадим материалы в правоохранительные органы.</li>
+      </ul>
+
+      <div class="abuse-cta">
+        <h4>🚨 Сообщить о нарушении</h4>
+        <p style="color:rgba(255,255,255,.55);font-size:13.5px;">Направьте жалобу на email <a href="mailto:abuse@tgleadwareon.ru" style="color:#ff9040;">abuse@tgleadwareon.ru</a> или в Telegram <a href="https://t.me/TGLeadSupportBot" target="_blank" rel="noopener" style="color:#ff9040;">@TGLeadSupportBot</a>.</p>
+        <a href="mailto:abuse@tgleadwareon.ru?subject=Жалоба%20на%20злоупотребление" class="btn">📧 Написать жалобу</a>
+      </div>
+    </div>
+
+    <div class="legal-section">
+      <h3>7. Связанные документы</h3>
+      <ul>
+        <li><a href="{{ url_for('terms') }}">Пользовательское соглашение</a> — полные условия использования Сервиса;</li>
+        <li><a href="{{ url_for('privacy') }}">Политика конфиденциальности</a> — обработка персональных данных;</li>
+        <li><a href="{{ url_for('faq') }}">Часто задаваемые вопросы</a> — практические аспекты использования;</li>
+        <li><a href="https://telegram.org/tos" target="_blank" rel="noopener">Telegram Terms of Service</a> — Правила использования Telegram.</li>
+      </ul>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer" style="position:relative;z-index:1;">
+  <div class="container footer-inner">
+    <div class="footer-left"><span class="logo-text">TG Lead Wareon</span></div>
+    <div class="footer-links">
+      <a href="{{ url_for('privacy') }}">Конфиденциальность</a>
+      <a href="{{ url_for('terms') }}">Соглашение</a>
+      <a href="{{ url_for('abuse_policy') }}">Анти-злоупотребления</a>
+      <a href="{{ url_for('support') }}">Поддержка</a>
+    </div>
+  </div>
+  <div class="container">{% include '_legal_footer.html' %}</div>
+</footer>
+{% include '_cookie_banner.html' %}
+</body>
+</html>

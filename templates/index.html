@@ -581,17 +581,16 @@
     <div class="hero-content" data-reveal>
       <div class="hero-eyebrow">
         <span class="dot-live"></span>
-        847 операторов онлайн прямо сейчас
+        SaaS-платформа · Российская юрисдикция · 152-ФЗ
       </div>
       <h1>
-        Находите клиентов<br>
-        в Telegram на<br>
-        <span class="gradient-text">автопилоте</span>
+        Аналитика Telegram-аудитории<br>
+        для <span class="gradient-text">маркетинга</span>
       </h1>
       <p class="hero-subtitle">
-        TG Lead Wareon — платформа для анализа аудитории Telegram-каналов,
-        автоматизации коммуникации с вашей базой и нейрочаттинга.
-        Без лишних трат времени. Без ручного труда.
+        TG Lead Wareon — SaaS-платформа для анализа аудитории Telegram-каналов,
+        сегментации подписчиков и автоматизации коммуникации с вашей клиентской базой.
+        Прозрачная аналитика, удобные инструменты, российская юрисдикция.
       </p>
       <div class="hero-actions">
         <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Начать бесплатно — 3 дня</a>
@@ -759,6 +758,56 @@
     </div>
   </div>
 </div>
+
+<!-- ══ Для кого ══ -->
+<section class="section" id="audience" style="padding-top:48px;padding-bottom:24px;">
+  <div class="container">
+    <div class="section-header center" data-reveal>
+      <div class="section-label">Целевая аудитория</div>
+      <h2>Для кого <span class="gradient-text">TG Lead Wareon</span></h2>
+      <p style="max-width:640px;margin:0 auto;">Сервис предназначен для лиц и организаций, имеющих законные основания обработки данных аудитории в соответствии с 152-ФЗ и 38-ФЗ.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;max-width:1100px;margin:32px auto 0;">
+
+      <div data-reveal style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:22px 22px;transition:border-color .2s;">
+        <div style="font-size:30px;margin-bottom:10px;">🎯</div>
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">Маркетологи каналов</h3>
+        <p style="font-size:13px;color:rgba(255,255,255,.48);line-height:1.7;margin:0;">Анализ собственной аудитории Telegram-канала: сегменты, активность, демография. Применение для контент-стратегии и таргетинга.</p>
+      </div>
+
+      <div data-reveal style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:22px 22px;transition-delay:.1s;">
+        <div style="font-size:30px;margin-bottom:10px;">🤝</div>
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">Маркетинговые агентства</h3>
+        <p style="font-size:13px;color:rgba(255,255,255,.48);line-height:1.7;margin:0;">Работа с аудиторией каналов клиентов на основании заключённых договоров. Подготовка аналитических отчётов и стратегий продвижения.</p>
+      </div>
+
+      <div data-reveal style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:22px 22px;transition-delay:.2s;">
+        <div style="font-size:30px;margin-bottom:10px;">💼</div>
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">Владельцы бизнеса</h3>
+        <p style="font-size:13px;color:rgba(255,255,255,.48);line-height:1.7;margin:0;">Коммуникация с собственной клиентской базой, получившей согласие на сообщения. Сегментация для персонализированных предложений.</p>
+      </div>
+
+      <div data-reveal style="background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:22px 22px;transition-delay:.3s;">
+        <div style="font-size:30px;margin-bottom:10px;">📊</div>
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">Маркетинговые аналитики</h3>
+        <p style="font-size:13px;color:rgba(255,255,255,.48);line-height:1.7;margin:0;">Исследования рынка, конкурентный анализ публичных Telegram-каналов, подготовка отчётов о состоянии сегмента.</p>
+      </div>
+
+    </div>
+
+    <!-- Compliance badge -->
+    <div data-reveal style="max-width:760px;margin:32px auto 0;background:linear-gradient(135deg,rgba(59,232,140,.06),rgba(59,232,140,.02));border:1px solid rgba(59,232,140,.25);border-radius:14px;padding:18px 24px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+      <div style="font-size:32px;flex-shrink:0;">🛡️</div>
+      <div style="flex:1;min-width:240px;">
+        <div style="font-size:14px;font-weight:700;color:#9be8b8;margin-bottom:4px;">Работаем в рамках закона</div>
+        <p style="font-size:12.5px;color:rgba(255,255,255,.5);margin:0;line-height:1.6;">Соблюдение 152-ФЗ «О персональных данных» и 38-ФЗ «О рекламе». Российская юрисдикция. Активная блокировка нарушителей.</p>
+      </div>
+      <a href="{{ url_for('abuse_policy') }}" style="font-size:12.5px;color:#3be88c;text-decoration:none;border:1px solid rgba(59,232,140,.3);padding:7px 14px;border-radius:8px;white-space:nowrap;">Подробнее →</a>
+    </div>
+
+  </div>
+</section>
 
 <!-- ══ How it works ══ -->
 <section class="section" id="how">
@@ -998,8 +1047,10 @@
       <p style="font-size:11px;color:rgba(255,255,255,0.2);margin-top:6px;">SaaS-платформа для маркетинговой аналитики Telegram-аудитории.</p>
     </div>
     <div class="footer-links">
+      <a href="{{ url_for('contacts') }}">Контакты</a>
       <a href="{{ url_for('privacy') }}">Конфиденциальность</a>
       <a href="{{ url_for('terms') }}">Соглашение</a>
+      <a href="{{ url_for('abuse_policy') }}" style="color:#ff9999;">🚨 Сообщить о нарушении</a>
       <a href="{{ url_for('support') }}">Поддержка</a>
       <a href="{{ url_for('download') }}">Скачать</a>
       <a href="{{ url_for('blog') }}">Блог</a>

@@ -376,7 +376,7 @@
             <tr class="cat-row"><td colspan="4">Основные лимиты</td></tr>
             <tr><td>Miner аккаунтов</td><td>1</td><td class="pro-col">3</td><td>10</td></tr>
             <tr><td>Sender аккаунтов</td><td>1</td><td class="pro-col">5</td><td>20</td></tr>
-            <tr><td>Лидов в месяц</td><td>50 000</td><td class="pro-col">500 000</td><td>∞ безлимит</td></tr>
+            <tr><td>Контактов в анализе/мес</td><td>50 000</td><td class="pro-col">500 000</td><td>∞ безлимит</td></tr>
             <tr><td>Параллельных анализов</td><td>1</td><td class="pro-col">3</td><td>10</td></tr>
             <tr class="cat-row"><td colspan="4">Функции</td></tr>
             <tr><td>Экспорт CSV</td><td class="check">✓</td><td class="check pro-col">✓</td><td class="check">✓</td></tr>
@@ -452,10 +452,10 @@
           </div>
 
           <div class="product-for">Для кого</div>
-          <div class="product-audience">Владельцы бизнеса и маркетологи, которым нужно автоматизировать рассылку по клиентской базе, давшей согласие на получение сообщений.</div>
+          <div class="product-audience">Владельцы бизнеса и маркетологи, которым нужно автоматизировать коммуникацию со своей клиентской базой, давшей согласие на получение сообщений.</div>
 
           <ul class="product-features">
-            <li>Рассылка по вашей клиентской базе (CSV)</li>
+            <li>Коммуникация с вашей клиентской базой (импорт из CSV)</li>
             <li>Персонализация: {имя}, {username} в тексте</li>
             <li>Настройка интервалов между сообщениями</li>
             <li>Поддержка нескольких шаблонов</li>
@@ -482,6 +482,14 @@
       <!-- Комбо-подсказка -->
       <div style="margin-top:20px;text-align:center;padding:18px 24px;background:rgba(255,106,0,0.05);border:1px solid rgba(255,106,0,0.18);border-radius:14px;">
         <span style="font-size:14px;color:rgba(255,255,255,0.50);">💡 Возьмите оба инструмента и сэкономьте — тариф <strong style="color:var(--orange-3);">Start за 990₽/мес</strong> включает и Miner, и Sender вместе.</span>
+      </div>
+
+      <!-- Compliance disclaimer -->
+      <div style="margin-top:14px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-left:3px solid rgba(59,232,140,.5);border-radius:12px;padding:14px 18px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(59,232,140,.7);margin-bottom:6px;">🛡️ Правовой режим</div>
+        <p style="font-size:12.5px;color:rgba(255,255,255,.5);margin:0;line-height:1.7;">
+          Услуга предназначена для лиц, имеющих <strong style="color:rgba(255,255,255,.75);">законные основания обработки персональных данных</strong> в соответствии с ФЗ № 152-ФЗ «О персональных данных» и ФЗ № 38-ФЗ «О рекламе». Использование Сервиса для рассылки незапрошенных сообщений (спама), сбора или продажи персональных данных третьих лиц без надлежащих оснований <strong style="color:rgba(255,255,255,.75);">запрещено</strong> и влечёт мгновенную блокировку аккаунта без возврата средств. Подробнее: <a href="{{ url_for('abuse_policy') }}" style="color:#3be88c;text-decoration:none;border-bottom:1px solid rgba(59,232,140,.3);">Политика противодействия злоупотреблениям</a>.
+        </p>
       </div>
     </div>
   </section>
@@ -522,7 +530,7 @@
         <div class="addon-card" data-addon="analytics" data-price="290" data-name="Аналитика Pro">
           <div class="addon-icon">📊</div>
           <div class="addon-name">Расширенная аналитика</div>
-          <div class="addon-desc">Детальная воронка по каждой рассылке, когортный анализ аудитории, экспорт отчётов в PDF.</div>
+          <div class="addon-desc">Детальная воронка по каждой кампании, когортный анализ аудитории, экспорт отчётов в PDF.</div>
           <div class="addon-footer">
             <div class="addon-price">+290₽/мес</div>
             <div style="display:flex;gap:6px;">
