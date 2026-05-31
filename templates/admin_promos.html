@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Промо-коды — Админ TG Lead Wareon</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { background:#06060d; font-family:Inter,sans-serif; }
+    .admin-wrap { max-width:1280px; margin:0 auto; padding:30px 24px 80px; }
+    .admin-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:18px; border-bottom:1px solid rgba(255,255,255,.06); }
+    .admin-head h1 { font-size:22px; font-weight:800; margin:0; }
+    .admin-tabs { display:flex; gap:6px; }
+    .admin-tab { padding:7px 14px; border-radius:8px; font-size:13px; font-weight:600; color:rgba(255,255,255,.5); background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); text-decoration:none; }
+    .admin-tab:hover { color:#fff; }
+    .admin-tab.active { background:rgba(255,106,0,.12); color:#ff9040; border-color:rgba(255,106,0,.4); }
+    .admin-logout { color:rgba(255,255,255,.4); font-size:12px; text-decoration:none; margin-left:14px; align-self:center; }
+
+    .section { background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.07); border-radius:14px; padding:20px 22px; margin-bottom:16px; }
+    .section h2 { font-size:14px; font-weight:700; margin:0 0 16px; }
+
+    .field { display:flex; flex-direction:column; gap:5px; }
+    .field label { font-size:11px; color:rgba(255,255,255,.4); text-transform:uppercase; letter-spacing:.05em; }
+    .field input, .field select, .field textarea { background:rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:9px 12px; color:#e2e8f0; font-size:13px; font-family:inherit; }
+    .field input[type="text"] { text-transform:uppercase; }
+
+    .btn { padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; border:1px solid rgba(255,255,255,.1); background:transparent; color:rgba(255,255,255,.65); display:inline-flex; align-items:center; gap:5px; }
+    .btn-primary { background:linear-gradient(135deg,#ff6a00,#ff9040); color:#fff; border-color:transparent; }
+    .btn-danger { color:#ff6b6b; border-color:rgba(255,107,107,.25); }
+    .btn-sm { padding:5px 10px; font-size:11.5px; }
+
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th { text-align:left; padding:10px 12px; color:rgba(255,255,255,.4); font-weight:500; font-size:11px; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid rgba(255,255,255,.07); }
+    td { padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.03); vertical-align:middle; }
+    .pill { display:inline-flex; padding:2px 8px; border-radius:999px; font-size:10.5px; font-weight:700; }
+    .pill-green { background:rgba(59,232,140,.1); color:#3be88c; }
+    .pill-gray { background:rgba(255,255,255,.05); color:rgba(255,255,255,.4); }
+    .pill-orange { background:rgba(255,144,64,.12); color:#ff9040; }
+
+    .code-tag { font-family:'JetBrains Mono', monospace; background:rgba(255,106,0,.12); color:#ff9040; padding:4px 10px; border-radius:6px; font-weight:700; font-size:12.5px; }
+
+    .empty { text-align:center; padding:40px; color:rgba(255,255,255,.3); font-size:14px; }
+  </style>
+</head>
+<body class="page-dark">
+<div class="admin-wrap">
+
+  <div class="admin-head">
+    <h1>🎁 Промо-коды</h1>
+    <div class="admin-tabs">
+      <a href="{{ url_for('admin_dashboard') }}" class="admin-tab">📊 Дашборд</a>
+      <a href="{{ url_for('admin_users') }}" class="admin-tab">👥 Юзеры</a>
+      <a href="{{ url_for('admin_promos') }}" class="admin-tab active">🎁 Промо</a>
+      <a href="{{ url_for('admin_reviews') }}" class="admin-tab">⭐ Отзывы</a>
+      <a href="{{ url_for('admin_logout') }}" class="admin-logout">Выйти</a>
+    </div>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div style="padding:12px;border-radius:8px;margin-bottom:14px;background:{% if category == 'error' %}rgba(255,107,107,0.1){% else %}rgba(59,232,140,0.1){% endif %};color:{% if category == 'error' %}#ff6b6b{% else %}#3be88c{% endif %};font-size:13px;">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- Создание -->
+  <div class="section">
+    <h2>➕ Создать промо-код</h2>
+    <form method="POST" action="{{ url_for('admin_promos_create') }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:12px;">
+        <div class="field">
+          <label>Код *</label>
+          <input name="code" type="text" required placeholder="WELCOME20" maxlength="32">
+        </div>
+        <div class="field">
+          <label>Скидка %</label>
+          <input name="discount_percent" type="number" min="0" max="100" placeholder="20" value="0">
+        </div>
+        <div class="field">
+          <label>Скидка ₽ (фикс)</label>
+          <input name="discount_amount" type="number" min="0" placeholder="100" value="0">
+        </div>
+        <div class="field">
+          <label>+Дней триала</label>
+          <input name="bonus_days" type="number" min="0" placeholder="0" value="0">
+        </div>
+        <div class="field">
+          <label>Макс. использований</label>
+          <input name="max_uses" type="number" min="0" placeholder="0 = без лимита" value="0">
+        </div>
+        <div class="field">
+          <label>Действует до</label>
+          <input name="valid_until" type="datetime-local">
+        </div>
+        <div class="field">
+          <label>На какие тарифы</label>
+          <select name="applies_to">
+            <option value="all">Все тарифы</option>
+            <option value="miner">Только Miner</option>
+            <option value="sender">Только Sender</option>
+            <option value="start">Только Start</option>
+            <option value="pro">Только Pro</option>
+            <option value="scale">Только Scale</option>
+          </select>
+        </div>
+        <div class="field" style="grid-column:span 2;">
+          <label>Описание (для внутренней админки)</label>
+          <input name="description" type="text" placeholder="Например: чёрная пятница 2026" maxlength="200">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Создать промо-код</button>
+    </form>
+  </div>
+
+  <!-- Список -->
+  <div class="section">
+    <h2>📋 Активные и архивные промо-коды</h2>
+    {% if promos %}
+    <table>
+      <thead>
+        <tr>
+          <th>Код</th>
+          <th>Скидка</th>
+          <th>+Дни</th>
+          <th>Использовано</th>
+          <th>Сумма скидок</th>
+          <th>Применяется к</th>
+          <th>Действует до</th>
+          <th>Статус</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in promos %}
+        <tr>
+          <td><span class="code-tag">{{ p.code }}</span>{% if p.description %}<div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:3px;">{{ p.description }}</div>{% endif %}</td>
+          <td>
+            {% if p.discount_percent %}–{{ p.discount_percent }}%{% endif %}
+            {% if p.discount_amount %}–{{ p.discount_amount }} ₽{% endif %}
+            {% if not p.discount_percent and not p.discount_amount %}—{% endif %}
+          </td>
+          <td>{% if p.bonus_days %}+{{ p.bonus_days }} дн{% else %}—{% endif %}</td>
+          <td>
+            <b>{{ p.actual_uses }}</b>{% if p.max_uses %} / {{ p.max_uses }}{% endif %}
+          </td>
+          <td><span class="pill pill-orange">{{ p.total_discount|int }} ₽</span></td>
+          <td style="font-size:11.5px;">{{ p.applies_to or 'all' }}</td>
+          <td style="font-size:11.5px;color:rgba(255,255,255,.45);">{% if p.valid_until %}{{ p.valid_until[:16] }}{% else %}∞{% endif %}</td>
+          <td>
+            {% if p.is_active %}
+              <span class="pill pill-green">Активен</span>
+            {% else %}
+              <span class="pill pill-gray">Отключён</span>
+            {% endif %}
+          </td>
+          <td style="white-space:nowrap;">
+            <form method="POST" action="{{ url_for('admin_promos_toggle', promo_id=p.id) }}" style="display:inline;">
+              <button class="btn btn-sm" type="submit">{% if p.is_active %}🔒{% else %}🔓{% endif %}</button>
+            </form>
+            <form method="POST" action="{{ url_for('admin_promos_delete', promo_id=p.id) }}" style="display:inline;" onsubmit="return confirm('Удалить промо-код?');">
+              <button class="btn btn-danger btn-sm" type="submit">✕</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">Пока нет промо-кодов. Создайте первый выше 👆</div>
+    {% endif %}
+  </div>
+
+  <!-- Помощь -->
+  <div class="section" style="background:rgba(255,106,0,.04);border-color:rgba(255,106,0,.18);">
+    <h2 style="color:#ff9040;">💡 Как использовать промо-коды</h2>
+    <div style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.8;">
+      <p style="margin-bottom:8px;"><b>Скидка %</b> — процент от стоимости тарифа (например, 20%). При применении к Miner 490₽ получится 392₽.</p>
+      <p style="margin-bottom:8px;"><b>Скидка ₽</b> — фиксированная сумма списания (например, 100 ₽). При применении к Miner 490₽ получится 390₽.</p>
+      <p style="margin-bottom:8px;"><b>+Дни триала</b> — даёт дополнительные дни бесплатного доступа к Miner (применяется при регистрации).</p>
+      <p style="margin-bottom:8px;"><b>Макс. использований</b> — 0 означает без лимита. Для лимитированных акций укажите число.</p>
+      <p style="margin-bottom:0;"><b>Применяется к</b> — выбирайте «all» для скидки на все тарифы, или конкретный тариф.</p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

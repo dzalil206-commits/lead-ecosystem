@@ -493,6 +493,35 @@ def init_db():
             used_at TIMESTAMP
         );
     ''')
+    # Промо-коды для маркетинговых кампаний
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS promo_codes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT UNIQUE NOT NULL,
+            discount_percent INTEGER DEFAULT 0,
+            discount_amount INTEGER DEFAULT 0,
+            bonus_days INTEGER DEFAULT 0,
+            max_uses INTEGER DEFAULT 0,
+            used_count INTEGER DEFAULT 0,
+            valid_until TIMESTAMP,
+            applies_to TEXT DEFAULT 'all',
+            is_active INTEGER DEFAULT 1,
+            description TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS promo_usages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            promo_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            product TEXT,
+            original_amount INTEGER,
+            discount_amount INTEGER,
+            final_amount INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
     db.commit()
     # Миграции для существующих таблиц (безопасны — падают если колонка уже есть)
     for sql in [
@@ -797,6 +826,18 @@ def register():
         _ip = request.headers.get('X-Real-IP') or (request.headers.get('X-Forwarded-For', '').split(',')[0].strip()) or request.remote_addr or '-'
         _ua = (request.headers.get('User-Agent') or '')[:200]
         log_action(user_id, 'terms_accepted', f'agree=1; adult=1; ip={_ip}; ua={_ua}')
+        # Telegram-уведомление админу о новой регистрации
+        try:
+            bonus_mark = ' 🎁 +3 дня' if bonus_valid else ''
+            send_telegram(ADMIN_ID,
+                f'👤 <b>Новая регистрация</b>{bonus_mark}\n\n'
+                f'Email: <code>{email}</code>\n'
+                f'Имя: {full_name or "—"}\n'
+                f'IP: <code>{_ip}</code>\n'
+                f'ID: #{user_id}'
+            )
+        except Exception:
+            pass
         if bonus_valid:
             flash('🎉 Регистрация успешна! 3 дня Miner активированы. Войдите.', 'success')
         else:
@@ -1833,12 +1874,19 @@ def antilopay_webhook():
                     (user_id, f'{product}%')
                 )
                 log_action(user_id, 'license_activated', f'{product}:{int(amount)}rub:antilopay:{payment_id}')
-                # Уведомление пользователю
+                # Уведомление пользователю и админу
                 user_row = conn.execute("SELECT telegram_id, email FROM users WHERE id=?", (user_id,)).fetchone()
                 if user_row and user_row['telegram_id']:
                     send_telegram(user_row['telegram_id'],
                         f'✅ <b>TG Lead Wareon</b>\n\nЛицензия <b>{product.capitalize()}</b> активирована на {days} дней.\n'
                         f'Войдите в кабинет: {BASE_URL}/dashboard')
+                send_telegram(ADMIN_ID,
+                    f'💰 <b>Новая оплата!</b>\n\n'
+                    f'Сумма: <b>{int(amount)}₽</b>\n'
+                    f'Тариф: {product.capitalize()}\n'
+                    f'Пользователь: #{user_id} ({(user_row or {}).get("email","—")})\n'
+                    f'Провайдер: Antilopay\n'
+                    f'Payment ID: <code>{payment_id}</code>')
                 if user_row and user_row['email']:
                     expires_at_str = (datetime.now() + timedelta(days=days)).strftime('%d.%m.%Y')
                     threading.Thread(
@@ -2668,14 +2716,236 @@ def admin_dashboard():
     if not session.get('is_admin'):
         return redirect(url_for('admin_login'))
     db = get_db()
-    users            = db.execute("SELECT * FROM users ORDER BY created_at DESC").fetchall()
-    licenses         = db.execute("SELECT * FROM licenses ORDER BY created_at DESC").fetchall()
+
+    # === ФИНАНСОВАЯ СТАТИСТИКА ===
+    def _sum(q, args=()):
+        r = db.execute(q, args).fetchone()
+        return float(r[0] or 0) if r else 0.0
+
+    # Доход (по успешным платежам)
+    rev_today  = _sum("SELECT SUM(amount) FROM payments WHERE status IN ('succeeded') AND date(created_at) = date('now')")
+    rev_week   = _sum("SELECT SUM(amount) FROM payments WHERE status IN ('succeeded') AND date(created_at) >= date('now','-7 days')")
+    rev_month  = _sum("SELECT SUM(amount) FROM payments WHERE status IN ('succeeded') AND date(created_at) >= date('now','-30 days')")
+    rev_year   = _sum("SELECT SUM(amount) FROM payments WHERE status IN ('succeeded') AND date(created_at) >= date('now','-365 days')")
+    rev_total  = _sum("SELECT SUM(amount) FROM payments WHERE status IN ('succeeded')")
+
+    # Альтернативный подсчёт через лицензии (на случай если payments не заполнены)
+    if rev_total == 0:
+        rev_today = _sum("SELECT SUM(price) FROM licenses WHERE price > 0 AND date(created_at) = date('now')")
+        rev_week  = _sum("SELECT SUM(price) FROM licenses WHERE price > 0 AND date(created_at) >= date('now','-7 days')")
+        rev_month = _sum("SELECT SUM(price) FROM licenses WHERE price > 0 AND date(created_at) >= date('now','-30 days')")
+        rev_year  = _sum("SELECT SUM(price) FROM licenses WHERE price > 0 AND date(created_at) >= date('now','-365 days')")
+        rev_total = _sum("SELECT SUM(price) FROM licenses WHERE price > 0")
+
+    # График доходов по дням (последние 30 дней)
+    rev_chart = db.execute("""
+        SELECT date(created_at) as d, COALESCE(SUM(price),0) as amount
+        FROM licenses WHERE price > 0 AND date(created_at) >= date('now','-30 days')
+        GROUP BY date(created_at) ORDER BY d
+    """).fetchall()
+    chart_labels = [r['d'] for r in rev_chart]
+    chart_values = [float(r['amount']) for r in rev_chart]
+
+    # Топ-продаваемые тарифы
+    top_products = db.execute("""
+        SELECT product, COUNT(*) as cnt, COALESCE(SUM(price),0) as revenue
+        FROM licenses WHERE price > 0
+        GROUP BY product ORDER BY revenue DESC LIMIT 5
+    """).fetchall()
+
+    # === ПОЛЬЗОВАТЕЛИ ===
+    users_total  = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    users_today  = db.execute("SELECT COUNT(*) FROM users WHERE date(created_at) = date('now')").fetchone()[0]
+    users_week   = db.execute("SELECT COUNT(*) FROM users WHERE date(created_at) >= date('now','-7 days')").fetchone()[0]
+    users_paid   = db.execute("SELECT COUNT(DISTINCT user_id) FROM licenses WHERE price > 0").fetchone()[0]
+    users_active = db.execute("SELECT COUNT(DISTINCT user_id) FROM licenses WHERE is_active=1 AND expires_at > datetime('now')").fetchone()[0]
+    conversion   = round((users_paid / users_total * 100) if users_total else 0, 1)
+
+    # === MINER АКТИВНОСТЬ ===
+    miner_jobs_today = db.execute("SELECT COUNT(*) FROM miner_jobs WHERE date(created_at) = date('now')").fetchone()[0]
+    miner_jobs_total = db.execute("SELECT COUNT(*) FROM miner_jobs").fetchone()[0]
+    leads_total      = db.execute("SELECT COALESCE(SUM(leads_count),0) FROM miner_jobs WHERE status='done'").fetchone()[0]
+
+    # Средний чек
+    avg_check = db.execute("SELECT AVG(price) FROM licenses WHERE price > 0").fetchone()[0] or 0
+
+    users            = db.execute("SELECT * FROM users ORDER BY created_at DESC LIMIT 50").fetchall()
+    licenses         = db.execute("SELECT * FROM licenses ORDER BY created_at DESC LIMIT 30").fetchall()
     pending_payments = db.execute("SELECT * FROM payments WHERE status='pending' ORDER BY created_at DESC LIMIT 20").fetchall()
     pending_reviews  = db.execute("SELECT COUNT(*) FROM reviews WHERE is_approved=0").fetchone()[0]
     recent_actions   = db.execute("SELECT * FROM user_actions ORDER BY created_at DESC LIMIT 50").fetchall()
-    return render_template('admin.html', users=users, licenses=licenses,
-                           pending_payments=pending_payments, pending_reviews=pending_reviews,
-                           recent_actions=recent_actions)
+
+    return render_template('admin.html',
+        # Финансы
+        rev_today=int(rev_today), rev_week=int(rev_week), rev_month=int(rev_month),
+        rev_year=int(rev_year), rev_total=int(rev_total),
+        avg_check=int(avg_check),
+        chart_labels=chart_labels, chart_values=chart_values,
+        top_products=top_products,
+        # Пользователи
+        users_total=users_total, users_today=users_today, users_week=users_week,
+        users_paid=users_paid, users_active=users_active, conversion=conversion,
+        # Miner
+        miner_jobs_today=miner_jobs_today, miner_jobs_total=miner_jobs_total,
+        leads_total=leads_total,
+        # Таблицы
+        users=users, licenses=licenses,
+        pending_payments=pending_payments, pending_reviews=pending_reviews,
+        recent_actions=recent_actions)
+
+@app.route('/admin/promos')
+def admin_promos():
+    """Управление промо-кодами."""
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
+    db = get_db()
+    promos = db.execute("""
+        SELECT p.*,
+               (SELECT COUNT(*) FROM promo_usages WHERE promo_id=p.id) as actual_uses,
+               (SELECT COALESCE(SUM(discount_amount),0) FROM promo_usages WHERE promo_id=p.id) as total_discount
+        FROM promo_codes p ORDER BY p.created_at DESC
+    """).fetchall()
+    return render_template('admin_promos.html', promos=promos)
+
+
+@app.route('/admin/promos/create', methods=['POST'])
+def admin_promos_create():
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
+    db = get_db()
+    code = (request.form.get('code') or '').strip().upper()
+    if not code:
+        flash('Введите код', 'error')
+        return redirect(url_for('admin_promos'))
+    try:
+        db.execute(
+            """INSERT INTO promo_codes (code, discount_percent, discount_amount, bonus_days,
+                                        max_uses, valid_until, applies_to, description)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            (code,
+             int(request.form.get('discount_percent') or 0),
+             int(request.form.get('discount_amount') or 0),
+             int(request.form.get('bonus_days') or 0),
+             int(request.form.get('max_uses') or 0),
+             request.form.get('valid_until') or None,
+             (request.form.get('applies_to') or 'all').strip(),
+             (request.form.get('description') or '').strip()[:200])
+        )
+        db.commit()
+        flash(f'Промо-код {code} создан', 'success')
+    except sqlite3.IntegrityError:
+        flash('Такой код уже существует', 'error')
+    except Exception as e:
+        flash(f'Ошибка: {e}', 'error')
+    return redirect(url_for('admin_promos'))
+
+
+@app.route('/admin/promos/<int:promo_id>/toggle', methods=['POST'])
+def admin_promos_toggle(promo_id):
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
+    db = get_db()
+    db.execute("UPDATE promo_codes SET is_active = 1 - is_active WHERE id=?", (promo_id,))
+    db.commit()
+    return redirect(url_for('admin_promos'))
+
+
+@app.route('/admin/promos/<int:promo_id>/delete', methods=['POST'])
+def admin_promos_delete(promo_id):
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
+    db = get_db()
+    db.execute("DELETE FROM promo_codes WHERE id=?", (promo_id,))
+    db.commit()
+    flash('Промо-код удалён', 'success')
+    return redirect(url_for('admin_promos'))
+
+
+@app.route('/admin/users')
+def admin_users():
+    """Поиск пользователей с фильтрами."""
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
+    db = get_db()
+    q       = (request.args.get('q', '') or '').strip()
+    filt    = request.args.get('filter', 'all')  # all | paid | active | trial | expired
+    page    = max(1, int(request.args.get('page', 1)))
+    per_page = 50
+
+    base = """
+        SELECT u.id, u.email, u.full_name, u.created_at, u.telegram_id, u.referral_id,
+               (SELECT COUNT(*) FROM licenses WHERE user_id=u.id AND is_active=1 AND expires_at > datetime('now')) AS active_lic,
+               (SELECT COALESCE(SUM(price),0) FROM licenses WHERE user_id=u.id AND price > 0) AS total_paid,
+               (SELECT COUNT(*) FROM licenses WHERE user_id=u.id) AS total_lic
+        FROM users u
+    """
+    conds, args = [], []
+    if q:
+        conds.append("(u.email LIKE ? OR u.full_name LIKE ? OR CAST(u.id AS TEXT) = ? OR u.telegram_id LIKE ?)")
+        args += [f'%{q}%', f'%{q}%', q, f'%{q}%']
+    if filt == 'paid':
+        conds.append("(SELECT COUNT(*) FROM licenses WHERE user_id=u.id AND price > 0) > 0")
+    elif filt == 'active':
+        conds.append("(SELECT COUNT(*) FROM licenses WHERE user_id=u.id AND is_active=1 AND expires_at > datetime('now')) > 0")
+    elif filt == 'trial':
+        conds.append("(SELECT COUNT(*) FROM licenses WHERE user_id=u.id AND price = 0 AND is_active=1) > 0")
+    elif filt == 'expired':
+        conds.append("(SELECT COUNT(*) FROM licenses WHERE user_id=u.id AND expires_at <= datetime('now')) > 0")
+
+    if conds:
+        base += ' WHERE ' + ' AND '.join(conds)
+    base += ' ORDER BY u.created_at DESC LIMIT ? OFFSET ?'
+    args += [per_page, (page - 1) * per_page]
+    users = db.execute(base, args).fetchall()
+
+    # Total count for pagination
+    count_sql = "SELECT COUNT(*) FROM users u"
+    if conds:
+        count_sql += ' WHERE ' + ' AND '.join(conds)
+    total = db.execute(count_sql, args[:-2] if conds else []).fetchone()[0]
+    pages = max(1, (total + per_page - 1) // per_page)
+
+    return render_template('admin_users.html', users=users, q=q, filt=filt,
+                           page=page, pages=pages, total=total)
+
+
+@app.route('/admin/users/<int:user_id>')
+def admin_user_card(user_id):
+    """Карточка пользователя с полной историей."""
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
+    db = get_db()
+    user = db.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+    if not user:
+        flash('Пользователь не найден', 'error')
+        return redirect(url_for('admin_users'))
+
+    licenses = db.execute(
+        "SELECT * FROM licenses WHERE user_id=? ORDER BY created_at DESC", (user_id,)
+    ).fetchall()
+    payments = db.execute(
+        "SELECT * FROM payments WHERE user_id=? ORDER BY created_at DESC", (user_id,)
+    ).fetchall()
+    actions = db.execute(
+        "SELECT * FROM user_actions WHERE user_id=? ORDER BY created_at DESC LIMIT 100", (user_id,)
+    ).fetchall()
+    referred = db.execute(
+        "SELECT id, email, full_name, created_at FROM users WHERE referral_id=? ORDER BY created_at DESC", (user_id,)
+    ).fetchall()
+    miner_jobs = db.execute(
+        "SELECT id, source_link, status, leads_count, created_at FROM miner_jobs WHERE user_id=? ORDER BY created_at DESC LIMIT 20", (user_id,)
+    ).fetchall()
+
+    total_paid    = sum((l['price'] or 0) for l in licenses)
+    total_leads   = sum((j['leads_count'] or 0) for j in miner_jobs)
+    total_actions = db.execute("SELECT COUNT(*) FROM user_actions WHERE user_id=?", (user_id,)).fetchone()[0]
+
+    return render_template('admin_user.html',
+                           user=user, licenses=licenses, payments=payments,
+                           actions=actions, referred=referred, miner_jobs=miner_jobs,
+                           total_paid=total_paid, total_leads=total_leads,
+                           total_actions=total_actions)
+
 
 @app.route('/admin/give_license', methods=['POST'])
 def admin_give_license():

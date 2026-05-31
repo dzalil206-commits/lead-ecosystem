@@ -4,160 +4,283 @@
   <meta charset="UTF-8" />
   <title>Админ-панель — TG Lead Wareon</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    body { background:#06060d; font-family:Inter,sans-serif; }
+    .admin-wrap { max-width:1280px; margin:0 auto; padding:30px 24px 80px; }
+    .admin-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; padding-bottom:20px; border-bottom:1px solid rgba(255,255,255,.06); }
+    .admin-head h1 { font-size:24px; font-weight:800; margin:0; }
+    .admin-tabs { display:flex; gap:6px; }
+    .admin-tab { padding:7px 14px; border-radius:8px; font-size:13px; font-weight:600; color:rgba(255,255,255,.5); background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); text-decoration:none; transition:.15s; }
+    .admin-tab:hover { color:#fff; border-color:rgba(255,106,0,.35); }
+    .admin-tab.active { background:rgba(255,106,0,.12); color:#ff9040; border-color:rgba(255,106,0,.4); }
+    .admin-logout { color:rgba(255,255,255,.4); font-size:12px; text-decoration:none; }
+
+    /* KPI Cards */
+    .kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:24px; }
+    .kpi { background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.07); border-radius:14px; padding:16px 18px; }
+    .kpi.green { border-left:3px solid #3be88c; }
+    .kpi.orange { border-left:3px solid #ff9040; }
+    .kpi.blue { border-left:3px solid #64a0ff; }
+    .kpi.purple { border-left:3px solid #b96aff; }
+    .kpi-label { font-size:11px; text-transform:uppercase; color:rgba(255,255,255,.4); letter-spacing:.05em; margin-bottom:6px; }
+    .kpi-val { font-size:24px; font-weight:800; line-height:1; letter-spacing:-.02em; }
+    .kpi-sub { font-size:11.5px; color:rgba(255,255,255,.45); margin-top:6px; }
+
+    /* Sections */
+    .section { background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.07); border-radius:16px; padding:20px 22px; margin-bottom:18px; }
+    .section h2 { font-size:14px; font-weight:700; margin:0 0 16px; display:flex; align-items:center; gap:8px; }
+    .section h2 .badge { background:rgba(255,106,0,.12); color:#ff9040; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:700; }
+
+    /* Tables */
+    table { width:100%; border-collapse:collapse; font-size:12.5px; }
+    th { text-align:left; padding:8px 10px; color:rgba(255,255,255,.4); font-weight:500; font-size:11px; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid rgba(255,255,255,.06); }
+    td { padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.03); }
+    tr:hover td { background:rgba(255,255,255,.02); }
+
+    /* Buttons */
+    .btn { padding:7px 13px; border-radius:8px; font-size:12.5px; font-weight:600; text-decoration:none; cursor:pointer; border:1px solid rgba(255,255,255,.1); background:transparent; color:rgba(255,255,255,.65); display:inline-flex; align-items:center; gap:5px; transition:.15s; }
+    .btn:hover { color:#fff; border-color:rgba(255,255,255,.25); }
+    .btn-primary { background:linear-gradient(135deg,#ff6a00,#ff9040); color:#fff; border-color:transparent; }
+    .btn-primary:hover { opacity:.9; transform:translateY(-1px); }
+    .btn-danger { color:#ff6b6b; border-color:rgba(255,107,107,.25); }
+    .btn-sm { padding:4px 10px; font-size:11px; }
+
+    /* Form */
+    .field input, .field select { width:100%; background:rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:8px 12px; color:#e2e8f0; font-size:13px; font-family:inherit; }
+    .field label { font-size:11px; color:rgba(255,255,255,.4); margin-bottom:4px; display:block; }
+
+    /* Pill statuses */
+    .pill { display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; font-size:10.5px; font-weight:700; }
+    .pill-green { background:rgba(59,232,140,.1); color:#3be88c; }
+    .pill-red { background:rgba(255,107,107,.1); color:#ff6b6b; }
+    .pill-yellow { background:rgba(255,179,71,.1); color:#ffb347; }
+    .pill-gray { background:rgba(255,255,255,.05); color:rgba(255,255,255,.4); }
+
+    /* Chart */
+    .chart-wrap { height:240px; margin-top:8px; }
+
+    /* Two-col layout */
+    .grid-2 { display:grid; grid-template-columns:2fr 1fr; gap:18px; margin-bottom:18px; }
+    @media(max-width:900px){ .grid-2 { grid-template-columns:1fr; } }
+  </style>
 </head>
 <body class="page-dark">
-<div class="container" style="padding:40px 20px;max-width:900px;margin:0 auto;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
-        <h1 style="font-size:24px;">👑 Админ-панель</h1>
-        <div style="display:flex;gap:8px;align-items:center;">
-            <a href="{{ url_for('admin_reviews') }}" class="btn btn-outline btn-sm">
-                Отзывы{% if pending_reviews %} <span style="background:#ff6b6b;color:#fff;border-radius:999px;padding:1px 7px;font-size:11px;margin-left:4px;">{{ pending_reviews }}</span>{% endif %}
-            </a>
-            <a href="{{ url_for('admin_logout') }}" class="btn btn-ghost btn-sm">Выйти</a>
+<div class="admin-wrap">
+
+  <div class="admin-head">
+    <h1>👑 Админ-панель</h1>
+    <div class="admin-tabs">
+      <a href="{{ url_for('admin_dashboard') }}" class="admin-tab active">📊 Дашборд</a>
+      <a href="{{ url_for('admin_users') }}" class="admin-tab">👥 Юзеры</a>
+      <a href="{{ url_for('admin_promos') }}" class="admin-tab">🎁 Промо</a>
+      <a href="{{ url_for('admin_reviews') }}" class="admin-tab">⭐ Отзывы{% if pending_reviews %} <span style="background:#ff6b6b;color:#fff;border-radius:999px;padding:0 7px;margin-left:4px;">{{ pending_reviews }}</span>{% endif %}</a>
+      <a href="{{ url_for('admin_logout') }}" class="admin-logout" style="margin-left:14px;align-self:center;">Выйти</a>
+    </div>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div style="padding:12px;border-radius:8px;margin-bottom:14px;background:{% if category == 'error' %}rgba(255,107,107,0.1){% else %}rgba(59,232,140,0.1){% endif %};color:{% if category == 'error' %}#ff6b6b{% else %}#3be88c{% endif %};font-size:13px;">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- === Финансовая статистика === -->
+  <div class="kpi-row">
+    <div class="kpi green">
+      <div class="kpi-label">💰 Сегодня</div>
+      <div class="kpi-val">{{ '{:,}'.format(rev_today).replace(',', ' ') }} ₽</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">📅 Неделя</div>
+      <div class="kpi-val">{{ '{:,}'.format(rev_week).replace(',', ' ') }} ₽</div>
+    </div>
+    <div class="kpi orange">
+      <div class="kpi-label">📈 Месяц</div>
+      <div class="kpi-val">{{ '{:,}'.format(rev_month).replace(',', ' ') }} ₽</div>
+    </div>
+    <div class="kpi orange">
+      <div class="kpi-label">🗓 Год</div>
+      <div class="kpi-val">{{ '{:,}'.format(rev_year).replace(',', ' ') }} ₽</div>
+    </div>
+    <div class="kpi purple">
+      <div class="kpi-label">💎 Всего</div>
+      <div class="kpi-val">{{ '{:,}'.format(rev_total).replace(',', ' ') }} ₽</div>
+      <div class="kpi-sub">Средний чек: {{ avg_check }} ₽</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Chart -->
+    <div class="section">
+      <h2>📊 Доход по дням (последние 30)</h2>
+      <div class="chart-wrap"><canvas id="revChart"></canvas></div>
+    </div>
+
+    <!-- Top products -->
+    <div class="section">
+      <h2>🏆 Топ тарифов</h2>
+      {% if top_products %}
+      <table>
+        <thead><tr><th>Тариф</th><th>Продаж</th><th style="text-align:right">Доход</th></tr></thead>
+        <tbody>
+          {% for p in top_products %}
+          <tr>
+            <td><b>{{ p.product }}</b></td>
+            <td>{{ p.cnt }}</td>
+            <td style="text-align:right;color:#3be88c;font-weight:700;">{{ '{:,}'.format(p.revenue|int).replace(',', ' ') }} ₽</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="color:rgba(255,255,255,.3);font-size:13px;text-align:center;padding:20px;">Нет данных</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- === KPI Юзеры/Miner === -->
+  <div class="kpi-row">
+    <div class="kpi blue">
+      <div class="kpi-label">👥 Всего юзеров</div>
+      <div class="kpi-val">{{ users_total }}</div>
+      <div class="kpi-sub">+{{ users_today }} сегодня · +{{ users_week }} за неделю</div>
+    </div>
+    <div class="kpi blue">
+      <div class="kpi-label">💳 Платящих</div>
+      <div class="kpi-val">{{ users_paid }}</div>
+      <div class="kpi-sub">Конверсия: {{ conversion }}%</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">⚡ Активных</div>
+      <div class="kpi-val">{{ users_active }}</div>
+      <div class="kpi-sub">С действующей лицензией</div>
+    </div>
+    <div class="kpi purple">
+      <div class="kpi-label">⛏ Miner-задач</div>
+      <div class="kpi-val">{{ miner_jobs_total }}</div>
+      <div class="kpi-sub">+{{ miner_jobs_today }} сегодня · {{ leads_total }} лидов всего</div>
+    </div>
+  </div>
+
+  <!-- === Быстрая выдача лицензии === -->
+  <div class="section">
+    <h2>🎫 Выдать лицензию</h2>
+    <form method="POST" action="{{ url_for('admin_give_license') }}">
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end;">
+        <div class="field">
+          <label>Email</label>
+          <input name="email" type="email" required placeholder="user@example.com">
         </div>
-    </div>
+        <div class="field">
+          <label>Продукт</label>
+          <select name="product">
+            <option value="miner">Miner</option>
+            <option value="sender">Sender</option>
+            <option value="start">Start</option>
+            <option value="pro">Pro</option>
+            <option value="scale">Scale</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Дней</label>
+          <input name="days" type="number" value="30">
+        </div>
+        <button type="submit" class="btn btn-primary">Выдать</button>
+      </div>
+    </form>
+  </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div style="padding:12px;border-radius:8px;margin-bottom:16px;background:{% if category == 'error' %}rgba(255,107,107,0.1){% else %}rgba(59,232,140,0.1){% endif %};color:{% if category == 'error' %}#ff6b6b{% else %}#3be88c{% endif %};font-size:13px;">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+  <!-- === Последние лицензии === -->
+  <div class="section">
+    <h2>📋 Последние лицензии</h2>
+    {% if licenses %}
+    <table>
+      <thead>
+        <tr><th>#</th><th>User</th><th>Продукт</th><th>Цена</th><th>Истекает</th><th>Создана</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for lic in licenses[:15] %}
+        <tr>
+          <td>{{ lic.id }}</td>
+          <td><a href="{{ url_for('admin_user_card', user_id=lic.user_id) }}" style="color:#ff9040;text-decoration:none;">#{{ lic.user_id }}</a></td>
+          <td><b>{{ lic.product }}</b></td>
+          <td>{% if lic.price %}{{ lic.price }} ₽{% else %}<span class="pill pill-yellow">Триал</span>{% endif %}</td>
+          <td style="font-size:11.5px;color:rgba(255,255,255,.5);">{{ (lic.expires_at or '')[:16] }}</td>
+          <td style="font-size:11.5px;color:rgba(255,255,255,.3);">{{ (lic.created_at or '')[:16] }}</td>
+          <td>
+            {% if lic.is_active %}
+              <a href="{{ url_for('admin_revoke_license', license_id=lic.id) }}" class="btn btn-danger btn-sm" onclick="return confirm('Отозвать?')">Отозвать</a>
+            {% else %}
+              <span class="pill pill-gray">Неактивна</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="color:rgba(255,255,255,.3);font-size:13px;text-align:center;padding:24px;">Пока нет лицензий</div>
+    {% endif %}
+  </div>
 
-    <!-- Выдача лицензий -->
-    <div class="glass" style="padding:20px;border-radius:18px;margin-bottom:20px;">
-        <h2 style="font-size:18px;margin-bottom:16px;">🎫 Выдать лицензию</h2>
-        <form method="POST" action="{{ url_for('admin_give_license') }}">
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;">
-                <div class="field">
-                    <label>Email пользователя</label>
-                    <input name="email" type="email" required placeholder="user@example.com" style="width:100%;">
-                </div>
-                <div class="field">
-                    <label>Продукт</label>
-                    <select name="product" style="width:100%;background:rgba(10,10,10,0.96);border-radius:10px;border:1px solid rgba(255,255,255,0.16);padding:9px 10px;color:var(--text);font-size:14px;">
-                        <option value="miner">Miner</option>
-                        <option value="sender">Sender</option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label>Дней</label>
-                    <input name="days" type="number" value="30" style="width:100%;">
-                </div>
-                <button type="submit" class="btn btn-primary">Выдать</button>
-            </div>
-        </form>
+  <!-- === Последние действия === -->
+  <div class="section">
+    <h2>📜 Последние действия <span class="badge">{{ recent_actions|length }}</span></h2>
+    <div style="max-height:280px;overflow-y:auto;">
+    <table>
+      <thead><tr><th>Время</th><th>User</th><th>Действие</th><th>Детали</th></tr></thead>
+      <tbody>
+        {% for a in recent_actions %}
+        <tr>
+          <td style="font-size:11px;color:rgba(255,255,255,.35);white-space:nowrap;">{{ (a.created_at or '')[:16] }}</td>
+          <td>{% if a.user_id %}<a href="{{ url_for('admin_user_card', user_id=a.user_id) }}" style="color:#ff9040;text-decoration:none;">#{{ a.user_id }}</a>{% else %}—{% endif %}</td>
+          <td><b>{{ a.action }}</b></td>
+          <td style="color:rgba(255,255,255,.5);font-size:11.5px;max-width:500px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ a.details or '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
     </div>
+  </div>
 
-    <!-- Активные лицензии -->
-    <div class="glass" style="padding:20px;border-radius:18px;margin-bottom:20px;">
-        <h2 style="font-size:18px;margin-bottom:16px;">📋 Лицензии (последние 20)</h2>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;">
-            <thead>
-                <tr>
-                    <th style="text-align:left;padding:8px;color:var(--text-muted);">ID</th>
-                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Ключ</th>
-                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Продукт</th>
-                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Истекает</th>
-                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Статус</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for lic in licenses %}
-                <tr>
-                    <td style="padding:8px;">{{ lic.id }}</td>
-                    <td style="padding:8px;"><code style="font-size:11px;">{{ lic.license_key[:16] }}...</code></td>
-                    <td style="padding:8px;">{{ lic.product }}</td>
-                    <td style="padding:8px;">{{ lic.expires_at[:10] }}</td>
-                    <td style="padding:8px;">
-                        {% if lic.is_active %}
-                            <span style="color:#3be88c;">Активна</span>
-                        {% else %}
-                            <span style="color:#ff6b6b;">Неактивна</span>
-                        {% endif %}
-                    </td>
-                    <td style="padding:8px;">
-                        <a href="{{ url_for('admin_revoke_license', license_id=lic.id) }}" style="color:#ff6b6b;font-size:11px;">Отозвать</a>
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">Нет лицензий</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Ожидающие оплаты -->
-    <div class="glass" style="padding:20px;border-radius:18px;margin-bottom:20px;">
-        <h2 style="font-size:18px;margin-bottom:16px;">⏳ Ожидают подтверждения оплаты</h2>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;">
-            <thead>
-                <tr>
-                    <th style="text-align:left;padding:8px;color:var(--text-muted);">ID</th>
-                    <th style="text-align:left;padding:8px;color:var(--text-muted);">User ID</th>
-                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Продукт</th>
-                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Сумма</th>
-                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Дата</th>
-                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Выдать лицензию</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in pending_payments %}
-                <tr>
-                    <td style="padding:8px;">{{ p.id }}</td>
-                    <td style="padding:8px;">{{ p.user_id }}</td>
-                    <td style="padding:8px;">{{ p.product }}</td>
-                    <td style="padding:8px;">{{ p.amount }} ₽</td>
-                    <td style="padding:8px;">{{ p.created_at[:16] }}</td>
-                    <td style="padding:8px;">
-                        <form method="POST" action="{{ url_for('admin_give_license') }}" style="display:inline;">
-                            <input type="hidden" name="user_id" value="{{ p.user_id }}">
-                            <input type="hidden" name="product" value="{{ p.product }}">
-                            <input type="hidden" name="days" value="30">
-                            <button type="submit" style="background:none;border:none;color:var(--accent-light);cursor:pointer;font-size:12px;padding:0;">✓ Выдать</button>
-                        </form>
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">Нет ожидающих оплат</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Пользователи -->
-    <div class="glass" style="padding:20px;border-radius:18px;">
-        <h2 style="font-size:18px;margin-bottom:16px;">👥 Пользователи</h2>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;">
-            <thead>
-                <tr>
-                    <th style="text-align:left;padding:8px;color:var(--text-muted);">ID</th>
-                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Email</th>
-                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Имя</th>
-                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Дата</th>
-                    <th style="text-align:left;padding:8px;color:var(--text-muted);">Действия</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for user in users %}
-                <tr>
-                    <td style="padding:8px;">{{ user.id }}</td>
-                    <td style="padding:8px;">{{ user.email }}</td>
-                    <td style="padding:8px;">{{ user.full_name or '—' }}</td>
-                    <td style="padding:8px;">{{ user.created_at[:10] }}</td>
-                    <td style="padding:8px;">
-                        <a href="{{ url_for('admin_activate_user', user_id=user.id) }}" style="color:var(--accent-light);font-size:12px;">Активировать</a>
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Нет пользователей</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
 </div>
+
+<script>
+  // Revenue chart
+  (function () {
+    const ctx = document.getElementById('revChart');
+    if (!ctx) return;
+    const labels = {{ chart_labels|tojson }};
+    const values = {{ chart_values|tojson }};
+    if (!labels.length) {
+      ctx.parentElement.innerHTML = '<div style="text-align:center;padding:60px 20px;color:rgba(255,255,255,.3);font-size:13px;">Нет продаж за последние 30 дней</div>';
+      return;
+    }
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Доход, ₽',
+          data: values,
+          borderColor: '#ff9040',
+          backgroundColor: 'rgba(255,106,0,0.15)',
+          tension: 0.35, fill: true, pointRadius: 3, pointHoverRadius: 5,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: 'rgba(255,255,255,.4)', font: { size: 10 } }, grid: { display: false } },
+          y: { ticks: { color: 'rgba(255,255,255,.4)', font: { size: 10 }, callback: v => v + ' ₽' }, grid: { color: 'rgba(255,255,255,.04)' } }
+        }
+      }
+    });
+  })();
+</script>
+
 </body>
 </html>

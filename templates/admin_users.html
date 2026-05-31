@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Пользователи — Админ TG Lead Wareon</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body { background:#06060d; font-family:Inter,sans-serif; }
+    .admin-wrap { max-width:1280px; margin:0 auto; padding:30px 24px 80px; }
+    .admin-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:18px; border-bottom:1px solid rgba(255,255,255,.06); }
+    .admin-head h1 { font-size:22px; font-weight:800; margin:0; }
+    .admin-tabs { display:flex; gap:6px; }
+    .admin-tab { padding:7px 14px; border-radius:8px; font-size:13px; font-weight:600; color:rgba(255,255,255,.5); background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); text-decoration:none; }
+    .admin-tab:hover { color:#fff; }
+    .admin-tab.active { background:rgba(255,106,0,.12); color:#ff9040; border-color:rgba(255,106,0,.4); }
+    .admin-logout { color:rgba(255,255,255,.4); font-size:12px; text-decoration:none; margin-left:14px; align-self:center; }
+
+    /* Search bar */
+    .search-bar { background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.07); border-radius:14px; padding:18px 20px; margin-bottom:18px; }
+    .search-row { display:flex; gap:10px; align-items:end; flex-wrap:wrap; }
+    .search-row input, .search-row select { background:rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:9px 13px; color:#e2e8f0; font-size:13.5px; font-family:inherit; }
+    .search-row input { flex:1; min-width:240px; }
+    .filter-pills { display:flex; gap:6px; margin-top:14px; }
+    .filter-pill { padding:5px 12px; border-radius:999px; font-size:12px; color:rgba(255,255,255,.5); background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); text-decoration:none; }
+    .filter-pill.active { background:rgba(255,106,0,.12); color:#ff9040; border-color:rgba(255,106,0,.4); }
+    .filter-pill:hover { color:#fff; }
+
+    /* Table */
+    .section { background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.07); border-radius:14px; padding:18px 20px; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th { text-align:left; padding:10px 12px; color:rgba(255,255,255,.4); font-weight:500; font-size:11px; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid rgba(255,255,255,.07); }
+    td { padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.03); }
+    tr:hover td { background:rgba(255,255,255,.02); }
+    tr { cursor:pointer; }
+    .pill { display:inline-flex; padding:2px 8px; border-radius:999px; font-size:10.5px; font-weight:700; }
+    .pill-green { background:rgba(59,232,140,.1); color:#3be88c; }
+    .pill-gray { background:rgba(255,255,255,.05); color:rgba(255,255,255,.4); }
+    .pill-orange { background:rgba(255,144,64,.12); color:#ff9040; }
+
+    .btn { padding:7px 13px; border-radius:8px; font-size:12.5px; font-weight:600; text-decoration:none; cursor:pointer; border:1px solid rgba(255,255,255,.1); background:transparent; color:rgba(255,255,255,.65); display:inline-flex; align-items:center; gap:5px; }
+    .btn-primary { background:linear-gradient(135deg,#ff6a00,#ff9040); color:#fff; border-color:transparent; }
+
+    .pager { margin-top:14px; display:flex; justify-content:center; gap:6px; }
+    .pager a, .pager span { padding:6px 11px; border-radius:6px; font-size:12.5px; text-decoration:none; color:rgba(255,255,255,.5); background:rgba(255,255,255,.04); }
+    .pager a:hover { color:#fff; }
+    .pager .current { background:linear-gradient(135deg,#ff6a00,#ff9040); color:#fff; }
+  </style>
+</head>
+<body class="page-dark">
+<div class="admin-wrap">
+
+  <div class="admin-head">
+    <h1>👥 Пользователи <span style="color:rgba(255,255,255,.3);font-size:14px;font-weight:500;margin-left:6px;">({{ total }})</span></h1>
+    <div class="admin-tabs">
+      <a href="{{ url_for('admin_dashboard') }}" class="admin-tab">📊 Дашборд</a>
+      <a href="{{ url_for('admin_users') }}" class="admin-tab active">👥 Юзеры</a>
+      <a href="{{ url_for('admin_promos') }}" class="admin-tab">🎁 Промо</a>
+      <a href="{{ url_for('admin_reviews') }}" class="admin-tab">⭐ Отзывы</a>
+      <a href="{{ url_for('admin_logout') }}" class="admin-logout">Выйти</a>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-bar">
+    <form method="GET" action="{{ url_for('admin_users') }}">
+      <div class="search-row">
+        <input name="q" type="text" placeholder="Поиск по email, имени, Telegram ID или #ID" value="{{ q|e }}">
+        <button type="submit" class="btn btn-primary">🔍 Найти</button>
+        {% if q %}<a href="{{ url_for('admin_users') }}" class="btn">✕ Сбросить</a>{% endif %}
+        <input type="hidden" name="filter" value="{{ filt }}">
+      </div>
+    </form>
+    <div class="filter-pills">
+      <a href="?filter=all{% if q %}&q={{ q|urlencode }}{% endif %}" class="filter-pill {% if filt=='all' %}active{% endif %}">Все</a>
+      <a href="?filter=paid{% if q %}&q={{ q|urlencode }}{% endif %}" class="filter-pill {% if filt=='paid' %}active{% endif %}">💳 Платящие</a>
+      <a href="?filter=active{% if q %}&q={{ q|urlencode }}{% endif %}" class="filter-pill {% if filt=='active' %}active{% endif %}">⚡ Активные</a>
+      <a href="?filter=trial{% if q %}&q={{ q|urlencode }}{% endif %}" class="filter-pill {% if filt=='trial' %}active{% endif %}">🎁 Триал</a>
+      <a href="?filter=expired{% if q %}&q={{ q|urlencode }}{% endif %}" class="filter-pill {% if filt=='expired' %}active{% endif %}">⏱ Истёкшие</a>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="section">
+  {% if users %}
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Email</th>
+        <th>Имя</th>
+        <th>Регистрация</th>
+        <th>Лицензий</th>
+        <th>Активная</th>
+        <th>Заплачено</th>
+        <th>Telegram</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr onclick="window.location='{{ url_for('admin_user_card', user_id=u.id) }}'">
+        <td><span class="pill pill-gray">#{{ u.id }}</span></td>
+        <td><b>{{ u.email }}</b></td>
+        <td>{{ u.full_name or '—' }}</td>
+        <td style="font-size:11.5px;color:rgba(255,255,255,.45);">{{ (u.created_at or '')[:16] }}</td>
+        <td>{{ u.total_lic }}</td>
+        <td>
+          {% if u.active_lic > 0 %}
+            <span class="pill pill-green">⚡ Активна</span>
+          {% else %}
+            <span class="pill pill-gray">—</span>
+          {% endif %}
+        </td>
+        <td>{% if u.total_paid > 0 %}<span class="pill pill-orange">{{ u.total_paid|int }} ₽</span>{% else %}<span style="color:rgba(255,255,255,.25)">0</span>{% endif %}</td>
+        <td style="font-size:11.5px;color:rgba(255,255,255,.45);">{% if u.telegram_id %}@{{ u.telegram_id }}{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="text-align:center;padding:40px;color:rgba(255,255,255,.3);font-size:14px;">
+    {% if q %}Пользователи по запросу «{{ q }}» не найдены{% else %}Пока нет пользователей{% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Pagination -->
+  {% if pages > 1 %}
+  <div class="pager">
+    {% if page > 1 %}<a href="?page={{ page-1 }}&filter={{ filt }}{% if q %}&q={{ q|urlencode }}{% endif %}">‹</a>{% endif %}
+    {% for p in range(1, pages+1) %}
+      {% if p == page %}<span class="current">{{ p }}</span>
+      {% elif p <= 3 or p > pages-3 or (p >= page-1 and p <= page+1) %}
+        <a href="?page={{ p }}&filter={{ filt }}{% if q %}&q={{ q|urlencode }}{% endif %}">{{ p }}</a>
+      {% elif p == 4 and page > 5 %}<span>…</span>
+      {% elif p == pages-3 and page < pages-4 %}<span>…</span>
+      {% endif %}
+    {% endfor %}
+    {% if page < pages %}<a href="?page={{ page+1 }}&filter={{ filt }}{% if q %}&q={{ q|urlencode }}{% endif %}">›</a>{% endif %}
+  </div>
+  {% endif %}
+
+  </div>
+
+</div>
+</body>
+</html>
