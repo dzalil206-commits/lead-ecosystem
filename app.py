@@ -1622,6 +1622,24 @@ def payment_webhook():
     return jsonify({'ok': True})
 
 
+@app.route('/payment/antilopay/webhook', methods=['POST', 'GET'])
+def antilopay_webhook():
+    """Webhook от Antilopay.
+    Минимальная заглушка для прохождения проверки URL Антилопайем.
+    Полная обработка платежей будет добавлена после получения данных
+    о формате callback v2.0 (тарифы, подпись, поля).
+    """
+    try:
+        data = request.get_json(silent=True) or request.form.to_dict() or {}
+        logging.info(f'ANTILOPAY webhook: {request.method} {dict(request.headers)} | {data}')
+        # TODO: проверить подпись (signature) когда получим secret_key
+        # TODO: парсить статус платежа и активировать лицензию
+        return jsonify({'status': 'ok'}), 200
+    except Exception as e:
+        logging.error(f'ANTILOPAY webhook error: {e}')
+        return jsonify({'status': 'error', 'message': str(e)}), 200
+
+
 @app.route('/payment/lava/webhook', methods=['POST'])
 def lava_webhook():
     """Вебхук от Lava.top для подписок."""
