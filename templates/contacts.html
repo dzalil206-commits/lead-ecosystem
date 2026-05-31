@@ -127,24 +127,26 @@
       </div>
 
       <div class="contact-card">
-        <div class="contact-icon">📞</div>
-        <h3>Телефон</h3>
-        <p>Голосовая связь с поддержкой (рабочие часы Москва).</p>
-        <a href="tel:+79991234567">+7 (999) 123-45-67</a><br>
-        <span style="font-size:11.5px;color:rgba(255,255,255,.3);">Пн-Пт 10:00–19:00 МСК</span>
+        <div class="contact-icon">💌</div>
+        <h3>Форма обратной связи</h3>
+        <p>Любые вопросы, не подходящие под категории выше. Ответим в течение 24 часов.</p>
+        <a href="{{ url_for('support') }}">Открыть форму →</a><br>
+        <span style="font-size:11.5px;color:rgba(255,255,255,.3);">Пн-Вс · ответ в течение суток</span>
       </div>
 
     </div>
 
     <!-- Реквизиты -->
     <div class="info-block">
-      <h2>📋 Реквизиты</h2>
-      <div class="req-row"><span class="req-label">Полное наименование:</span> <span class="req-val">Индивидуальный предприниматель ____________</span></div>
-      <div class="req-row"><span class="req-label">ОГРНИП:</span> <span class="req-val">____________</span></div>
-      <div class="req-row"><span class="req-label">ИНН:</span> <span class="req-val">____________</span></div>
-      <div class="req-row"><span class="req-label">Адрес регистрации:</span> <span class="req-val">____________</span></div>
+      <h2>📋 Сведения о владельце Сервиса</h2>
       <div class="req-row"><span class="req-label">Сайт:</span> <span class="req-val">tgleadwareon.ru</span></div>
       <div class="req-row"><span class="req-label">Юрисдикция:</span> <span class="req-val">Российская Федерация</span></div>
+      <div class="req-row"><span class="req-label">Применимое право:</span> <span class="req-val">Законодательство РФ</span></div>
+      <div class="req-row"><span class="req-label">Подсудность споров:</span> <span class="req-val">Суд по месту регистрации владельца</span></div>
+      <div class="req-row"><span class="req-label">Юридические запросы:</span> <span class="req-val"><a href="mailto:legal@tgleadwareon.ru" style="color:var(--orange-3);">legal@tgleadwareon.ru</a></span></div>
+      <p style="font-size:12.5px;color:rgba(255,255,255,.35);margin-top:14px;line-height:1.6;">
+        Полные реквизиты индивидуального предпринимателя (ОГРНИП, ИНН, адрес регистрации) публикуются после завершения государственной регистрации в соответствии с ФЗ № 129-ФЗ «О государственной регистрации юридических лиц и индивидуальных предпринимателей». До этого момента все юридически значимые обращения принимаются по адресу <a href="mailto:legal@tgleadwareon.ru" style="color:var(--orange-3);">legal@tgleadwareon.ru</a> в установленный законом срок (30 календарных дней).
+      </p>
     </div>
 
     <!-- Время ответа -->
