@@ -631,6 +631,10 @@ def register():
             flash('Необходимо принять Пользовательское соглашение и Политику конфиденциальности.', 'error')
             return render_template('register.html', bonus_token=bonus_token, bonus_valid=bonus_valid)
 
+        if not request.form.get('adult'):
+            flash('Регистрация доступна только лицам, достигшим 18 лет.', 'error')
+            return render_template('register.html', bonus_token=bonus_token, bonus_valid=bonus_valid)
+
         if len(password) < 8:
             flash('Пароль должен содержать не менее 8 символов.', 'error')
             return render_template('register.html', bonus_token=bonus_token, bonus_valid=bonus_valid)
@@ -674,6 +678,10 @@ def register():
                 )
                 db.commit()
         log_action(user_id, 'register', email)
+        # Юридически значимое логирование принятия оферты — IP, User-Agent, время
+        _ip = request.headers.get('X-Real-IP') or (request.headers.get('X-Forwarded-For', '').split(',')[0].strip()) or request.remote_addr or '-'
+        _ua = (request.headers.get('User-Agent') or '')[:200]
+        log_action(user_id, 'terms_accepted', f'agree=1; adult=1; ip={_ip}; ua={_ua}')
         if bonus_valid:
             flash('🎉 Регистрация успешна! 3 дня Miner активированы. Войдите.', 'success')
         else:

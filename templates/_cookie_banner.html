@@ -1,0 +1,41 @@
+{# Cookie consent banner — universal partial.
+   Include via: {% include '_cookie_banner.html' %} right before </body> #}
+<div id="cookie-banner-tglw" style="display:none;position:fixed;left:14px;right:14px;bottom:14px;z-index:99990;background:rgba(8,8,16,.96);border:1px solid rgba(255,106,0,.32);border-radius:12px;padding:14px 18px;backdrop-filter:blur(16px);box-shadow:0 14px 44px rgba(0,0,0,.55);font-family:Inter,system-ui,-apple-system,sans-serif">
+  <div style="max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:space-between">
+    <div style="flex:1;min-width:240px;font-size:13px;color:rgba(255,255,255,.65);line-height:1.55">
+      🍪 Мы используем файлы cookie для работы сайта, аналитики и сохранения настроек.
+      Продолжая использовать сайт, вы соглашаетесь с
+      <a href="{{ url_for('privacy') }}" style="color:#ff9040;text-decoration:none;border-bottom:1px solid rgba(255,144,64,.4)">Политикой конфиденциальности</a>.
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button type="button" id="cookie-banner-tglw-accept"
+              style="background:linear-gradient(135deg,#ff6a00,#ff9040);color:#fff;border:none;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">
+        Принять
+      </button>
+      <a href="{{ url_for('privacy') }}"
+         style="background:transparent;color:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.15);padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center">
+        Подробнее
+      </a>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY = 'tglw_cookie_consent_v1';
+  try {
+    if (localStorage.getItem(KEY) === '1') return;
+  } catch (e) { /* localStorage недоступен — всё равно покажем */ }
+
+  var el = document.getElementById('cookie-banner-tglw');
+  if (!el) return;
+  el.style.display = 'block';
+
+  var btn = document.getElementById('cookie-banner-tglw-accept');
+  if (btn) {
+    btn.addEventListener('click', function () {
+      try { localStorage.setItem(KEY, '1'); } catch (e) {}
+      el.style.display = 'none';
+    });
+  }
+})();
+</script>

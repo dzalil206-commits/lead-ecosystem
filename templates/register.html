@@ -323,7 +323,13 @@
               <a href="{{ url_for('terms') }}" target="_blank">Пользовательское соглашение</a>
               и
               <a href="{{ url_for('privacy') }}" target="_blank">Политику конфиденциальности</a>,
-              а также даю согласие на обработку персональных данных
+              а также даю согласие на обработку моих персональных данных
+            </label>
+          </div>
+          <div class="agree-row" style="margin-top:8px">
+            <input type="checkbox" id="adult" name="adult" required/>
+            <label for="adult">
+              Подтверждаю, что мне исполнилось <strong>18 лет</strong>
             </label>
           </div>
           <button type="submit" class="submit-btn">Зарегистрироваться →</button>
@@ -389,5 +395,6 @@
   </div>
 
 </div>
+{% include '_cookie_banner.html' %}
 </body>
 </html>
