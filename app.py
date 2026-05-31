@@ -33,6 +33,10 @@ SUPPORT_USERNAME    = '@TGLeadSupportBot'
 YOOKASSA_SHOP_ID    = os.environ.get('YOOKASSA_SHOP_ID', '')
 YOOKASSA_SECRET_KEY = os.environ.get('YOOKASSA_SECRET_KEY', '')
 LAVA_API_KEY        = os.environ.get('LAVA_API_KEY', '')
+ANTILOPAY_SECRET_ID  = os.environ.get('ANTILOPAY_SECRET_ID',  '')
+ANTILOPAY_PROJECT_ID = os.environ.get('ANTILOPAY_PROJECT_ID', '')
+ANTILOPAY_PRIVATE_KEY= os.environ.get('ANTILOPAY_PRIVATE_KEY','')  # для подписи запросов
+ANTILOPAY_PUBLIC_KEY = os.environ.get('ANTILOPAY_PUBLIC_KEY', '')  # для проверки callback
 REVIEW_BOT_TOKEN    = os.environ.get('REVIEW_BOT_TOKEN', '')
 NOTIFY_BOT_TOKEN    = os.environ.get('NOTIFY_BOT_TOKEN', '')
 BASE_URL            = os.environ.get('BASE_URL', 'http://localhost:5000')
@@ -181,6 +185,109 @@ def create_lava_payment(amount_rub, user_id, product, days, user_email=''):
 
     logging.error('LAVA: ни один из режимов не сработал')
     return None, None
+
+
+def _antilopay_sign(payload_json: str, private_key_b64: str) -> str:
+    """Подпись запроса по алгоритму SHA256WithRSA для Antilopay API.
+    Возвращает base64-encoded подпись.
+    """
+    try:
+        from Crypto.Hash import SHA256
+        from Crypto.PublicKey import RSA
+        from Crypto.Signature import pkcs1_15
+        import base64 as _b64
+        rsa_key = RSA.importKey(_b64.b64decode(private_key_b64))
+        h = SHA256.new(payload_json.encode('utf-8'))
+        return _b64.b64encode(pkcs1_15.new(rsa_key).sign(h)).decode('ascii')
+    except Exception as e:
+        logging.error(f'ANTILOPAY: sign error — {e}')
+        return ''
+
+
+def _antilopay_verify(payload_raw: bytes, sign_b64: str, public_key_b64: str) -> bool:
+    """Проверка подписи callback от Antilopay."""
+    try:
+        from Crypto.Hash import SHA256
+        from Crypto.PublicKey import RSA
+        from Crypto.Signature import pkcs1_15
+        import base64 as _b64
+        rsa_key = RSA.importKey(_b64.b64decode(public_key_b64))
+        h = SHA256.new(payload_raw)
+        pkcs1_15.new(rsa_key).verify(h, _b64.b64decode(sign_b64))
+        return True
+    except Exception as e:
+        logging.warning(f'ANTILOPAY: verify failed — {e}')
+        return False
+
+
+def create_antilopay_payment(amount_rub, user_id, product, days, user_email='', user_phone=''):
+    """Создаёт платёж в Antilopay. Возвращает (payment_url, payment_id) или (None, None).
+    Поддерживает СБП и банковские карты.
+    """
+    if not (ANTILOPAY_SECRET_ID and ANTILOPAY_PROJECT_ID and ANTILOPAY_PRIVATE_KEY):
+        logging.warning('ANTILOPAY: ключи не заданы (SECRET_ID / PROJECT_ID / PRIVATE_KEY)')
+        return None, None
+
+    order_id = f'tglw-{user_id}-{product}-{uuid.uuid4().hex[:8]}'
+    product_label = PRODUCT_PRICES.get(product, {}).get('label', product.capitalize())
+
+    # Покупатель: нужен email ИЛИ phone. У нас всегда есть email.
+    customer = {'email': user_email or f'user{user_id}@tgleadwareon.ru'}
+    if user_phone:
+        customer['phone'] = user_phone
+
+    # IP клиента (требуется в некоторых сценариях)
+    try:
+        ip = request.headers.get('X-Real-IP') or (request.headers.get('X-Forwarded-For','').split(',')[0].strip()) or request.remote_addr
+        if ip:
+            customer['ip'] = ip
+    except Exception:
+        pass
+
+    payload = {
+        'project_identificator': ANTILOPAY_PROJECT_ID,
+        'amount':       float(amount_rub),
+        'order_id':     order_id,
+        'currency':     'RUB',
+        'product_name': product_label,
+        'product_type': 'services',
+        'description':  f'Лицензия {product_label} на {days} дней',
+        'customer':     customer,
+        'success_url':  f'{BASE_URL}/payment/success?product={product}&provider=antilopay',
+        'fail_url':     f'{BASE_URL}/pricing?status=cancelled',
+        'prefer_methods': ['SBP', 'CARD_RU'],
+        'merchant_extra': f'user_id={user_id};product={product}',
+    }
+
+    # JSON-строка БЕЗ пробелов между ключом и значением (требование Antilopay)
+    payload_json = json.dumps(payload, ensure_ascii=False, separators=(',', ':'))
+
+    sign = _antilopay_sign(payload_json, ANTILOPAY_PRIVATE_KEY)
+    if not sign:
+        return None, None
+
+    try:
+        logging.info(f'ANTILOPAY: создаём платёж order_id={order_id} amount={amount_rub}')
+        resp = requests.post(
+            'https://lk.antilopay.com/api/v1/payment/create',
+            data=payload_json.encode('utf-8'),
+            headers={
+                'Content-Type':       'application/json',
+                'X-Apay-Secret-Id':   ANTILOPAY_SECRET_ID,
+                'X-Apay-Sign':        sign,
+                'X-Apay-Sign-Version':'1',
+            },
+            timeout=15,
+        )
+        logging.info(f'ANTILOPAY: ответ {resp.status_code} — {resp.text[:300]}')
+        data = resp.json()
+        if data.get('code') == 0:
+            return data.get('payment_url'), data.get('payment_id') or order_id
+        logging.error(f'ANTILOPAY: ошибка code={data.get("code")} — {data.get("error")}')
+        return None, None
+    except Exception as e:
+        logging.error(f'ANTILOPAY: исключение — {e}')
+        return None, None
 
 
 def create_yookassa_payment(amount_rub, user_id, product, days):
@@ -1542,13 +1649,20 @@ def buy(product='start'):
         if addon_keys:
             product_label += ' + ' + ', '.join(PRODUCT_PRICES[ADDON_NAMES[k]]['label'] for k in addon_keys)
 
-        # 1. Пробуем Lava.top
-        confirm_url, payment_id = create_lava_payment(
+        # 1. Пробуем Antilopay (СБП + карты, российская юрисдикция)
+        confirm_url, payment_id = create_antilopay_payment(
             total_rub, current_user.id, product, info['days'], user_email
         )
-        provider = 'lava'
+        provider = 'antilopay'
 
-        # 2. Фолбэк на ЮKassa
+        # 2. Фолбэк на Lava.top (USDT + международные карты)
+        if not confirm_url:
+            confirm_url, payment_id = create_lava_payment(
+                total_rub, current_user.id, product, info['days'], user_email
+            )
+            provider = 'lava'
+
+        # 3. Фолбэк на ЮKassa
         if not confirm_url:
             confirm_url, payment_id = create_yookassa_payment(
                 total_rub, current_user.id, product, info['days']
@@ -1633,18 +1747,113 @@ def payment_webhook():
 @app.route('/payment/antilopay/webhook', methods=['POST', 'GET'])
 def antilopay_webhook():
     """Webhook от Antilopay.
-    Минимальная заглушка для прохождения проверки URL Антилопайем.
-    Полная обработка платежей будет добавлена после получения данных
-    о формате callback v2.0 (тарифы, подпись, поля).
+    Проверяет подпись SHA256WithRSA, активирует лицензию для SUCCESS.
+    Формат: type=payment, status=SUCCESS|FAIL, payment_id, order_id, amount...
     """
+    # GET — для теста доступности URL
+    if request.method == 'GET':
+        return jsonify({'status': 'ok'}), 200
+
     try:
-        data = request.get_json(silent=True) or request.form.to_dict() or {}
-        logging.info(f'ANTILOPAY webhook: {request.method} {dict(request.headers)} | {data}')
-        # TODO: проверить подпись (signature) когда получим secret_key
-        # TODO: парсить статус платежа и активировать лицензию
+        raw_body = request.get_data() or b''
+        sign     = request.headers.get('X-Apay-Callback', '')
+        version  = request.headers.get('X-Apay-Callback-Version', '1')
+        logging.info(f'ANTILOPAY callback v{version}: sign={sign[:20]}... body={raw_body[:300]}')
+
+        # Проверка подписи (если публичный ключ задан)
+        if ANTILOPAY_PUBLIC_KEY and sign:
+            if not _antilopay_verify(raw_body, sign, ANTILOPAY_PUBLIC_KEY):
+                logging.error('ANTILOPAY callback: invalid signature')
+                return jsonify({'status': 'error', 'message': 'invalid signature'}), 200
+        else:
+            logging.warning('ANTILOPAY callback: подпись не проверена (нет публичного ключа)')
+
+        data = json.loads(raw_body.decode('utf-8')) if raw_body else {}
+        cb_type = data.get('type')
+
+        # Обрабатываем только платежи (payment), не выплаты и не возвраты
+        if cb_type != 'payment':
+            logging.info(f'ANTILOPAY callback: ignoring type={cb_type}')
+            return jsonify({'status': 'ok'}), 200
+
+        status     = data.get('status')
+        payment_id = data.get('payment_id') or ''
+        order_id   = data.get('order_id') or ''
+        amount     = float(data.get('amount') or 0)
+        original_amount = float(data.get('original_amount') or amount)
+
+        # Проверка сумм — защита от подмены (требование Antilopay)
+        if amount > 0 and original_amount > 0 and abs(amount - original_amount) > 0.01:
+            logging.error(f'ANTILOPAY callback: amount mismatch {amount} vs {original_amount}')
+            return jsonify({'status': 'error', 'message': 'amount mismatch'}), 200
+
+        if status != 'SUCCESS':
+            logging.info(f'ANTILOPAY callback: payment {payment_id} status={status} — пропускаем')
+            return jsonify({'status': 'ok'}), 200
+
+        # Парсим user_id и product из order_id: tglw-{user_id}-{product}-{uuid}
+        parts = order_id.split('-')
+        if len(parts) < 4 or parts[0] != 'tglw':
+            logging.error(f'ANTILOPAY callback: cant parse order_id={order_id}')
+            return jsonify({'status': 'ok'}), 200
+        try:
+            user_id = int(parts[1])
+        except ValueError:
+            logging.error(f'ANTILOPAY callback: invalid user_id in order_id={order_id}')
+            return jsonify({'status': 'ok'}), 200
+        product = parts[2]
+
+        info = PRODUCT_PRICES.get(product, {})
+        days = info.get('days', 30)
+
+        # Активация лицензии
+        conn = sqlite3.connect(DATABASE)
+        conn.row_factory = sqlite3.Row
+        try:
+            existing = conn.execute(
+                "SELECT id, expires_at FROM licenses WHERE user_id=? AND product=? AND is_active=1",
+                (user_id, product.capitalize())
+            ).fetchone()
+
+            if existing:
+                conn.execute(
+                    "UPDATE licenses SET expires_at = datetime(expires_at, ?) WHERE id=?",
+                    (f'+{days} days', existing['id'])
+                )
+                log_action(user_id, 'license_renewed', f'{product}:antilopay:{payment_id}')
+            else:
+                license_key = generate_license_key()
+                expires_at  = datetime.now() + timedelta(days=days)
+                conn.execute(
+                    "INSERT INTO licenses (user_id, license_key, product, price, expires_at, is_active) VALUES (?,?,?,?,?,1)",
+                    (user_id, license_key, product.capitalize(), int(amount), expires_at)
+                )
+                conn.execute(
+                    "UPDATE payments SET status='succeeded' WHERE user_id=? AND product LIKE ? AND status='pending'",
+                    (user_id, f'{product}%')
+                )
+                log_action(user_id, 'license_activated', f'{product}:{int(amount)}rub:antilopay:{payment_id}')
+                # Уведомление пользователю
+                user_row = conn.execute("SELECT telegram_id, email FROM users WHERE id=?", (user_id,)).fetchone()
+                if user_row and user_row['telegram_id']:
+                    send_telegram(user_row['telegram_id'],
+                        f'✅ <b>TG Lead Wareon</b>\n\nЛицензия <b>{product.capitalize()}</b> активирована на {days} дней.\n'
+                        f'Войдите в кабинет: {BASE_URL}/dashboard')
+                if user_row and user_row['email']:
+                    expires_at_str = (datetime.now() + timedelta(days=days)).strftime('%d.%m.%Y')
+                    threading.Thread(
+                        target=send_purchase_email,
+                        args=(user_row['email'], product.capitalize(), int(amount), expires_at_str),
+                        daemon=True,
+                    ).start()
+            conn.commit()
+        finally:
+            conn.close()
+
         return jsonify({'status': 'ok'}), 200
     except Exception as e:
         logging.error(f'ANTILOPAY webhook error: {e}')
+        # Возвращаем 200 чтобы Antilopay не повторял запрос бесконечно
         return jsonify({'status': 'error', 'message': str(e)}), 200
 
 
